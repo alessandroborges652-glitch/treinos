@@ -231,6 +231,15 @@ select.tipo-sel{background:var(--tc);color:var(--tt);font-weight:800;border-colo
 .ori{display:flex;flex-direction:column;gap:2px;padding-block:8px;border-top:1px solid var(--line)}
 .ori:first-of-type{border-top:0}
 .sess-note{border-left:3px solid var(--warn);padding:4px 10px;font-size:.9rem}
+.tipo-cad{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tipo-cad button{border:1.5px solid var(--line);background:var(--surface);border-radius:10px;padding:10px;font-weight:700;cursor:pointer;display:flex;flex-direction:column;gap:2px;text-align:left}
+.tipo-cad button span{font-weight:500;font-size:.78rem;color:var(--muted)}
+.tipo-cad button[aria-pressed="true"]{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.cref-ph{aspect-ratio:3/2;max-width:320px;border-radius:10px;background:repeating-linear-gradient(-22deg,var(--accent-soft) 0 12px,var(--sunken) 12px 24px);display:flex;align-items:center;justify-content:center;color:var(--accent);font-weight:700;text-align:center;padding:12px}
+.cref-img{max-width:min(420px,100%);border-radius:10px;border:1px solid var(--line)}
+.badge{display:inline-flex;min-width:18px;height:18px;padding:0 5px;border-radius:99px;background:#E5B661;color:#22282A;font-size:.7rem;font-weight:800;align-items:center;justify-content:center;margin-left:4px}
+.zona-risco{border-color:var(--down)}
+.zona-risco h3{color:var(--down)}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:700;z-index:20;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.2)}
 @media (prefers-reduced-motion:no-preference){.toast{animation:pop .2s ease-out}@keyframes pop{from{transform:translate(-50%,8px);opacity:.4}}}
 </style>
@@ -289,6 +298,26 @@ const ORIENTACOES = [
 ];
 
 const DEMO = !CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY;
+/* Papéis: master (login mestre), personal (aprovado pelo mestre) e aluno */
+const statusDe = u => u?.status || "ativo";
+const isPers = () => !!S.user && ["personal", "master"].includes(S.user.role) && statusDe(S.user) === "ativo";
+const isMaster = () => S.user?.role === "master" && statusDe(S.user) === "ativo";
+const rotaInicial = () => !S.user ? "login" : isPers() ? "alunos" : S.user.role === "personal" ? "pendente" : "home";
+const CONVITE = (() => { try { return new URLSearchParams(location.search).get("p") || ""; } catch { return ""; } })();
+const PROF_PADRAO = { nome: "Alessandro Borges", cref: "018010-G/GO", role: "master" };
+let PROF = null; /* profissional responsável pelo usuário logado */
+const profDe = u => u ? { nome: u.nome, cref: u.cref || (u.role === "master" ? PROF_PADRAO.cref : ""), role: u.role } : PROF_PADRAO;
+const profLinha = p => `${p.nome} · Personal trainer${p.cref ? " · CREF " + p.cref : ""}`;
+const diasPara = iso => iso ? Math.round((new Date(String(iso).slice(0, 10) + "T00:00:00") - new Date(todayISO() + "T00:00:00")) / 86400000) : null;
+const crefChip = u => {
+  const d = diasPara(u.cref_validade);
+  if (d === null) return `<span class="chip warn">Validade não informada</span>`;
+  if (d < 0) return `<span class="chip bad">CREF vencido há ${-d} ${-d === 1 ? "dia" : "dias"}</span>`;
+  if (d <= 30) return `<span class="chip warn">Vence em ${d} ${d === 1 ? "dia" : "dias"} (${fmtData(u.cref_validade)})</span>`;
+  return `<span class="chip ok">Válido até ${fmtData(u.cref_validade)}</span>`;
+};
+const crefAtencao = u => { const d = diasPara(u.cref_validade); return d === null || d <= 30; };
+const primeiroNome = n => String(n || "").trim().split(/\s+/)[0];
 const LETRAS = ["A","B","C","D","E"];
 
 /* ---------- utilitários ---------- */
@@ -353,12 +382,30 @@ function makeSupabase(){
       return ok(await c.from("profiles").select("*").eq("id", session.user.id).single());
     },
     async signIn(email, password){ ok(await c.auth.signInWithPassword({ email, password })); return this.current(); },
-    async signUp(nome, email, password){
-      const d = ok(await c.auth.signUp({ email, password, options: { data: { nome }, emailRedirectTo: location.href.split("#")[0] } }));
+    async signUp(nome, email, password, extra = {}){
+      const d = ok(await c.auth.signUp({ email, password, options: { data: { nome, ...extra }, emailRedirectTo: location.origin + location.pathname } }));
       return d.session ? this.current() : null;
     },
+    async getPerfil(id){ return ok(await c.from("profiles").select("id,nome,cref,role,email").eq("id", id).maybeSingle()); },
+    async listPersonais(){ return ok(await c.from("profiles").select("*").eq("role", "personal").order("created_at", { ascending: false })); },
+    async aprovarPersonal(id, aprovar){ ok(await c.rpc("aprovar_personal", { uid: id, aprovar })); },
+    async enviarCref(uid, file, campos = {}){
+      const upd = { ...campos };
+      if (file) {
+        const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+        const path = `${uid}/cref-${Date.now()}.${ext}`;
+        ok(await c.storage.from("cref").upload(path, file, { upsert: true, contentType: file.type || undefined }));
+        upd.cref_foto = path;
+      }
+      if (Object.keys(upd).length) ok(await c.from("profiles").update(upd).eq("id", uid));
+    },
+    async excluirConta(uid){
+      try { const { data } = await c.storage.from("cref").list(uid); if (data?.length) await c.storage.from("cref").remove(data.map(f => `${uid}/${f.name}`)); } catch {}
+      ok(await c.rpc("excluir_conta", { uid }));
+    },
+    async crefUrl(path){ const d = ok(await c.storage.from("cref").createSignedUrl(path, 600)); return d.signedUrl; },
     async signOut(){ await c.auth.signOut(); },
-    async listAlunos(){ return ok(await c.from("profiles").select("*").eq("role", "aluno").order("nome")); },
+    async listAlunos(){ return ok(await c.from("profiles").select("*").eq("role", "aluno").eq("personal_id", S.user.id).order("nome")); },
     async listProgramas(){ return ok(await c.from("programas").select("id,aluno_id,nome,inicio,semanas,updated_at").eq("ativo", true)); },
     async listExercicios(){ return ok(await c.from("exercicios").select("*").order("nome")); },
     async saveExercicio(ex){
@@ -396,10 +443,12 @@ function makeSupabase(){
 function makeDemo(){
   const ago = n => { const d = new Date(); d.setDate(d.getDate() - n); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
   const users = [
-    { id: "p1", nome: "Alessandro Borges", email: "personal@exemplo.com", role: "personal" },
-    { id: "a1", nome: "Lucas Martins (exemplo)", email: "lucas@exemplo.com", role: "aluno" },
-    { id: "a2", nome: "Carla Souza (exemplo)", email: "carla@exemplo.com", role: "aluno" },
-    { id: "a3", nome: "Rafael Lima (exemplo)", email: "rafael@exemplo.com", role: "aluno" }
+    { id: "p1", nome: "Alessandro Borges", email: "personal@exemplo.com", role: "master", status: "ativo", cref: "018010-G/GO", cref_validade: ago(-300) },
+    { id: "p2", nome: "Marina Costa (exemplo)", email: "marina@exemplo.com", role: "personal", status: "pendente", cref: "012345-G/GO", cref_validade: ago(-410), cref_foto: "demo", created_at: new Date(Date.now() - 86400000).toISOString() },
+    { id: "p3", nome: "Diego Ramos (exemplo)", email: "diego@exemplo.com", role: "personal", status: "ativo", cref: "054321-G/SP", cref_validade: ago(-18), cref_conferido: true, cref_foto: "demo", created_at: new Date(Date.now() - 20 * 86400000).toISOString() },
+    { id: "a1", nome: "Lucas Martins (exemplo)", email: "lucas@exemplo.com", role: "aluno", personal_id: "p1" },
+    { id: "a2", nome: "Carla Souza (exemplo)", email: "carla@exemplo.com", role: "aluno", personal_id: "p1" },
+    { id: "a3", nome: "Rafael Lima (exemplo)", email: "rafael@exemplo.com", role: "aluno", personal_id: "p1" }
   ];
   const exs = [
     [1, "Supino reto com barra", "Peitoral", "Escápulas retraídas, barra desce até a linha do mamilo."],
@@ -473,7 +522,18 @@ function makeDemo(){
     async current(){ return me; },
     async demoLogin(id){ me = users.find(u => u.id === id); return me; },
     async signOut(){ me = null; },
-    async listAlunos(){ return clone(users.filter(u => u.role === "aluno")); },
+    async listAlunos(){ return clone(users.filter(u => u.role === "aluno" && u.personal_id === me.id)); },
+    async getPerfil(id){ const u = users.find(x => x.id === id); return u ? clone(u) : null; },
+    async listPersonais(){ return clone(users.filter(u => u.role === "personal")); },
+    async aprovarPersonal(id, aprovar){ const u = users.find(x => x.id === id); if (u) { u.status = aprovar ? "ativo" : "recusado"; u.cref_conferido = aprovar; } },
+    async enviarCref(uid, file, campos = {}){ const u = users.find(x => x.id === uid); if (u) { if (file) u.cref_foto = "demo"; Object.assign(u, campos); if (u.role !== "master") u.cref_conferido = false; } },
+    async excluirConta(uid){
+      const u = users.find(x => x.id === uid);
+      if (!u) return; if (u.role === "master") throw new Error("O login mestre não pode ser excluído pelo app");
+      users.forEach(x => { if (x.personal_id === uid) x.personal_id = "p1"; });
+      users.splice(users.indexOf(u), 1); if (me?.id === uid) me = null;
+    },
+    async crefUrl(){ return null; },
     async listProgramas(){ return clone(progs); },
     async listExercicios(){ return clone(exs).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")); },
     async saveExercicio(ex){
@@ -537,13 +597,17 @@ async function go(view, p = {}){
       S.data = { programa: prog ? normPrograma(prog) : null };
     } else if (view === "relatorio") {
       S.data = { rel: p.snapshot || await db.getRelatorio(p.id) };
+    } else if (view === "personais") {
+      S.data = { lista: await db.listPersonais(), fotos: {} };
+    } else if (view === "pendente" || view === "conta") {
+      S.data = { confirmarExclusao: false };
     } else if (view === "biblioteca") {
       S.data = { exercicios: await db.listExercicios(), q: "", edit: null, confirm: null };
     } else if (view === "home" || view === "treino") {
       const [prog, exercicios] = await Promise.all([db.getPrograma(S.user.id), db.listExercicios()]);
       const programa = prog ? normPrograma(prog) : null;
       const regs = programa ? await db.getRegistros(S.user.id, programa.id) : [];
-      const obs = programa && S.user.role === "personal" ? await db.getObs(programa.id) : {};
+      const obs = programa && isPers() ? await db.getObs(programa.id) : {};
       const rels = S.user.role === "aluno" ? await db.listRelatorios(S.user.id) : [];
       const sess = programa ? await db.getSessoes(S.user.id, programa.id) : [];
       S.data = { programa, regs, exercicios, obs, rels, sess };
@@ -562,16 +626,16 @@ function render(loading = false){
   if (S.view === "login") body = viewLogin();
   else if (loading) body = `<p class="muted">Carregando…</p>`;
   else if (S.data.error) body = `<div class="callout">Não foi possível carregar: ${esc(S.data.error)}</div><div><button class="btn" data-act="reload">Tentar de novo</button></div>`;
-  else body = ({ alunos: viewAlunos, aluno: viewAluno, biblioteca: viewBiblioteca, home: viewHome, treino: viewTreino, relatorio: viewRelatorio, orientacoes: viewOrientacoes })[S.view]();
+  else body = ({ alunos: viewAlunos, aluno: viewAluno, biblioteca: viewBiblioteca, home: viewHome, treino: viewTreino, relatorio: viewRelatorio, orientacoes: viewOrientacoes, personais: viewPersonais, pendente: viewPendente, conta: viewConta })[S.view]();
   $app.innerHTML = header() + `<main><div class="wrap">${body}</div></main>` + (S.view === "treino" && !loading && S.data.programa ? saveBar() : "");
 }
 
 function header(){
-  const isP = S.user?.role === "personal";
-  const nav = !S.user ? "" : isP
-    ? `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="alunos" ${["alunos","aluno"].includes(S.view) ? 'aria-current="page"' : ""}>Alunos</button><button data-act="nav" data-v="biblioteca" ${S.view === "biblioteca" ? 'aria-current="page"' : ""}>Biblioteca</button><button data-act="nav" data-v="home" ${["home","treino"].includes(S.view) ? 'aria-current="page"' : ""}>Meu treino</button><button data-act="nav" data-v="orientacoes" ${S.view === "orientacoes" ? 'aria-current="page"' : ""}>Orientações</button><button data-act="logout">Sair</button></nav>`
-    : `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="home" ${["home","treino","relatorio"].includes(S.view) ? 'aria-current="page"' : ""}>Meus treinos</button><button data-act="nav" data-v="orientacoes" ${S.view === "orientacoes" ? 'aria-current="page"' : ""}>Orientações</button><button data-act="logout">Sair</button></nav>`;
-  const demo = DEMO ? `<div class="demo"><div class="wrap">Modo demonstração: dados de exemplo, nada é salvo de verdade.${S.user ? ` Você está como <b>${esc(S.user.role === "personal" ? "personal" : "aluno")}</b>.` : ""}</div></div>` : "";
+  const isP = isPers();
+  const nav = !S.user ? "" : (S.user.role === "personal" && !isP) ? `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="pendente" ${S.view === "pendente" ? 'aria-current="page"' : ""}>Cadastro</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>` : isP
+    ? `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="alunos" ${["alunos","aluno"].includes(S.view) ? 'aria-current="page"' : ""}>Alunos</button>${isMaster() ? `<button data-act="nav" data-v="personais" ${S.view === "personais" ? 'aria-current="page"' : ""}>Personais${S.pendentes ? `<span class="badge">${S.pendentes}</span>` : ""}</button>` : ""}<button data-act="nav" data-v="biblioteca" ${S.view === "biblioteca" ? 'aria-current="page"' : ""}>Biblioteca</button><button data-act="nav" data-v="home" ${["home","treino"].includes(S.view) ? 'aria-current="page"' : ""}>Meu treino</button><button data-act="nav" data-v="orientacoes" ${S.view === "orientacoes" ? 'aria-current="page"' : ""}>Orientações</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>`
+    : `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="home" ${["home","treino","relatorio"].includes(S.view) ? 'aria-current="page"' : ""}>Meus treinos</button><button data-act="nav" data-v="orientacoes" ${S.view === "orientacoes" ? 'aria-current="page"' : ""}>Orientações</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>`;
+  const demo = DEMO ? `<div class="demo"><div class="wrap">Modo demonstração: dados de exemplo, nada é salvo de verdade.${S.user ? ` Você está como <b>${esc({ master: "login mestre", personal: isPers() ? "personal" : "personal em análise", aluno: "aluno" }[S.user.role])}</b>.` : ""}</div></div>` : "";
   return `<header class="top"><div class="wrap"><div class="brand">${MARK(30, "#F4F1EC", "#5CC9D2")}<div>Alessandro Borges<small>Personal trainer · CREF 018010-G/GO</small></div></div>${nav}</div></header>${demo}`;
 }
 
@@ -580,13 +644,23 @@ function viewLogin(){
   if (DEMO) return `<div class="login panel">
     <div class="hero-mark">${MARK(40)}<div><h1>Treinos</h1><p class="muted">Acompanhamento online</p></div></div>
     <p>Escolha como quer ver o app:</p>
-    <button class="btn primary" data-act="demoLogin" data-id="p1">Entrar como personal</button>
+    <button class="btn primary" data-act="demoLogin" data-id="p1">Entrar como Alessandro (login mestre)</button>
+    <button class="btn" data-act="demoLogin" data-id="p2">Entrar como personal aguardando aprovação (exemplo)</button>
     <button class="btn" data-act="demoLogin" data-id="a1">Entrar como aluno (Lucas, exemplo)</button>
     <p class="small muted">Na versão publicada, aqui aparece o login com e-mail e senha.</p></div>`;
   const cad = S.p.cad;
   return `<form class="login panel" id="authForm" novalidate>
     <div class="hero-mark">${MARK(40)}<div><h1>${cad ? "Criar conta" : "Entrar"}</h1><p class="muted">Treinos com Alessandro Borges</p></div></div>
-    ${cad ? `<label class="field"><span>Nome completo</span><input id="fNome" type="text" autocomplete="name" required></label>` : ""}
+    ${cad ? `<div class="field"><span>Você é</span><div class="tipo-cad">
+        <button type="button" data-act="tipoCad" data-v="aluno" aria-pressed="${S.p.tipo !== "personal"}">Aluno<span>Vou treinar</span></button>
+        <button type="button" data-act="tipoCad" data-v="personal" aria-pressed="${S.p.tipo === "personal"}">Personal trainer<span>Vou montar treinos</span></button></div></div>
+      ${S.p.tipo === "personal"
+        ? `<p class="small muted">O acesso de personal é liberado depois que o Alessandro Borges conferir e aprovar o seu CREF.</p>`
+        : `<p class="small ${CONVITE ? "" : "muted"}" ${CONVITE ? 'style="color:var(--up)"' : ""}>${CONVITE ? "✓ Convite do seu personal reconhecido. Você ficará vinculado a ele." : "Você ficará vinculado ao Alessandro Borges. Se recebeu o link de outro personal, abra o app por ele."}</p>`}
+      <label class="field"><span>Nome completo</span><input id="fNome" type="text" autocomplete="name" required></label>
+      ${S.p.tipo === "personal" ? `<label class="field"><span>Número do CREF</span><input id="fCref" type="text" placeholder="Ex.: 012345-G/GO" required></label>
+        <label class="field"><span>Validade do CREF</span><input id="fCrefVal" type="date" required></label>
+        <label class="field"><span>Foto do CREF (carteira ou certidão)</span><input id="fCrefFoto" type="file" accept="image/*,application/pdf"></label>` : ""}` : ""}
     <label class="field"><span>E-mail</span><input id="fEmail" type="email" autocomplete="email" required></label>
     <label class="field"><span>Senha</span><input id="fSenha" type="password" autocomplete="${cad ? "new-password" : "current-password"}" minlength="6" required></label>
     <div id="authMsg" class="small" role="alert"></div>
@@ -604,12 +678,13 @@ function viewAlunos(){
     const st = p ? `<span class="chip acc">${esc(p.nome)}</span><span class="chip num">Semana ${semanaAtual(p)} de ${p.semanas}</span>` : `<span class="chip warn">Sem programa</span>`;
     return `<div class="item"><div class="grow"><h3>${esc(a.nome)}</h3><p class="small muted">${esc(a.email)}</p></div><div class="row">${st}</div><button class="btn sm primary" data-act="openAluno" data-id="${esc(a.id)}">Abrir</button></div>`;
   }).join("");
-  const link = location.href.split("#")[0];
-  return `<div class="row"><div><h1>Alunos</h1><p class="muted num">${alunos.length} ${alunos.length === 1 ? "aluno" : "alunos"}</p></div></div>
+  const link = location.origin + location.pathname + "?p=" + S.user.id;
+  const avisoCref = isPers() && crefAtencao(S.user) ? `<div class="callout">${diasPara(S.user.cref_validade) === null ? "Informe a validade do seu CREF" : diasPara(S.user.cref_validade) < 0 ? "O seu CREF está vencido" : `O seu CREF vence em ${diasPara(S.user.cref_validade)} dia(s), em ${fmtData(S.user.cref_validade)}`}. Atualize os dados e a foto em <button class="btn sm" data-act="nav" data-v="conta">Minha conta</button></div>` : "";
+  return `${avisoCref}<div class="row"><div><h1>Alunos</h1><p class="muted num">${alunos.length} ${alunos.length === 1 ? "aluno" : "alunos"}</p></div></div>
     ${alunos.length ? `<div class="list">${cards}</div>` : `<div class="empty">Nenhum aluno cadastrado ainda.</div>`}
     <div class="item"><div class="grow"><h3>Meu treino</h3><p class="small muted">Monte e acompanhe o seu próprio programa (análise técnica)</p></div><div class="row">${pm[S.user.id] ? `<span class="chip acc">${esc(pm[S.user.id].nome)}</span><span class="chip num">Semana ${semanaAtual(pm[S.user.id])} de ${pm[S.user.id].semanas}</span>` : `<span class="chip warn">Sem programa</span>`}</div><button class="btn sm" data-act="openAluno" data-id="${esc(S.user.id)}">Editar programa</button></div>
-    <div class="panel"><h3>Adicionar aluno</h3><p class="small muted">Envie este link para o aluno. Ele cria a conta com e-mail e senha e aparece nesta lista para você montar o programa.</p>
-    <div class="row"><input id="shareLink" type="text" readonly value="${esc(DEMO ? "https://seu-usuario.github.io/treinos/" : link)}" style="flex:1;min-width:0"><button class="btn sm" data-act="copy">Copiar</button></div></div>`;
+    <div class="panel"><h3>Adicionar aluno</h3><p class="small muted">Envie este link para o aluno. Ele é o seu convite: o aluno cria a conta com e-mail e senha e aparece só na sua lista.</p>
+    <div class="row"><input id="shareLink" type="text" readonly value="${esc(DEMO ? "https://seu-usuario.github.io/treinos/?p=" + S.user.id : link)}" style="flex:1;min-width:0"><button class="btn sm" data-act="copy">Copiar</button></div></div>`;
 }
 
 /* ---------- Personal: aluno (programa / evolução) ---------- */
@@ -620,7 +695,7 @@ function viewAluno(){
   return `<div><button class="btn ghost sm" data-act="nav" data-v="alunos">← Alunos</button></div>
     <div><h1>${aluno.id === S.user.id ? "Meu treino" : esc(aluno.nome)}</h1><p class="muted small">${esc(aluno.email)}</p></div>
     <div class="tabs" role="tablist"><button role="tab" data-act="tab" data-tab="programa" aria-selected="${tab === "programa"}">Programa</button><button role="tab" data-act="tab" data-tab="evolucao" aria-selected="${tab === "evolucao"}">Evolução</button></div>
-    ${tab === "programa" ? editorPrograma() : (programa?.id ? (aluno.id === S.user.id ? "" : painelEnvio()) + evolucao({ prog: programa, regs: S.data.regs, exercicios: S.data.exercicios, modo: aluno.id === S.user.id ? "proprio" : "personal", obs: S.data.obs, sess: S.data.sess, editavel: true }) : `<div class="empty">Monte e salve um programa para acompanhar a evolução.</div>`)}`;
+    ${tab === "programa" ? editorPrograma() : (programa?.id ? (aluno.id === S.user.id ? "" : painelEnvio()) + evolucao({ prog: programa, regs: S.data.regs, exercicios: S.data.exercicios, modo: aluno.id === S.user.id ? "proprio" : "personal", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) }) : `<div class="empty">Monte e salve um programa para acompanhar a evolução.</div>`)}`;
 }
 
 function legendaTipos(compacta){
@@ -707,7 +782,7 @@ function viewBiblioteca(){
 /* ---------- Aluno: início ---------- */
 function viewHome(){
   const { programa, regs } = S.data;
-  if (!programa) return `<div><h1>Olá, ${esc(S.user.nome.split(" ")[0])}</h1></div><div class="empty">${S.user.role === "personal" ? "Você ainda não montou o seu próprio programa. Vá em Alunos → Meu treino → Editar programa." : "Seu programa de treino ainda não foi liberado. Assim que estiver pronto, ele aparece aqui."}</div>${S.user.role === "personal" ? "" : listaRelatorios()}`;
+  if (!programa) return `<div><h1>Olá, ${esc(S.user.nome.split(" ")[0])}</h1></div><div class="empty">${isPers() ? "Você ainda não montou o seu próprio programa. Vá em Alunos → Meu treino → Editar programa." : "Seu programa de treino ainda não foi liberado. Assim que estiver pronto, ele aparece aqui."}</div>${isPers() ? "" : listaRelatorios()}`;
   const sem = S.p.semana, cur = semanaAtual(programa);
   const treinos = programa.treinos.filter(t => t.itens.length);
   const cards = treinos.map(t => {
@@ -727,7 +802,7 @@ function viewHome(){
     </div><div class="row"><button class="btn" data-act="nav" data-v="orientacoes">Orientações do treino</button><span class="small muted">Sistema de cores, RIR, como progredir e segurança.</span></div></div>
     <div class="row"><label class="field" style="min-width:200px"><span>Semana do programa</span><select id="semSel">${semOpts}</select></label><span class="small muted num" style="align-self:flex-end;padding-bottom:10px">de ${programa.semanas} semanas</span></div>
     <div class="list">${cards}</div>
-    ${S.user.role === "personal" ? `<h2 style="margin-top:12px">Registro do meu treino</h2>${evolucao({ prog: programa, regs, exercicios: S.data.exercicios, modo: "proprio", obs: S.data.obs, sess: S.data.sess, editavel: true })}` : listaRelatorios()}`;
+    ${isPers() ? `<h2 style="margin-top:12px">Registro do meu treino</h2>${evolucao({ prog: programa, regs, exercicios: S.data.exercicios, modo: "proprio", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) })}` : listaRelatorios()}`;
 }
 
 /* ---------- Aluno: treino ---------- */
@@ -781,13 +856,89 @@ function viewTreino(){
       <div class="row"><button class="btn sm" data-act="nav" data-v="orientacoes">Orientações completas</button><span class="small muted">5 a 8 min de aquecimento geral antes do primeiro exercício.</span></div></details>
     <div id="treinoCards" style="display:flex;flex-direction:column;gap:20px">${cards}</div>
     <div class="panel"><label class="field"><span>Observações da sessão</span><textarea id="sessObs" placeholder="Como foi o treino? Exercício que travou, desconforto, ajuste de máquina...">${esc(sessao?.obs || "")}</textarea></label>
-      <p class="small muted">O Alessandro lê estas observações. Em caso de dor no peito, tontura, falta de ar desproporcional ou dor articular aguda, pare o treino e avise na hora.</p></div>`;
+      <p class="small muted">${esc(primeiroNome((PROF || PROF_PADRAO).nome))} lê estas observações. Em caso de dor no peito, tontura, falta de ar desproporcional ou dor articular aguda, pare o treino e avise na hora.</p></div>`;
+}
+
+/* ---------- Personal aguardando aprovação ---------- */
+function viewPendente(){
+  const u = S.user, recusado = statusDe(u) === "recusado";
+  return `<div><p class="label">Cadastro de personal</p><h1>${recusado ? "Cadastro não aprovado" : "Cadastro em análise"}</h1></div>
+    <div class="panel">
+      <p>${recusado ? "O seu cadastro de personal não foi aprovado. Se acha que houve engano, envie uma nova foto do CREF abaixo e fale com o Alessandro Borges." : "Recebemos o seu cadastro. O Alessandro Borges vai conferir o seu CREF e liberar o seu acesso de personal. Você recebe a liberação ao entrar de novo no app."}</p>
+      <div class="info-grid">
+        <div><span class="label">Nome</span><b>${esc(u.nome)}</b></div>
+        <div><span class="label">CREF</span><b>${esc(u.cref || "não informado")}</b></div>
+        <div><span class="label">Validade</span><b class="num">${u.cref_validade ? fmtData(u.cref_validade) : "não informada"}</b></div>
+        <div><span class="label">Foto do CREF</span><b style="color:${u.cref_foto ? "var(--up)" : "var(--warn)"}">${u.cref_foto ? "Enviada" : "Falta enviar"}</b></div>
+      </div>
+    </div>
+    <div class="panel"><h3>${u.cref_foto ? "Trocar a foto do CREF" : "Enviar a foto do CREF"}</h3>
+      <label class="field"><span>Número do CREF</span><input id="pCref" type="text" value="${esc(u.cref || "")}" placeholder="Ex.: 012345-G/GO"></label>
+      <label class="field"><span>Validade do CREF</span><input id="pCrefVal" type="date" value="${esc(u.cref_validade ? String(u.cref_validade).slice(0, 10) : "")}"></label>
+      <label class="field"><span>Foto (carteira ou certidão)</span><input id="pCrefFoto" type="file" accept="image/*,application/pdf"></label>
+      <div class="row"><button class="btn primary" data-act="enviarCref">Enviar</button><button class="btn" data-act="verificar">Verificar aprovação</button></div>
+    </div>`;
+}
+
+/* ---------- Minha conta ---------- */
+function viewConta(){
+  const u = S.user, pers = ["personal", "master"].includes(u.role), mestre = u.role === "master";
+  const papel = { master: "Login mestre", personal: isPers() ? "Personal trainer" : "Personal trainer (em análise)", aluno: "Aluno" }[u.role];
+  const crefPainel = pers ? `<div class="panel"><div class="row"><h3>Meu CREF</h3><span class="spacer"></span>${crefChip(u)}</div>
+      ${!mestre && isPers() ? `<p class="small muted">Ao mudar número, validade ou foto, o Alessandro confere os novos dados. O seu acesso continua liberado enquanto isso.</p>` : ""}
+      <div class="grid2">
+        <label class="field"><span>Número do CREF</span><input id="pCref" type="text" value="${esc(u.cref || "")}" placeholder="Ex.: 012345-G/GO"></label>
+        <label class="field"><span>Validade do CREF</span><input id="pCrefVal" type="date" value="${esc(u.cref_validade ? String(u.cref_validade).slice(0, 10) : "")}"></label>
+      </div>
+      <label class="field"><span>Nova foto (carteira ou certidão)</span><input id="pCrefFoto" type="file" accept="image/*,application/pdf"></label>
+      <div><button class="btn primary" data-act="enviarCref">Salvar dados do CREF</button></div></div>` : "";
+  const apagar = mestre
+    ? `<div class="panel"><h3>Excluir conta</h3><p class="small muted">O login mestre não pode ser excluído pelo app, porque é por ele que os personais são aprovados.</p></div>`
+    : `<div class="panel zona-risco"><h3>Excluir minha conta</h3>
+        <p class="small">${u.role === "aluno" ? "Apaga o seu cadastro, os seus programas, registros de carga, observações e acompanhamentos." : "Apaga o seu cadastro, a sua biblioteca de exercícios e a foto do CREF. Os seus alunos passam para o Alessandro Borges."} Não dá para desfazer.</p>
+        ${S.data.confirmarExclusao
+          ? `<label class="field"><span>Para confirmar, digite EXCLUIR</span><input id="confirmaExclusao" type="text" autocomplete="off"></label>
+             <div class="row"><button class="btn danger" data-act="excluirMinhaConta">Excluir minha conta definitivamente</button><button class="btn ghost" data-act="cancelarExclusao">Cancelar</button></div>`
+          : `<div><button class="btn danger" data-act="pedirExclusao">Excluir minha conta</button></div>`}</div>`;
+  return `<div><p class="label">${papel}</p><h1>Minha conta</h1></div>
+    <div class="panel"><div class="info-grid"><div><span class="label">Nome</span><b>${esc(u.nome)}</b></div><div><span class="label">E-mail</span><b>${esc(u.email || "")}</b></div><div><span class="label">Tipo de conta</span><b>${papel}</b></div></div></div>
+    ${crefPainel}${apagar}`;
+}
+
+/* ---------- Login mestre: aprovação de personais ---------- */
+function viewPersonais(){
+  const { lista, fotos } = S.data;
+  const card = u => {
+    const st = statusDe(u);
+    const foto = fotos[u.id] === undefined ? "" : fotos[u.id] === null
+      ? `<div class="cref-ph">Foto do CREF${DEMO ? " (exemplo)" : " indisponível"}</div>`
+      : /\.pdf($|\?)/i.test(u.cref_foto || "") ? `<a href="${esc(fotos[u.id])}" target="_blank" rel="noopener">Abrir o PDF do CREF</a>` : `<img class="cref-img" src="${esc(fotos[u.id])}" alt="Foto do CREF de ${esc(u.nome)}">`;
+    const acoes = st === "pendente"
+      ? `<button class="btn sm primary" data-act="aprovar" data-id="${esc(u.id)}" ${u.cref_foto ? "" : "disabled"}>Aprovar</button><button class="btn sm danger" data-act="recusar" data-id="${esc(u.id)}">Recusar</button>`
+      : st === "ativo" ? `${u.cref_conferido === false ? `<button class="btn sm primary" data-act="aprovar" data-id="${esc(u.id)}">Marcar CREF como conferido</button>` : ""}<button class="btn sm ghost danger" data-act="recusar" data-id="${esc(u.id)}">Bloquear acesso</button>`
+      : `<button class="btn sm" data-act="aprovar" data-id="${esc(u.id)}">Aprovar</button>`;
+    const exclusao = S.data.excluir === u.id
+      ? `<div class="callout" style="background:var(--down-soft);color:var(--down)">Excluir a conta de ${esc(u.nome)} apaga o cadastro, a biblioteca e a foto do CREF dele. Os alunos dele passam para você. Não dá para desfazer.
+          <div class="row" style="margin-top:8px"><button class="btn sm danger" data-act="excluirPersonal" data-id="${esc(u.id)}">Excluir definitivamente</button><button class="btn sm ghost" data-act="cancelarExcluirPersonal">Cancelar</button></div></div>`
+      : `<div><button class="btn sm ghost danger" data-act="pedirExcluirPersonal" data-id="${esc(u.id)}">Excluir conta</button></div>`;
+    return `<div class="panel" style="gap:10px"><div class="row"><div class="grow" style="flex:1;min-width:180px"><h3>${esc(u.nome)}</h3><p class="small muted">${esc(u.email || "")}</p></div>
+        <span class="chip ${st === "ativo" ? "ok" : st === "pendente" ? "warn" : "bad"}">${st === "ativo" ? "Aprovado" : st === "pendente" ? "Aguardando" : "Recusado"}</span></div>
+      <div class="info-grid"><div><span class="label">CREF</span><b>${esc(u.cref || "não informado")}</b></div><div><span class="label">Validade</span><b class="num">${u.cref_validade ? fmtData(u.cref_validade) : "não informada"}</b></div><div><span class="label">Cadastro</span><b class="num">${u.created_at ? fmtData(u.created_at) : "–"}</b></div></div>
+      <div class="row">${crefChip(u)}${st === "ativo" && u.cref_conferido === false ? `<span class="chip warn">CREF atualizado pelo personal · conferir</span>` : ""}</div>
+      ${u.cref_foto ? (fotos[u.id] === undefined ? `<div><button class="btn sm" data-act="verCref" data-id="${esc(u.id)}">Ver foto do CREF</button></div>` : foto) : `<p class="small" style="color:var(--warn)">Ainda não enviou a foto do CREF.</p>`}
+      <div class="row">${acoes}</div>${exclusao}</div>`;
+  };
+  const grupo = (titulo, arr, vazio) => `<h2>${titulo} <span class="muted num">(${arr.length})</span></h2>${arr.length ? arr.map(card).join("") : `<div class="empty">${vazio}</div>`}`;
+  return `<div><p class="label">Login mestre</p><h1>Personais</h1><p class="muted">Confira o número, a validade e a foto do CREF antes de aprovar. Os aprovados aparecem do CREF que vence primeiro para o último. Cada personal só vê os próprios alunos.</p></div>
+    ${grupo("Aguardando aprovação", lista.filter(u => statusDe(u) === "pendente"), "Nenhum cadastro aguardando.")}
+    ${grupo("Aprovados", lista.filter(u => statusDe(u) === "ativo").sort((a, b) => (diasPara(a.cref_validade) ?? -1e9) - (diasPara(b.cref_validade) ?? -1e9)), "Nenhum personal aprovado ainda.")}
+    ${lista.some(u => statusDe(u) === "recusado") ? grupo("Recusados", lista.filter(u => statusDe(u) === "recusado"), "") : ""}`;
 }
 
 /* ---------- Orientações ---------- */
 function viewOrientacoes(){
   const p = S.data.programa;
-  const blocos = ORIENTACOES.map(b => `<section class="panel"><h2>${esc(b.titulo)}</h2><div>${b.itens.map(([k, v]) => `<div class="ori"><b>${esc(k)}</b><p>${esc(k === "Reavaliação" && p?.reavaliacao ? `Ao final do bloco, em ${fmtData(p.reavaliacao)}.` : v)}</p></div>`).join("")}</div></section>`).join("");
+  const blocos = ORIENTACOES.map(b => `<section class="panel"><h2>${esc(b.titulo)}</h2><div>${b.itens.map(([k, v]) => `<div class="ori"><b>${esc(k)}</b><p>${esc(k === "Reavaliação" && p?.reavaliacao ? `Ao final do bloco, em ${fmtData(p.reavaliacao)}.` : k === "Profissional" && PROF && PROF.role !== "master" ? profLinha(profDe(PROF)) : v)}</p></div>`).join("")}</div></section>`).join("");
   return `<div><p class="label">Leia antes de treinar</p><h1>Orientações</h1></div>
     <section class="panel"><h2>O sistema de cores</h2><p>A cor de cada série diz a intensidade dela: quanto mais escura, mais pesada. O descanso depois da série segue a cor; o exercício avisa quando for diferente.</p>${legendaTipos(false)}
       <p class="small muted">Registre carga e repetições apenas nas séries de trabalho. Aquecimento e reconhecimento não entram nos registros.</p></section>
@@ -829,6 +980,7 @@ function evolucao(ctx){
   const { prog, regs, exercicios } = ctx;
   const modo = ctx.modo, proprio = modo === "proprio", paraAluno = modo === "aluno", editavel = !!ctx.editavel;
   const obs = ctx.obs || {};
+  const pf = ctx.prof || PROF_PADRAO;
   const exMap = Object.fromEntries(exercicios.map(e => [e.id, e]));
   const nomeEx = id => exMap[id]?.nome || "Exercício";
   const treinos = prog.treinos.filter(t => t.itens.length);
@@ -858,7 +1010,7 @@ function evolucao(ctx){
   const T = (a, t) => proprio ? t : a;
   const obsBox = k => editavel
     ? `<label class="field obsf"><span>Minhas observações</span><textarea id="obs-${k}" data-obs="${k}" placeholder="${proprio ? "Anotações sobre esta parte." : "O que você quer comentar sobre esta parte. Vai junto quando você enviar ao aluno."}">${esc(obs[k] || "")}</textarea></label>`
-    : (obs[k] ? `<div class="obs-pt"><span class="label">Observações do Alessandro</span><p>${esc(obs[k]).replace(/\n/g, "<br>")}</p></div>` : "");
+    : (obs[k] ? `<div class="obs-pt"><span class="label">Observações de ${esc(primeiroNome(pf.nome))}</span><p>${esc(obs[k]).replace(/\n/g, "<br>")}</p></div>` : "");
   const sec = (n, k, titulo, corpo) => `<section class="panel" id="sec-${k}"><div><p class="sec-n">${n}</p><h2>${titulo}</h2></div>${corpo}${obsBox(k)}</section>`;
   const wTabs = (key, extra) => subTabs(key, [...semanas.map(w => ({ v: String(w), l: `Semana ${w}` })), ...(extra ? [extra] : [])], String(ultima));
   const tTabs = (key, extra) => subTabs(key, [...treinos.map(t => ({ v: t.letra, l: `Treino ${t.letra}` })), ...(extra ? [extra] : [])], treinos[0].letra);
@@ -883,7 +1035,7 @@ function evolucao(ctx){
 
   /* Topo */
   const topo = `<section class="panel rep-head">
-      <div class="row">${MARK(34)}<div><div style="font-weight:500;letter-spacing:.06em">ALESSANDRO <b style="font-weight:800">BORGES</b></div><span class="sub" style="letter-spacing:.22em">PERSONAL TRAINER · CREF 018010-G/GO</span></div></div>
+      <div class="row">${MARK(34)}<div><div style="font-weight:500;letter-spacing:.06em;text-transform:uppercase">${esc(pf.nome.split(" ").slice(0, -1).join(" "))} <b style="font-weight:800">${esc(pf.nome.split(" ").slice(-1)[0])}</b></div><span class="sub" style="letter-spacing:.22em">PERSONAL TRAINER${pf.cref ? " · CREF " + esc(pf.cref) : ""}</span></div></div>
       <h2>${proprio ? "Registro do meu treino" : "Acompanhamento de cargas"} · ${esc(prog.nome)}</h2>
       ${proprio ? "" : `<span class="selo">Modalidade · ${esc(prog.modalidade)}</span>`}
       <p>Período: <b>${periodo}</b> (programa de ${N} semanas).${de > 1 ? ` A semana ${de} é o ponto de partida: as comparações começam na semana ${de + 1}.` : ""} ${T("Em cada parte, toque na semana ou no treino que quer ver. Toda comparação é feita com a semana anterior.", "Comparações sempre contra a semana anterior.")}</p>
@@ -1053,7 +1205,7 @@ function evolucao(ctx){
   const s6 = sec("06 · Fechamento", "fechamento", `Pontos acumulados: ${sinal(acc)}`, `<p class="small muted">${T("A linha sobe quando a semana soma pontos, fica parada quando você mantém tudo e desce quando há recuo.", "Acumulado semanal. Ausência não pontua.")}</p>
     <div class="chart">${linhaPontos(cum, N, ultima)}</div>${saldos ? `<p class="small num">Saldo por semana: ${saldos}</p>` : ""}`);
 
-  const rodape = `<footer class="rep-foot">${MARK(22)}<span>Alessandro Borges · CREF 018010-G/GO · Números dos registros série a série do app, considerando apenas séries de trabalho. Fechamento em ${esc(ctx.data || new Date().toLocaleDateString("pt-BR"))}.</span></footer>`;
+  const rodape = `<footer class="rep-foot">${MARK(22)}<span>${esc(pf.nome)}${pf.cref ? " · CREF " + esc(pf.cref) : ""} · Números dos registros série a série do app, considerando apenas séries de trabalho. Fechamento em ${esc(ctx.data || new Date().toLocaleDateString("pt-BR"))}.</span></footer>`;
   return conf + topo + s1 + s2 + s3 + s4 + s5 + s6 + rodape;
 }
 
@@ -1149,7 +1301,7 @@ function snapshot(de, ate){
     programa: { nome: p.nome, modalidade: p.modalidade, inicio: p.inicio, semanas: p.semanas, treinos: p.treinos },
     regs: d.regs.filter(r => r.semana >= de && r.semana <= ate).map(({ id, updated_at, ...r }) => r),
     exercicios: d.exercicios.filter(e => used.has(e.id)).map(e => ({ id: e.id, nome: e.nome })),
-    obs: { ...(d.obs || {}) }, cur: semanaAtual(p), data: new Date().toLocaleDateString("pt-BR"), de, ate
+    obs: { ...(d.obs || {}) }, cur: semanaAtual(p), data: new Date().toLocaleDateString("pt-BR"), de, ate, prof: profDe(S.user)
   };
 }
 function painelEnvio(){
@@ -1187,16 +1339,16 @@ function listaRelatorios(){
   const rels = S.data.rels || [];
   return `<h2 style="margin-top:12px">Meus acompanhamentos</h2>${rels.length
     ? `<div class="list">${rels.map(r => `<div class="item"><div class="grow"><h3>${esc(r.titulo)}</h3><p class="small muted">Enviado em ${new Date(r.created_at).toLocaleDateString("pt-BR")}</p></div><button class="btn primary sm" data-act="openRel" data-id="${r.id}">Abrir</button></div>`).join("")}</div>`
-    : `<div class="empty">Quando o Alessandro enviar um acompanhamento da sua evolução, ele aparece aqui.</div>`}`;
+    : `<div class="empty">Quando o seu personal enviar um acompanhamento da sua evolução, ele aparece aqui.</div>`}`;
 }
 function viewRelatorio(){
   const r = S.data.rel;
   if (!r) return `<div class="callout">Acompanhamento não encontrado.</div>`;
-  const d = r.dados, isP = S.user.role === "personal";
+  const d = r.dados, isP = isPers();
   return `<div>${isP ? `<button class="btn ghost sm" data-act="backAluno">← Voltar ao aluno</button>` : `<button class="btn ghost sm" data-act="nav" data-v="home">← Início</button>`}</div>
     ${S.p.snapshot ? `<div class="callout">Prévia: é assim que o aluno vai receber. Nada foi enviado ainda.</div>` : ""}
     <div><p class="label">${S.p.snapshot ? "Prévia" : "Enviado em " + new Date(r.created_at).toLocaleDateString("pt-BR")}</p><h1>${esc(r.titulo)}</h1></div>
-    ${evolucao({ prog: normPrograma(clone(d.programa)), regs: d.regs, exercicios: d.exercicios, modo: "aluno", obs: d.obs, cur: d.cur, data: d.data, de: d.de, ate: d.ate })}`;
+    ${evolucao({ prog: normPrograma(clone(d.programa)), regs: d.regs, exercicios: d.exercicios, modo: "aluno", obs: d.obs, cur: d.cur, data: d.data, de: d.de, ate: d.ate, prof: d.prof || PROF_PADRAO })}`;
 }
 
 /* =====================================================================
@@ -1208,7 +1360,44 @@ document.addEventListener("click", async ev => {
   try {
     if (a === "nav") return go(el.dataset.v);
     if (a === "reload") return go(S.view, S.p);
-    if (a === "demoLogin") { S.user = await db.demoLogin(el.dataset.id); return go(S.user.role === "personal" ? "alunos" : "home"); }
+    if (a === "demoLogin") { S.user = await db.demoLogin(el.dataset.id); return entrar(); }
+    if (a === "tipoCad") {
+      const vals = Object.fromEntries(["fNome", "fEmail", "fSenha", "fCref", "fCrefVal"].map(id => [id, document.getElementById(id)?.value || ""]));
+      S.p.tipo = el.dataset.v; render();
+      Object.entries(vals).forEach(([id, v]) => { const i = document.getElementById(id); if (i) i.value = v; });
+      return;
+    }
+    if (a === "verCref") { const u = d.lista.find(x => x.id === el.dataset.id); d.fotos[u.id] = await db.crefUrl(u.cref_foto); return render(); }
+    if (a === "aprovar" || a === "recusar") {
+      el.disabled = true; await db.aprovarPersonal(el.dataset.id, a === "aprovar");
+      d.lista = await db.listPersonais(); S.pendentes = contaPendencias(d.lista);
+      toast(a === "aprovar" ? "Personal aprovado. O acesso já está liberado." : "Acesso de personal recusado."); return render();
+    }
+    if (a === "enviarCref") {
+      const f = document.getElementById("pCrefFoto")?.files?.[0], cref = document.getElementById("pCref").value.trim(), validade = document.getElementById("pCrefVal").value;
+      if (!cref) return toast("Informe o número do CREF.");
+      if (!validade) return toast("Informe a validade do CREF.");
+      if (!f && !S.user.cref_foto) return toast("Escolha a foto do CREF.");
+      if (f && f.size > 8 * 1024 * 1024) return toast("A foto passa de 8 MB. Envie uma imagem menor.", 4000);
+      const mudou = f || cref !== (S.user.cref || "") || validade !== String(S.user.cref_validade || "").slice(0, 10);
+      if (!mudou) return toast("Nada mudou.");
+      el.disabled = true; await db.enviarCref(S.user.id, f || null, { cref, cref_validade: validade }); S.user = await db.current();
+      toast(S.user.role === "master" ? "CREF atualizado." : isPers() ? "CREF atualizado. O Alessandro vai conferir os novos dados." : "Dados do CREF enviados."); return render();
+    }
+    if (a === "pedirExclusao") { d.confirmarExclusao = true; return render(); }
+    if (a === "cancelarExclusao") { d.confirmarExclusao = false; return render(); }
+    if (a === "excluirMinhaConta") {
+      if ((document.getElementById("confirmaExclusao")?.value || "").trim().toUpperCase() !== "EXCLUIR") return toast("Digite EXCLUIR para confirmar.");
+      el.disabled = true; await db.excluirConta(S.user.id); await db.signOut(); S.user = null; S.view = "login"; S.p = {}; render(); return toast("Sua conta foi excluída.", 4000);
+    }
+    if (a === "pedirExcluirPersonal") { d.excluir = el.dataset.id; return render(); }
+    if (a === "cancelarExcluirPersonal") { d.excluir = null; return render(); }
+    if (a === "excluirPersonal") {
+      el.disabled = true; await db.excluirConta(el.dataset.id); d.excluir = null;
+      d.lista = await db.listPersonais(); S.pendentes = contaPendencias(d.lista);
+      toast("Conta do personal excluída. Os alunos dele passaram para você.", 4500); return render();
+    }
+    if (a === "verificar") { S.user = await db.current(); if (isPers()) { toast("Acesso de personal liberado!"); return entrar(); } toast("Ainda em análise."); return render(); }
     if (a === "toggleCad") { S.p.cad = !S.p.cad; return render(); }
     if (a === "logout") { await db.signOut(); S.user = null; S.view = "login"; S.p = {}; return render(); }
     if (a === "copy") { const i = document.getElementById("shareLink"); try { await navigator.clipboard.writeText(i.value); toast("Link copiado"); } catch { i.select(); toast("Selecionado. Copie com Ctrl+C."); } return; }
@@ -1384,11 +1573,21 @@ document.addEventListener("submit", async ev => {
       if (S.p.cad) {
         const nome = document.getElementById("fNome").value.trim();
         if (!nome) throw new Error("Informe seu nome.");
-        const u = await db.signUp(nome, email, senha);
-        if (!u) { msg.style.color = "var(--up)"; msg.textContent = "Conta criada. Confirme pelo link enviado ao seu e-mail e depois entre."; S.p.cad = false; btn.disabled = false; return; }
+        const personal = S.p.tipo === "personal";
+        const cref = personal ? document.getElementById("fCref").value.trim() : "";
+        const foto = personal ? document.getElementById("fCrefFoto").files?.[0] : null;
+        const validade = personal ? document.getElementById("fCrefVal").value : "";
+        if (personal && !cref) throw new Error("Informe o número do CREF.");
+        if (personal && !validade) throw new Error("Informe a validade do CREF.");
+        if (personal && diasPara(validade) < 0) throw new Error("A validade informada já passou. Confira a data do seu CREF.");
+        if (personal && !foto) throw new Error("Anexe a foto do CREF.");
+        if (foto && foto.size > 8 * 1024 * 1024) throw new Error("A foto passa de 8 MB. Envie uma imagem menor.");
+        const u = await db.signUp(nome, email, senha, personal ? { tipo: "personal", cref, cref_validade: validade } : { tipo: "aluno", personal_id: CONVITE });
+        if (!u) { msg.style.color = "var(--up)"; msg.textContent = personal ? "Conta criada. Confirme pelo link enviado ao seu e-mail e entre para enviar a foto do CREF." : "Conta criada. Confirme pelo link enviado ao seu e-mail e depois entre."; S.p.cad = false; btn.disabled = false; return; }
         S.user = u;
+        if (foto) { try { await db.enviarCref(u.id, foto, {}); S.user = await db.current(); } catch (e) { toast("Conta criada, mas a foto não subiu. Envie de novo na próxima tela.", 4500); } }
       } else S.user = await db.signIn(email, senha);
-      go(S.user.role === "personal" ? "alunos" : "home");
+      entrar();
     } catch (e) { msg.textContent = traduzErro(e); btn.disabled = false; }
   }
 });
@@ -1468,6 +1667,16 @@ document.addEventListener("keydown", ev => {
 /* =====================================================================
    INÍCIO
    ===================================================================== */
+const contaPendencias = l => l.filter(u => statusDe(u) === "pendente" || (statusDe(u) === "ativo" && (u.cref_conferido === false || (diasPara(u.cref_validade) ?? -1) < 0))).length;
+async function entrar(){
+  PROF = null; S.pendentes = 0;
+  try {
+    if (S.user.role === "aluno" && S.user.personal_id) PROF = await db.getPerfil(S.user.personal_id);
+    else if (isPers()) PROF = S.user;
+    if (isMaster()) S.pendentes = contaPendencias(await db.listPersonais());
+  } catch {}
+  go(rotaInicial());
+}
 async function start(){
   if (DEMO) { db = makeDemo(); render(); return; }
   $app.innerHTML = `<main><div class="wrap"><p class="muted">Carregando…</p></div></main>`;
@@ -1476,7 +1685,7 @@ async function start(){
     db = makeSupabase();
     S.user = await db.current();
   } catch (e) { $app.innerHTML = `<main><div class="wrap"><div class="callout">${esc(traduzErro(e))}</div></div></main>`; return; }
-  if (S.user) go(S.user.role === "personal" ? "alunos" : "home"); else render();
+  if (S.user) entrar(); else render();
 }
 start();
 </script>
