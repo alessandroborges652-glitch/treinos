@@ -303,6 +303,7 @@ const statusDe = u => u?.status || "ativo";
 const isPers = () => !!S.user && ["personal", "master"].includes(S.user.role) && statusDe(S.user) === "ativo";
 const isMaster = () => S.user?.role === "master" && statusDe(S.user) === "ativo";
 const rotaInicial = () => !S.user ? "login" : isPers() ? "alunos" : S.user.role === "personal" ? "pendente" : "home";
+const RECUPERANDO = /type=recovery/.test(location.hash);
 const CONVITE = (() => { try { return new URLSearchParams(location.search).get("p") || ""; } catch { return ""; } })();
 const PROF_PADRAO = { nome: "Alessandro Borges", cref: "018010-G/GO", role: "master" };
 let PROF = null; /* profissional responsável pelo usuário logado */
@@ -363,6 +364,7 @@ const traduzErro = e => {
   if (/Invalid login credentials/i.test(m)) return "E-mail ou senha incorretos.";
   if (/Email not confirmed/i.test(m)) return "Confirme seu e-mail pelo link enviado antes de entrar.";
   if (/already registered/i.test(m)) return "Este e-mail já tem conta. Use a opção Entrar.";
+  if (/rate limit|security purposes/i.test(m)) return "Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo.";
   if (/Password should be/i.test(m)) return "A senha precisa ter pelo menos 6 caracteres.";
   if (/Failed to fetch|NetworkError/i.test(m)) return "Sem conexão com o servidor. Verifique sua internet.";
   return m;
@@ -405,6 +407,8 @@ function makeSupabase(){
     },
     async crefUrl(path){ const d = ok(await c.storage.from("cref").createSignedUrl(path, 600)); return d.signedUrl; },
     async signOut(){ await c.auth.signOut(); },
+    async resetSenha(email){ ok(await c.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname })); },
+    async novaSenha(password){ ok(await c.auth.updateUser({ password })); },
     async listAlunos(){ return ok(await c.from("profiles").select("*").eq("role", "aluno").eq("personal_id", S.user.id).order("nome")); },
     async listProgramas(){ return ok(await c.from("programas").select("id,aluno_id,nome,inicio,semanas,updated_at").eq("ativo", true)); },
     async listExercicios(){ return ok(await c.from("exercicios").select("*").order("nome")); },
@@ -522,6 +526,7 @@ function makeDemo(){
     async current(){ return me; },
     async demoLogin(id){ me = users.find(u => u.id === id); return me; },
     async signOut(){ me = null; },
+    async resetSenha(){}, async novaSenha(){},
     async listAlunos(){ return clone(users.filter(u => u.role === "aluno" && u.personal_id === me.id)); },
     async getPerfil(id){ const u = users.find(x => x.id === id); return u ? clone(u) : null; },
     async listPersonais(){ return clone(users.filter(u => u.role === "personal")); },
@@ -599,7 +604,7 @@ async function go(view, p = {}){
       S.data = { rel: p.snapshot || await db.getRelatorio(p.id) };
     } else if (view === "personais") {
       S.data = { lista: await db.listPersonais(), fotos: {} };
-    } else if (view === "pendente" || view === "conta") {
+    } else if (view === "pendente" || view === "conta" || view === "novaSenha") {
       S.data = { confirmarExclusao: false };
     } else if (view === "biblioteca") {
       S.data = { exercicios: await db.listExercicios(), q: "", edit: null, confirm: null };
@@ -626,7 +631,7 @@ function render(loading = false){
   if (S.view === "login") body = viewLogin();
   else if (loading) body = `<p class="muted">Carregando…</p>`;
   else if (S.data.error) body = `<div class="callout">Não foi possível carregar: ${esc(S.data.error)}</div><div><button class="btn" data-act="reload">Tentar de novo</button></div>`;
-  else body = ({ alunos: viewAlunos, aluno: viewAluno, biblioteca: viewBiblioteca, home: viewHome, treino: viewTreino, relatorio: viewRelatorio, orientacoes: viewOrientacoes, personais: viewPersonais, pendente: viewPendente, conta: viewConta })[S.view]();
+  else body = ({ alunos: viewAlunos, aluno: viewAluno, biblioteca: viewBiblioteca, home: viewHome, treino: viewTreino, relatorio: viewRelatorio, orientacoes: viewOrientacoes, personais: viewPersonais, pendente: viewPendente, conta: viewConta, novaSenha: viewNovaSenha })[S.view]();
   $app.innerHTML = header() + `<main><div class="wrap">${body}</div></main>` + (S.view === "treino" && !loading && S.data.programa ? saveBar() : "");
 }
 
@@ -649,6 +654,13 @@ function viewLogin(){
     <button class="btn" data-act="demoLogin" data-id="a1">Entrar como aluno (Lucas, exemplo)</button>
     <p class="small muted">Na versão publicada, aqui aparece o login com e-mail e senha.</p></div>`;
   const cad = S.p.cad;
+  if (S.p.esqueci) return `<form class="login panel" id="resetForm" novalidate>
+    <div class="hero-mark">${MARK(40)}<div><h1>Nova senha</h1><p class="muted">Enviamos um link para o seu e-mail</p></div></div>
+    <label class="field"><span>E-mail da sua conta</span><input id="rEmail" type="email" autocomplete="email" required></label>
+    <div id="resetMsg" class="small" role="alert"></div>
+    <button class="btn primary" type="submit">Enviar link para criar nova senha</button>
+    <button class="btn ghost" type="button" data-act="voltarLogin">Voltar para entrar</button>
+  </form>`;
   return `<form class="login panel" id="authForm" novalidate>
     <div class="hero-mark">${MARK(40)}<div><h1>${cad ? "Criar conta" : "Entrar"}</h1><p class="muted">Treinos com Alessandro Borges</p></div></div>
     ${cad ? `<div class="field"><span>Você é</span><div class="tipo-cad">
@@ -666,6 +678,7 @@ function viewLogin(){
     <div id="authMsg" class="small" role="alert"></div>
     <button class="btn primary" type="submit">${cad ? "Criar conta" : "Entrar"}</button>
     <button class="btn ghost" type="button" data-act="toggleCad">${cad ? "Já tenho conta" : "Primeiro acesso? Criar conta"}</button>
+    ${cad ? "" : `<button class="btn ghost" type="button" data-act="esqueci">Esqueci minha senha</button>`}
   </form>`;
 }
 
@@ -880,6 +893,17 @@ function viewPendente(){
     </div>`;
 }
 
+/* ---------- Nova senha ---------- */
+function formSenha(titulo, texto){
+  return `<div class="panel"><h3>${titulo}</h3>${texto ? `<p class="small muted">${texto}</p>` : ""}
+    <div class="grid2"><label class="field"><span>Nova senha</span><input id="ns1" type="password" autocomplete="new-password" minlength="6"></label>
+    <label class="field"><span>Repita a nova senha</span><input id="ns2" type="password" autocomplete="new-password" minlength="6"></label></div>
+    <div><button class="btn primary" data-act="salvarSenha">Salvar nova senha</button></div></div>`;
+}
+function viewNovaSenha(){
+  return `<div><p class="label">Acesso</p><h1>Criar nova senha</h1></div>${formSenha("Defina a sua nova senha", "Use pelo menos 6 caracteres. Depois de salvar, você já entra no app.")}`;
+}
+
 /* ---------- Minha conta ---------- */
 function viewConta(){
   const u = S.user, pers = ["personal", "master"].includes(u.role), mestre = u.role === "master";
@@ -902,7 +926,7 @@ function viewConta(){
           : `<div><button class="btn danger" data-act="pedirExclusao">Excluir minha conta</button></div>`}</div>`;
   return `<div><p class="label">${papel}</p><h1>Minha conta</h1></div>
     <div class="panel"><div class="info-grid"><div><span class="label">Nome</span><b>${esc(u.nome)}</b></div><div><span class="label">E-mail</span><b>${esc(u.email || "")}</b></div><div><span class="label">Tipo de conta</span><b>${papel}</b></div></div></div>
-    ${crefPainel}${apagar}`;
+    ${crefPainel}${formSenha("Trocar senha", "")}${apagar}`;
 }
 
 /* ---------- Login mestre: aprovação de personais ---------- */
@@ -1398,6 +1422,16 @@ document.addEventListener("click", async ev => {
       toast("Conta do personal excluída. Os alunos dele passaram para você.", 4500); return render();
     }
     if (a === "verificar") { S.user = await db.current(); if (isPers()) { toast("Acesso de personal liberado!"); return entrar(); } toast("Ainda em análise."); return render(); }
+    if (a === "esqueci") { S.p.esqueci = true; return render(); }
+    if (a === "voltarLogin") { S.p.esqueci = false; return render(); }
+    if (a === "salvarSenha") {
+      const p1 = document.getElementById("ns1").value, p2 = document.getElementById("ns2").value;
+      if (p1.length < 6) return toast("A senha precisa ter pelo menos 6 caracteres.");
+      if (p1 !== p2) return toast("As duas senhas não são iguais.");
+      el.disabled = true; await db.novaSenha(p1); toast("Senha salva.");
+      if (S.view === "novaSenha") { history.replaceState(null, "", location.pathname); return entrar(); }
+      document.getElementById("ns1").value = ""; document.getElementById("ns2").value = ""; el.disabled = false; return;
+    }
     if (a === "toggleCad") { S.p.cad = !S.p.cad; return render(); }
     if (a === "logout") { await db.signOut(); S.user = null; S.view = "login"; S.p = {}; return render(); }
     if (a === "copy") { const i = document.getElementById("shareLink"); try { await navigator.clipboard.writeText(i.value); toast("Link copiado"); } catch { i.select(); toast("Selecionado. Copie com Ctrl+C."); } return; }
@@ -1565,6 +1599,14 @@ document.addEventListener("submit", async ev => {
     try { await db.saveExercicio(ex); S.data.exercicios = await db.listExercicios(); S.data.edit = null; toast("Exercício salvo"); render(); }
     catch (e) { toast(traduzErro(e), 4000); }
   }
+  if (f.id === "resetForm") {
+    const msg = document.getElementById("resetMsg"), email = document.getElementById("rEmail").value.trim();
+    if (!email) { msg.style.color = "var(--down)"; msg.textContent = "Informe o seu e-mail."; return; }
+    const btn = f.querySelector("[type=submit]"); btn.disabled = true;
+    try { await db.resetSenha(email); msg.style.color = "var(--up)"; msg.textContent = "Pronto. Abra o e-mail que enviamos e clique no link para criar a nova senha."; }
+    catch (e) { msg.style.color = "var(--down)"; msg.textContent = traduzErro(e); btn.disabled = false; }
+    return;
+  }
   if (f.id === "authForm") {
     const msg = document.getElementById("authMsg"); msg.textContent = ""; msg.style.color = "var(--down)";
     const email = document.getElementById("fEmail").value.trim(), senha = document.getElementById("fSenha").value;
@@ -1685,6 +1727,7 @@ async function start(){
     db = makeSupabase();
     S.user = await db.current();
   } catch (e) { $app.innerHTML = `<main><div class="wrap"><div class="callout">${esc(traduzErro(e))}</div></div></main>`; return; }
+  if (S.user && RECUPERANDO) return go("novaSenha");
   if (S.user) entrar(); else render();
 }
 start();
