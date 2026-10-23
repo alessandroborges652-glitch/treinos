@@ -1,0 +1,1485 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--WRAP-END-->
+<title>Treinos Alessandro Borges</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<!--PWA-START-->
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="theme-color" content="#0E4C55">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Treinos AB">
+<!--PWA-END-->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap">
+<style>
+/* Layout: faixa de marca no topo, coluna única de até 880px; cartões só onde há um objeto (exercício, aluno). */
+:root{
+  --bg:#F4F1EC; --surface:#FFFFFF; --sunken:#ECE8E1; --fg:#22282A; --muted:#66757A; --line:#DCD7CE;
+  --accent:#0E4C55; --accent-2:#1B8A93; --accent-soft:#DDEEEF; --on-accent:#F4F1EC;
+  --band:#0E4C55; --on-band:#F4F1EC; --band-muted:#9FC9CD;
+  --up:#1B7A4B; --up-soft:#DCEFE3; --down:#A8452A; --down-soft:#F5E1DC; --warn:#946010; --warn-soft:#F6EAD3;
+  --prev:#00939F; --cur:#C25E22; --mk1:#0E4C55; --mk4:#1B8A93;
+  --font:"Manrope", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]){
+  --bg:#0E1719; --surface:#152225; --sunken:#0B1315; --fg:#E8ECEA; --muted:#93A4A7; --line:#26383C;
+  --accent:#5CC9D2; --accent-2:#5CC9D2; --accent-soft:#163A3F; --on-accent:#0B1315;
+  --band:#0A3A41; --on-band:#F4F1EC; --band-muted:#8BBFC4;
+  --up:#5BC48C; --up-soft:#173527; --down:#E08A6B; --down-soft:#3A1F1A; --warn:#E5B661; --warn-soft:#3A2D14;
+  --prev:#2AA3AE; --cur:#D4783A; --mk1:#F4F1EC; --mk4:#5CC9D2;
+  color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#0E1719; --surface:#152225; --sunken:#0B1315; --fg:#E8ECEA; --muted:#93A4A7; --line:#26383C;
+  --accent:#5CC9D2; --accent-2:#5CC9D2; --accent-soft:#163A3F; --on-accent:#0B1315;
+  --band:#0A3A41; --on-band:#F4F1EC; --band-muted:#8BBFC4;
+  --up:#5BC48C; --up-soft:#173527; --down:#E08A6B; --down-soft:#3A1F1A; --warn:#E5B661; --warn-soft:#3A2D14;
+  --prev:#2AA3AE; --cur:#D4783A; --mk1:#F4F1EC; --mk4:#5CC9D2;
+  color-scheme:dark }
+*{box-sizing:border-box}
+html,body{margin:0}
+body{background:var(--bg);color:var(--fg);font-family:var(--font);font-size:15px;line-height:1.5;-webkit-font-smoothing:antialiased}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--band)}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{margin:0;line-height:1.2;text-wrap:balance}
+h1{font-size:1.6rem;font-weight:800;letter-spacing:-.01em}
+h2{font-size:1.15rem;font-weight:700}
+h3{font-size:1rem;font-weight:700}
+p{margin:0}
+a{color:var(--accent)}
+.wrap{max-width:880px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--muted)}
+.small{font-size:.85rem}
+.label{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+
+/* Topo */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--band);color:var(--on-band)}
+.top .wrap{display:flex;align-items:center;gap:12px;padding-block:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px;font-weight:800;letter-spacing:-.01em;margin-right:auto}
+.brand small{display:block;font-weight:500;font-size:.72rem;color:var(--band-muted);letter-spacing:.02em}
+.brand svg{flex:none}
+.nav{display:flex;gap:4px;flex-wrap:wrap}
+.nav button{background:none;border:0;color:var(--band-muted);font-weight:700;padding:6px 10px;border-radius:8px;cursor:pointer}
+.nav button[aria-current="page"]{color:var(--on-band);background:rgba(255,255,255,.12)}
+.nav button:hover{color:var(--on-band)}
+.demo{background:var(--warn-soft);color:var(--warn);font-size:.85rem;font-weight:600}
+.demo .wrap{padding-block:8px}
+
+main .wrap{padding-block:24px 96px;display:flex;flex-direction:column;gap:20px}
+
+/* Controles */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;border:1px solid var(--line);background:var(--surface);padding:9px 14px;border-radius:var(--r);font-weight:700;cursor:pointer;text-decoration:none;color:var(--fg);min-height:40px}
+.btn:hover{border-color:var(--accent-2)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.ghost{background:none;border-color:transparent;color:var(--accent);padding-inline:8px}
+.btn.danger{color:var(--down)}
+.btn.sm{min-height:32px;padding:5px 10px;font-size:.85rem}
+.btn:disabled{opacity:.5;cursor:default}
+:focus-visible{outline:2px solid var(--accent-2);outline-offset:2px}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field span{font-size:.8rem;font-weight:700;color:var(--muted)}
+input[type=text],input[type=email],input[type=password],input[type=number],input[type=date],input[type=url],select,textarea{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:40px}
+textarea{min-height:64px;resize:vertical}
+input:focus,select:focus,textarea:focus{border-color:var(--accent-2);outline:none;box-shadow:0 0 0 3px var(--accent-soft)}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.spacer{flex:1}
+
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:flex;flex-direction:column;gap:14px;min-width:0}
+.list{display:flex;flex-direction:column;gap:10px}
+.item{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px;display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.item .grow{flex:1;min-width:180px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:.78rem;font-weight:700;padding:3px 8px;border-radius:99px;background:var(--sunken);color:var(--muted);white-space:nowrap}
+.chip.ok{background:var(--up-soft);color:var(--up)}
+.chip.bad{background:var(--down-soft);color:var(--down)}
+.chip.warn{background:var(--warn-soft);color:var(--warn)}
+.chip.acc{background:var(--accent-soft);color:var(--accent)}
+
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);overflow-x:auto}
+.tabs button{background:none;border:0;border-bottom:3px solid transparent;padding:8px 12px;font-weight:700;color:var(--muted);cursor:pointer;white-space:nowrap}
+.tabs button[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent)}
+.letters{display:flex;gap:6px;flex-wrap:wrap}
+.letters button{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--surface);font-weight:800;font-size:1.05rem;cursor:pointer;position:relative}
+.letters button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.letters button .dot{position:absolute;top:4px;right:5px;width:6px;height:6px;border-radius:50%;background:var(--accent-2)}
+
+/* Editor de programa */
+.ex-edit{border:1px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.ex-edit .head{display:flex;gap:8px;align-items:center}
+.ex-edit .ord{font-weight:800;color:var(--accent-2);width:22px;flex:none}
+.ex-edit .presc{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:520px){.ex-edit .presc{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Treino do aluno */
+.ex-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.ex-card header{padding:14px 16px 10px;display:flex;gap:12px;align-items:flex-start}
+.ex-card .n{font-weight:800;color:var(--accent-2);font-size:1.1rem;line-height:1.3;width:24px;flex:none}
+.ex-card .body{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
+.presc-line{display:flex;gap:6px;flex-wrap:wrap}
+.obs{font-size:.9rem;background:var(--sunken);border-radius:8px;padding:8px 10px}
+.video{border-radius:10px;overflow:hidden;background:#000;aspect-ratio:16/9;max-width:100%}
+.video iframe{width:100%;height:100%;border:0;display:block}
+.video-ph{aspect-ratio:16/9;max-width:100%;border-radius:10px;background:repeating-linear-gradient(-22deg,var(--accent-soft) 0 14px,var(--sunken) 14px 28px);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;text-align:center;padding:16px;color:var(--accent);font-weight:700}
+.sets{width:100%;border-collapse:collapse}
+.sets th{font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:4px 6px;font-weight:700}
+.sets td{padding:4px 6px;vertical-align:middle}
+.sets td:first-child{font-weight:800;width:44px;color:var(--muted)}
+.sets input{min-height:44px;text-align:center;font-weight:700;font-size:1rem}
+.sets .prev{font-size:.8rem;color:var(--muted);white-space:nowrap}
+.savebar{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px)}
+.savebar .wrap{display:flex;gap:10px;align-items:center;padding-block:10px}
+
+/* Evolução */
+.tbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+table.data{border-collapse:collapse;width:100%;font-size:.88rem;font-variant-numeric:tabular-nums}
+table.data th,table.data td{padding:8px 10px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+table.data th{font-size:.72rem;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);background:var(--sunken)}
+table.data tr:last-child td{border-bottom:0}
+table.data td.c{text-align:center}
+.freq td.c{font-weight:800}
+.chart svg{width:100%;height:auto;display:block}
+.callout{border-radius:10px;padding:10px 12px;background:var(--warn-soft);color:var(--warn);font-size:.9rem;font-weight:600}
+.empty{padding:28px 16px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:14px}
+
+/* Login */
+.login{max-width:420px;margin:0 auto;width:100%}
+.hero-mark{display:flex;align-items:center;gap:12px}
+
+/* Arrastar exercícios */
+.ex-list{display:flex;flex-direction:column;gap:10px}
+.drag{flex:none;cursor:grab;touch-action:none;user-select:none;-webkit-user-select:none;border:1px dashed var(--line);background:var(--surface);color:var(--muted);font-size:1.15rem;line-height:1;width:36px;height:40px;border-radius:8px;display:inline-flex;align-items:center;justify-content:center}
+.drag:hover{color:var(--accent);border-color:var(--accent-2)}
+.ex-edit.dragging{box-shadow:0 12px 32px rgba(0,0,0,.2);border-color:var(--accent-2);background:var(--surface);position:relative;z-index:3}
+.ex-edit.dragging .drag{cursor:grabbing;color:var(--accent)}
+body.is-dragging{user-select:none;-webkit-user-select:none;cursor:grabbing}
+/* Acompanhamento */
+h4{margin:0;font-size:.95rem;font-weight:700}
+.rep-head{gap:12px}
+.selo{align-self:flex-start;font-size:.7rem;font-weight:500;letter-spacing:.22em;text-transform:uppercase;border:1.5px solid var(--accent);color:var(--accent);padding:4px 10px;border-radius:6px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:.82rem;color:var(--muted)}
+.legend i{display:inline-block;width:12px;height:12px;border-radius:3px;vertical-align:-1px;margin-right:5px}
+.sec-n{font-size:.7rem;font-weight:500;letter-spacing:.22em;text-transform:uppercase;color:var(--accent-2);margin-bottom:2px}
+.tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(128px,1fr));gap:10px}
+.tile{border:1.5px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:2px;font-variant-numeric:tabular-nums}
+.tile b{font-size:1.2rem;font-weight:800}
+.tile.cur{border-color:var(--cur)} .tile.prev{border-color:var(--prev)}
+.tdets{display:flex;flex-direction:column}
+.tdet{display:flex;flex-direction:column;gap:14px;padding-block:16px;border-top:1px solid var(--line)}
+.tdets>.tdet:first-child{border-top:0;padding-top:0}
+.exd{display:flex;flex-direction:column;gap:8px}
+.ex-detail{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr);gap:12px;align-items:start}
+@media (max-width:680px){.ex-detail{grid-template-columns:minmax(0,1fr)}}
+.multiples{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.mult{border:1px solid var(--line);border-radius:10px;padding:10px 12px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.sub{display:block;font-size:.75rem;color:var(--muted);font-weight:500}
+.tot,.saldo{font-variant-numeric:tabular-nums}
+.saldo{font-size:1.05rem}
+.rep-foot{display:flex;gap:10px;align-items:center;color:var(--muted);font-size:.8rem;border-top:1px solid var(--line);padding-top:14px}
+@media (max-width:480px){table.data th,table.data td{padding:7px 7px}}
+.fix{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:6px}
+.fix input{width:96px;min-height:34px}
+.chart{min-width:0}
+.ex-edit{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.ex-edit input,.ex-edit textarea{-webkit-user-select:text;user-select:text}
+.ex-ph{border:2px dashed var(--accent-2);border-radius:12px;background:var(--accent-soft)}
+select.pos{width:66px;flex:none;font-weight:800;color:var(--accent-2);padding:6px 4px}
+.tabs.sub{border-bottom:0;gap:6px;flex-wrap:wrap;overflow:visible}
+.tabs.sub button{border:1px solid var(--line);border-radius:99px;padding:6px 12px;font-size:.85rem;background:var(--surface)}
+.tabs.sub button[aria-selected="true"]{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.obsf textarea{min-height:80px;background:var(--bg)}
+.obsf{border-top:1px solid var(--line);padding-top:12px}
+.obs-pt{border-left:3px solid var(--accent-2);background:var(--accent-soft);border-radius:0 10px 10px 0;padding:10px 12px;display:flex;flex-direction:column;gap:4px}
+.obs-pt .label{color:var(--accent)}
+.send{border-color:var(--accent-2)}
+/* Sistema de cores das séries */
+.t-aquecimento{--tc:#DCEAEC;--tt:#0E4C55}
+.t-reconhecimento{--tc:#8FC6CC;--tt:#0B3A41}
+.t-trabalho{--tc:#0E4C55;--tt:#F4F1EC}
+.t-pill{display:inline-flex;align-items:center;gap:6px;font-size:.78rem;font-weight:800;padding:3px 10px;border-radius:99px;background:var(--tc);color:var(--tt);white-space:nowrap;box-shadow:inset 0 0 0 1px rgba(127,160,165,.35)}
+.sets-list{display:flex;flex-direction:column;gap:6px}
+.set{border:1px solid var(--line);border-left:7px solid var(--tc);background:var(--bg);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:6px}
+.set-head{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.set-head .meta{font-weight:700;font-variant-numeric:tabular-nums}
+.set-head .desc{margin-left:auto;font-size:.8rem;color:var(--muted)}
+.set-in{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.set-in input{width:84px;min-height:44px;text-align:center;font-weight:700;font-size:1rem}
+.set-in .x{color:var(--muted);font-weight:700;font-size:.85rem}
+.set .prev{font-size:.8rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.set .skip{font-size:.82rem;color:var(--muted)}
+details.legend-card>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;font-weight:700}
+details.legend-card>summary::-webkit-details-marker{display:none}
+details.legend-card>summary::after{content:"▾";margin-left:auto;color:var(--muted)}
+details.legend-card:not([open])>summary::after{content:"▸"}
+.legend-t{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:8px}
+.lt{border:1px solid var(--line);border-left:7px solid var(--tc);border-radius:10px;padding:8px 10px;display:flex;flex-direction:column;gap:4px;background:var(--surface)}
+.sets-edit{display:flex;flex-direction:column;gap:6px}
+.set-row{display:grid;grid-template-columns:22px minmax(130px,1.3fr) minmax(0,1fr) minmax(0,.8fr) 36px;gap:6px;align-items:center}
+.set-row .n{font-weight:800;color:var(--muted);text-align:center}
+select.tipo-sel{background:var(--tc);color:var(--tt);font-weight:800;border-color:transparent}
+@media (max-width:520px){.set-row{grid-template-columns:20px minmax(0,1fr) minmax(0,1fr)}.set-row .rir-in{grid-column:2}.set-row .rm{grid-column:3;justify-self:end}}
+.add-sets{display:flex;gap:6px;flex-wrap:wrap}
+.add-sets .btn{border-left:7px solid var(--tc)}
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.info-grid div{display:flex;flex-direction:column;gap:2px}
+.ori{display:flex;flex-direction:column;gap:2px;padding-block:8px;border-top:1px solid var(--line)}
+.ori:first-of-type{border-top:0}
+.sess-note{border-left:3px solid var(--warn);padding:4px 10px;font-size:.9rem}
+.toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:700;z-index:20;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.2)}
+@media (prefers-reduced-motion:no-preference){.toast{animation:pop .2s ease-out}@keyframes pop{from{transform:translate(-50%,8px);opacity:.4}}}
+</style>
+<!--HEAD-END-->
+</head>
+<body>
+<div id="app"></div>
+
+<script>
+/* =====================================================================
+   CONFIGURAÇÃO — cole aqui os dados do seu projeto Supabase.
+   Enquanto estiver vazio, o app roda em MODO DEMONSTRAÇÃO.
+   ===================================================================== */
+const CONFIG = {
+  SUPABASE_URL: "https://rvtfvmgbxkbqoqinrjxs.supabase.co",
+  SUPABASE_ANON_KEY: "sb_publishable_vcvjqLvOwhlTSkSugRcUOQ_NMKzsGKe"
+};
+/* ===================================================================== */
+
+/* =====================================================================
+   SISTEMA DE CORES E ORIENTAÇÕES (textos da sua ficha; edite aqui se quiser)
+   ===================================================================== */
+const TIPOS = {
+  aquecimento:    { nome: "Aquecimento",    rir: "4+",     descanso: "60 s",  carga: "50 a 60% do peso máximo", resumo: "RIR 4+ · não levar à falha · 50 a 60% do peso máximo",
+                    intuito: "Preparar a articulação e o músculo. Carga leve: pare com 4 ou mais repetições ainda disponíveis. Se terminou ofegante, a carga estava alta demais.", curto: "Série leve, só para preparar", reps: "15-20" },
+  reconhecimento: { nome: "Reconhecimento", rir: "4+",     descanso: "90 s",  carga: "80 a 90% do peso máximo", resumo: "RIR 4+ · não levar à falha · 80 a 90% do peso máximo",
+                    intuito: "Sentir a carga das séries de trabalho com poucas repetições, sem cansar o músculo: pare com 4 ou mais repetições ainda disponíveis.", curto: "Sentir a carga, sem cansar", reps: "4-6" },
+  trabalho:       { nome: "Trabalho",       rir: "0 a 3",  descanso: "120 s", carga: "carga da faixa de repetições", resumo: "RIR 0 a 3 · o mais próximo possível da falha técnica",
+                    intuito: "É onde o treino acontece. Termine a série com 0 a 3 repetições ainda possíveis, sem perder a técnica. Só estas séries são registradas e entram na sua evolução.", curto: "Série que conta", reps: "6-8" }
+};
+const ORDEM_TIPOS = ["aquecimento", "reconhecimento", "trabalho"];
+const CONTATO = "Alessandro Borges · Personal trainer · CREF 018010-G/GO · (62) 98630-6701";
+const ORIENTACOES = [
+  { titulo: "O que é RIR", itens: [
+    ["Em uma frase", "RIR é quantas repetições você ainda conseguiria fazer quando decide parar a série."],
+    ["O teste", "Ao terminar a série, pergunte: “se eu quisesse, quantas repetições a mais eu faria com a mesma técnica?” Essa resposta é o RIR."],
+    ["RIR 0", "Nenhuma repetição sobrando. É a falha técnica."],
+    ["RIR 1 a 3", "Sobrariam de 1 a 3 repetições. É a intensidade da maior parte do treino."],
+    ["RIR 4 ou mais", "Sobrariam 4 ou mais. Série leve, de aquecimento ou reconhecimento."],
+    ["Onde encontrar", "O RIR aparece dentro de cada série, junto com as repetições."] ] },
+  { titulo: "Como progredir: carga ou repetições", itens: [
+    ["Regra da dupla progressão", "Mantenha a carga e vá somando repetições dentro da faixa prevista. Quando conseguir o número máximo da faixa em todas as séries de trabalho, com o RIR indicado, aumente a carga e volte ao número menor de repetições. É assim que se progride sem forçar a técnica."],
+    ["Quanto aumentar", "Membros superiores: 1 a 2,5 kg. Membros inferiores: 2,5 a 5 kg. Depois de subir a carga é normal fazer menos repetições por algumas semanas — isso faz parte do processo."],
+    ["Se travar", "Duas semanas sem subir carga nem repetições no mesmo exercício: anote nas observações da sessão e me avise, para ajustarmos volume, descanso ou técnica."] ] },
+  { titulo: "Segurança", itens: [
+    ["Pare e avise", "Dor no peito, tontura, falta de ar desproporcional ao esforço, visão turva ou dor articular aguda."],
+    ["Dor não é meta", "Desconforto muscular durante o esforço é esperado. Dor em articulação, coluna ou pontada localizada não é — interrompa a série."],
+    ["Falha técnica, não falha total", "Nas séries de trabalho com RIR 0, pare quando a execução começa a se perder. Insistir depois disso aumenta risco sem aumentar resultado."],
+    ["Aquecimento geral", "5 a 8 minutos de aquecimento geral antes do primeiro exercício, além das séries de aquecimento e reconhecimento previstas no treino."],
+    ["Ajustes", "Não substitua exercícios por conta própria — qualquer ajuste deve ser combinado antes."] ] },
+  { titulo: "Contato e acompanhamento", itens: [
+    ["Dúvidas", "Envie mensagem com o nome do exercício e, se possível, um vídeo da execução."],
+    ["Prazo de resposta", "Até 24 horas em dias úteis."],
+    ["Reavaliação", "Ao final do bloco, na data indicada no seu programa."],
+    ["Profissional", CONTATO] ] }
+];
+
+const DEMO = !CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY;
+const LETRAS = ["A","B","C","D","E"];
+
+/* ---------- utilitários ---------- */
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const fmt = n => (n == null || n === "") ? "" : String(Math.round(Number(n) * 100) / 100).replace(".", ",");
+const fmtKg = n => Math.round(n).toLocaleString("pt-BR");
+const parseReps = v => { v = String(v ?? "").replace(/\s/g, ""); if (v === "") return null; if (!/^\d+(\+\d+)*$/.test(v)) return NaN; const p = v.split("+").map(Number); return { reps: p.reduce((a, b) => a + b, 0), txt: p.length > 1 ? p.join("+") : null }; };
+const parseN = v => { v = String(v ?? "").trim().replace(",", "."); if (v === "") return null; const n = Number(v); return isFinite(n) && n >= 0 ? n : NaN; };
+const todayISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+const clone = o => JSON.parse(JSON.stringify(o));
+function semanaAtual(p){
+  const d0 = new Date(p.inicio + "T00:00:00");
+  const dias = Math.floor((Date.now() - d0.getTime()) / 86400000);
+  return Math.min(p.semanas, Math.max(1, Math.floor(dias / 7) + 1));
+}
+function ytId(url){
+  if (!url) return null;
+  const m = String(url).match(/(?:youtu\.be\/|[?&]v=|shorts\/|embed\/|live\/)([A-Za-z0-9_-]{11})/);
+  return m ? m[1] : null;
+}
+/* registros usam a ordem das séries de trabalho (1ª de trabalho = 1), para que incluir ou tirar aquecimento/reconhecimento não desalinhe o histórico */
+const serT = it => Array.from({ length: (it.sets || []).filter(st => st.tipo === "trabalho").length }, (_, i) => i + 1);
+const fmtData = iso => iso ? String(iso).slice(0, 10).split("-").reverse().join("/") : "–";
+const novaSerie = (tipo, base) => ({ tipo, reps: base?.reps || TIPOS[tipo].reps, rir: TIPOS[tipo].rir });
+function normItem(it){
+  if (!Array.isArray(it.sets) || !it.sets.length) it.sets = Array.from({ length: Number(it.series) || 1 }, () => ({ tipo: "trabalho", reps: it.reps || "", rir: it.rir || "" }));
+  it.sets.forEach(st => { if (!TIPOS[st.tipo]) st.tipo = "trabalho"; });
+  it.series = it.sets.length;
+  if (it.descanso === "60-90s") it.descanso = "";
+  return it;
+}
+function normPrograma(p){
+  ["objetivo", "reavaliacao", "frequencia", "restricoes"].forEach(k => { if (p[k] == null) p[k] = ""; });
+  (p.treinos || []).forEach(t => (t.itens || []).forEach(normItem));
+  const map = Object.fromEntries((p.treinos || []).map(t => [t.letra, t]));
+  p.modalidade = p.modalidade || "feedback semanal";
+  p.treinos = LETRAS.map(l => ({ letra: l, nome: map[l]?.nome || "", itens: map[l]?.itens || [] }));
+  return p;
+}
+const volume = rows => rows.reduce((s, r) => (r.carga != null && r.reps != null) ? s + Number(r.carga) * Number(r.reps) : s, 0);
+const traduzErro = e => {
+  const m = (e && (e.message || e.error_description)) || String(e);
+  if (/Invalid login credentials/i.test(m)) return "E-mail ou senha incorretos.";
+  if (/Email not confirmed/i.test(m)) return "Confirme seu e-mail pelo link enviado antes de entrar.";
+  if (/already registered/i.test(m)) return "Este e-mail já tem conta. Use a opção Entrar.";
+  if (/Password should be/i.test(m)) return "A senha precisa ter pelo menos 6 caracteres.";
+  if (/Failed to fetch|NetworkError/i.test(m)) return "Sem conexão com o servidor. Verifique sua internet.";
+  return m;
+};
+const MARK = (size = 30, c1 = "var(--mk1)", c4 = "var(--mk4)") => `<svg width="${size}" height="${size}" viewBox="-8 -98 107 107" aria-hidden="true">${[[0,0,26],[21,-7,42],[42,-14,58],[63,-21,74]].map(([x,y,l],i) => `<line x1="${x}" y1="${y}" x2="${(x+0.3746*l).toFixed(2)}" y2="${(y-0.9272*l).toFixed(2)}" stroke="${i===3 ? c4 : c1}" stroke-width="14" stroke-linecap="round"/>`).join("")}</svg>`;
+
+/* =====================================================================
+   CAMADA DE DADOS — Supabase (real) ou memória (demonstração)
+   ===================================================================== */
+function makeSupabase(){
+  const c = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_ANON_KEY);
+  const ok = ({ data, error }) => { if (error) throw error; return data; };
+  return {
+    async current(){
+      const { data: { session } } = await c.auth.getSession();
+      if (!session) return null;
+      return ok(await c.from("profiles").select("*").eq("id", session.user.id).single());
+    },
+    async signIn(email, password){ ok(await c.auth.signInWithPassword({ email, password })); return this.current(); },
+    async signUp(nome, email, password){
+      const d = ok(await c.auth.signUp({ email, password, options: { data: { nome }, emailRedirectTo: location.href.split("#")[0] } }));
+      return d.session ? this.current() : null;
+    },
+    async signOut(){ await c.auth.signOut(); },
+    async listAlunos(){ return ok(await c.from("profiles").select("*").eq("role", "aluno").order("nome")); },
+    async listProgramas(){ return ok(await c.from("programas").select("id,aluno_id,nome,inicio,semanas,updated_at").eq("ativo", true)); },
+    async listExercicios(){ return ok(await c.from("exercicios").select("*").order("nome")); },
+    async saveExercicio(ex){
+      const row = { nome: ex.nome, grupo: ex.grupo, video_url: ex.video_url, descricao: ex.descricao };
+      return ex.id ? ok(await c.from("exercicios").update(row).eq("id", ex.id).select().single())
+                   : ok(await c.from("exercicios").insert(row).select().single());
+    },
+    async deleteExercicio(id){ ok(await c.from("exercicios").delete().eq("id", id)); },
+    async getPrograma(alunoId){
+      return ok(await c.from("programas").select("*").eq("aluno_id", alunoId).eq("ativo", true).order("updated_at", { ascending: false }).limit(1).maybeSingle());
+    },
+    async savePrograma(p){
+      const row = { aluno_id: p.aluno_id, nome: p.nome, modalidade: p.modalidade, objetivo: p.objetivo || null, reavaliacao: p.reavaliacao || null, frequencia: p.frequencia ? Number(p.frequencia) : null, restricoes: p.restricoes || null, inicio: p.inicio, semanas: p.semanas, treinos: p.treinos, ativo: true, updated_at: new Date().toISOString() };
+      return p.id ? ok(await c.from("programas").update(row).eq("id", p.id).select().single())
+                  : ok(await c.from("programas").insert(row).select().single());
+    },
+    async getSessoes(alunoId, pid){ return ok(await c.from("sessoes").select("*").eq("aluno_id", alunoId).eq("programa_id", pid)); },
+    async saveSessao(r){ ok(await c.from("sessoes").upsert({ ...r, updated_at: new Date().toISOString() }, { onConflict: "aluno_id,programa_id,semana,letra" })); },
+    async getObs(pid){ const d = ok(await c.from("anotacoes").select("obs").eq("programa_id", pid).maybeSingle()); return d?.obs || {}; },
+    async saveObs(pid, obs){ ok(await c.from("anotacoes").upsert({ programa_id: pid, obs, updated_at: new Date().toISOString() }, { onConflict: "programa_id" })); },
+    async listRelatorios(alunoId){ return ok(await c.from("relatorios").select("id,titulo,created_at").eq("aluno_id", alunoId).order("created_at", { ascending: false })); },
+    async getRelatorio(id){ return ok(await c.from("relatorios").select("*").eq("id", id).single()); },
+    async saveRelatorio(r){ return ok(await c.from("relatorios").insert(r).select("id").single()); },
+    async deleteRelatorio(id){ ok(await c.from("relatorios").delete().eq("id", id)); },
+    async getRegistros(alunoId, programaId){
+      return ok(await c.from("registros").select("*").eq("aluno_id", alunoId).eq("programa_id", programaId));
+    },
+    async saveRegistros(up, del){
+      if (up.length) ok(await c.from("registros").upsert(up.map(({ id, ...r }) => ({ ...r, updated_at: new Date().toISOString() })), { onConflict: "aluno_id,programa_id,semana,letra,exercicio_id,serie" }));
+      for (const k of del) ok(await c.from("registros").delete().match(k));
+    }
+  };
+}
+
+function makeDemo(){
+  const ago = n => { const d = new Date(); d.setDate(d.getDate() - n); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
+  const users = [
+    { id: "p1", nome: "Alessandro Borges", email: "personal@exemplo.com", role: "personal" },
+    { id: "a1", nome: "Lucas Martins (exemplo)", email: "lucas@exemplo.com", role: "aluno" },
+    { id: "a2", nome: "Carla Souza (exemplo)", email: "carla@exemplo.com", role: "aluno" },
+    { id: "a3", nome: "Rafael Lima (exemplo)", email: "rafael@exemplo.com", role: "aluno" }
+  ];
+  const exs = [
+    [1, "Supino reto com barra", "Peitoral", "Escápulas retraídas, barra desce até a linha do mamilo."],
+    [2, "Supino inclinado com halteres", "Peitoral", "Banco a 30°, cotovelos a ~45° do tronco."],
+    [3, "Crucifixo na máquina", "Peitoral", ""],
+    [4, "Tríceps na polia com corda", "Tríceps", "Cotovelos fixos ao lado do corpo; abrir a corda no final."],
+    [5, "Puxada frontal aberta", "Dorsal", "Puxar até a parte alta do peito, sem jogar o tronco."],
+    [6, "Remada curvada com barra", "Dorsal", "Tronco a ~45°, coluna neutra."],
+    [7, "Rosca direta com barra", "Bíceps", ""],
+    [8, "Rosca Scott na máquina", "Bíceps", ""],
+    [9, "Agachamento livre", "Quadríceps", "Profundidade conforme mobilidade, joelhos alinhados aos pés."],
+    [10, "Leg press 45°", "Quadríceps", ""],
+    [11, "Cadeira extensora", "Quadríceps", "Pausa de 1 s no topo."],
+    [12, "Cadeira flexora", "Isquiotibiais", ""],
+    [13, "Desenvolvimento com halteres", "Deltoide", ""],
+    [14, "Elevação lateral com halteres", "Deltoide", "Subir até a linha dos ombros."]
+  ].map(([id, nome, grupo, descricao]) => ({ id, nome, grupo, video_url: "demo", descricao }));
+  const item = (id, series = 3, reps = "8-12", obs = "", prep = false) => ({ exercicio_id: id, descanso: "", obs,
+    sets: [...(prep ? [novaSerie("aquecimento"), novaSerie("reconhecimento")] : []), ...Array.from({ length: series }, () => ({ tipo: "trabalho", reps, rir: "0 a 3" }))] });
+  const progs = [
+    normPrograma({ id: 1, aluno_id: "a1", nome: "Hipertrofia — Bloco 1", modalidade: "feedback semanal", objetivo: "Hipertrofia", frequencia: 3, restricoes: "Sem restrições", reavaliacao: ago(-12), inicio: ago(44), semanas: 8, treinos: [
+      { letra: "A", nome: "Peito e tríceps", itens: [item(1, 3, "6-8", "Última série até a falha técnica.", true), item(2), item(3, 3, "12-15"), item(4, 3, "10-12")] },
+      { letra: "B", nome: "Costas e bíceps", itens: [item(5, 3, "8-12", "", true), item(6), item(7, 3, "10-12"), item(8, 3, "10-12")] },
+      { letra: "C", nome: "Pernas", itens: [item(9, 3, "6-8", "", true), item(10), item(11, 3, "12-15"), item(12, 3, "10-12")] }
+    ] }),
+    normPrograma({ id: 2, aluno_id: "a2", nome: "Adaptação", modalidade: "feedback mensal", inicio: ago(9), semanas: 6, treinos: [
+      { letra: "A", nome: "Superiores", itens: [item(5, 3, "12"), item(2, 3, "12"), item(13, 3, "12"), item(14, 3, "15")] },
+      { letra: "B", nome: "Inferiores", itens: [item(10, 3, "12"), item(11, 3, "15"), item(12, 3, "15")] }
+    ] }),
+    normPrograma({ id: 3, aluno_id: "p1", nome: "Força", modalidade: "feedback semanal", inicio: ago(12), semanas: 8, treinos: [
+      { letra: "A", nome: "Inferiores", itens: [item(9, 4, "4-6"), item(10, 3, "8-10"), item(12, 3, "10-12")] },
+      { letra: "B", nome: "Superiores", itens: [item(1, 4, "4-6"), item(6, 3, "6-8"), item(13, 3, "8-10")] }
+    ] })
+  ];
+  const regs = [];
+  const base = { 1: 50, 2: 22, 3: 40, 4: 25, 5: 55, 6: 40, 7: 25, 8: 30, 9: 60, 10: 160, 11: 45, 12: 40, 13: 14, 14: 8 };
+  const add = (p, semana, letra) => {
+    const t = p.treinos.find(x => x.letra === letra);
+    t.itens.forEach((it, idx) => {
+      serT(it).forEach((s, j) => {
+        const inc = (idx % 2 === 0) ? (semana - 1) * 2.5 : 0;
+        const fac = p.id === 2 ? 0.55 : p.id === 3 ? 1.4 : 1;
+        const reps = [10, 9, 8, 7][j] + (idx % 2 === 1 ? (semana - 1) : 0);
+        regs.push({ aluno_id: p.aluno_id, programa_id: p.id, semana, letra, exercicio_id: it.exercicio_id, serie: s,
+          carga: Math.round((base[it.exercicio_id] * fac + inc) * 2) / 2, reps, reps_txt: null });
+      });
+    });
+  };
+  ["A","B","C"].forEach(l => { add(progs[0], 1, l); add(progs[0], 2, l); });
+  add(progs[0], 3, "A"); add(progs[0], 3, "C");
+  [4, 5].forEach(w => ["A","B","C"].forEach(l => add(progs[0], w, l))); add(progs[0], 6, "A"); add(progs[0], 6, "B");
+  const R = (p, w, l, ex, s) => regs.find(r => r.programa_id === p && r.semana === w && r.letra === l && r.exercicio_id === ex && r.serie === s);
+  const miss = R(1, 2, "C", 12, 2); if (miss) miss.reps = null;
+  const tri = R(1, 3, "A", 4, 3); if (tri) { tri.reps = 10; tri.reps_txt = "6+4"; }
+  [1, 2, 3].forEach(k => { const x = R(1, 2, "A", 3, k), y = R(1, 3, "A", 3, k); if (x && y) { y.carga = x.carga; y.reps = x.reps; } });
+  const lp = R(1, 3, "C", 10, 3); if (lp) lp.reps -= 2;
+  add(progs[1], 1, "A"); add(progs[1], 1, "B"); add(progs[1], 2, "A");
+  add(progs[2], 1, "A"); add(progs[2], 1, "B"); add(progs[2], 2, "A"); add(progs[2], 2, "B");
+
+  let me = null, nextId = 100;
+  const sess = [{ aluno_id: "a1", programa_id: 1, semana: 3, letra: "C", obs: "Exemplo: no leg press senti o joelho direito na última série e parei antes. Sem dor depois do treino." }];
+  const obsMap = { 1: { panorama: "Semana 3 com ausência no treino B (exemplo de observação). Vamos ajustar a rotina para encaixar os três treinos." } };
+  const snap = clone(regs.filter(r => r.programa_id === 1 && r.semana <= 2));
+  const fx = snap.find(r => r.semana === 2 && r.letra === "C" && r.exercicio_id === 12 && r.serie === 2); if (fx) fx.reps = 9;
+  const rels = [{ id: 50, aluno_id: "a1", programa_id: 1, titulo: "Acompanhamento · semanas 1 a 2", created_at: new Date(Date.now() - 8 * 86400000).toISOString(),
+    dados: { programa: clone(progs[0]), regs: snap, exercicios: exs.map(e => ({ id: e.id, nome: e.nome })), cur: 3, de: 1, ate: 2, data: new Date(Date.now() - 8 * 86400000).toLocaleDateString("pt-BR"),
+      obs: { panorama: "Duas semanas completas, todos os treinos feitos (exemplo).", fechamento: "Bom início de bloco. Seguimos com a mesma estrutura (exemplo)." } } }];
+  const keyOf = r => [r.aluno_id, r.programa_id, r.semana, r.letra, r.exercicio_id, r.serie].join("|");
+  return {
+    demo: true, users,
+    async current(){ return me; },
+    async demoLogin(id){ me = users.find(u => u.id === id); return me; },
+    async signOut(){ me = null; },
+    async listAlunos(){ return clone(users.filter(u => u.role === "aluno")); },
+    async listProgramas(){ return clone(progs); },
+    async listExercicios(){ return clone(exs).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")); },
+    async saveExercicio(ex){
+      if (ex.id) { Object.assign(exs.find(e => e.id === ex.id), ex); return clone(ex); }
+      const n = { ...ex, id: nextId++ }; exs.push(n); return clone(n);
+    },
+    async deleteExercicio(id){ const i = exs.findIndex(e => e.id === id); if (i >= 0) exs.splice(i, 1); },
+    async getPrograma(alunoId){ const p = progs.find(p => p.aluno_id === alunoId); return p ? clone(p) : null; },
+    async savePrograma(p){
+      if (p.id) { const i = progs.findIndex(x => x.id === p.id); progs[i] = clone(p); return clone(p); }
+      const n = { ...clone(p), id: nextId++ }; progs.push(n); return clone(n);
+    },
+    async getObs(pid){ return clone(obsMap[pid] || {}); },
+    async getSessoes(a, pid){ return clone(sess.filter(x => x.aluno_id === a && x.programa_id === pid)); },
+    async saveSessao(r){ const i = sess.findIndex(x => x.aluno_id === r.aluno_id && x.programa_id === r.programa_id && x.semana === r.semana && x.letra === r.letra); if (i >= 0) sess[i] = { ...r, updated_at: new Date().toISOString() }; else sess.push({ ...r, updated_at: new Date().toISOString() }); },
+    async saveObs(pid, o){ obsMap[pid] = clone(o); },
+    async listRelatorios(a){ return clone(rels.filter(r => r.aluno_id === a).map(({ dados, ...r }) => r)).reverse(); },
+    async getRelatorio(id){ return clone(rels.find(r => r.id === id)); },
+    async saveRelatorio(r){ const n = { ...clone(r), id: nextId++, created_at: new Date().toISOString() }; rels.push(n); return { id: n.id }; },
+    async deleteRelatorio(id){ const i = rels.findIndex(r => r.id === id); if (i >= 0) rels.splice(i, 1); },
+    async getRegistros(alunoId, programaId){ return clone(regs.filter(r => r.aluno_id === alunoId && r.programa_id === programaId)); },
+    async saveRegistros(up, del){
+      for (const r of up) { const k = keyOf(r); const i = regs.findIndex(x => keyOf(x) === k); if (i >= 0) regs[i] = { ...r }; else regs.push({ ...r }); }
+      for (const d of del) { const k = keyOf(d); const i = regs.findIndex(x => keyOf(x) === k); if (i >= 0) regs.splice(i, 1); }
+    }
+  };
+}
+
+/* =====================================================================
+   ESTADO E NAVEGAÇÃO
+   ===================================================================== */
+let db;
+const S = { user: null, view: "login", p: {}, data: {}, busy: false };
+const $app = document.getElementById("app");
+
+function toast(msg, ms = 2600){
+  document.querySelector(".toast")?.remove();
+  const t = document.createElement("div"); t.className = "toast"; t.setAttribute("role", "status"); t.textContent = msg;
+  document.body.appendChild(t); setTimeout(() => t.remove(), ms);
+}
+
+async function go(view, p = {}){
+  S.view = view; S.p = p; S.data = {};
+  render(true);
+  try {
+    if (view === "alunos") {
+      const [alunos, progs] = await Promise.all([db.listAlunos(), db.listProgramas()]);
+      S.data = { alunos, progs };
+    } else if (view === "aluno") {
+      const [alunos, prog, exercicios] = await Promise.all([db.listAlunos(), db.getPrograma(p.alunoId), db.listExercicios()]);
+      const aluno = alunos.find(a => a.id === p.alunoId) || (p.alunoId === S.user.id ? S.user : null);
+      const programa = prog ? normPrograma(prog) : null;
+      const regs = programa?.id ? await db.getRegistros(p.alunoId, programa.id) : [];
+      const [obs, rels, sess] = programa?.id ? await Promise.all([db.getObs(programa.id), db.listRelatorios(p.alunoId), db.getSessoes(p.alunoId, programa.id)]) : [{}, [], []];
+      S.data = { aluno, programa, regs, exercicios, obs, rels, sess, envio: p.envio || null,
+        draft: programa ? clone(programa) : { aluno_id: p.alunoId, nome: "Programa 1", modalidade: "feedback semanal", inicio: todayISO(), semanas: 8, treinos: LETRAS.map(l => ({ letra: l, nome: "", itens: [] })) },
+        dirty: false };
+      S.p.tab = p.tab || "programa"; S.p.letra = p.letra || "A";
+    } else if (view === "orientacoes") {
+      const prog = S.user.role === "aluno" ? await db.getPrograma(S.user.id) : null;
+      S.data = { programa: prog ? normPrograma(prog) : null };
+    } else if (view === "relatorio") {
+      S.data = { rel: p.snapshot || await db.getRelatorio(p.id) };
+    } else if (view === "biblioteca") {
+      S.data = { exercicios: await db.listExercicios(), q: "", edit: null, confirm: null };
+    } else if (view === "home" || view === "treino") {
+      const [prog, exercicios] = await Promise.all([db.getPrograma(S.user.id), db.listExercicios()]);
+      const programa = prog ? normPrograma(prog) : null;
+      const regs = programa ? await db.getRegistros(S.user.id, programa.id) : [];
+      const obs = programa && S.user.role === "personal" ? await db.getObs(programa.id) : {};
+      const rels = S.user.role === "aluno" ? await db.listRelatorios(S.user.id) : [];
+      const sess = programa ? await db.getSessoes(S.user.id, programa.id) : [];
+      S.data = { programa, regs, exercicios, obs, rels, sess };
+      if (programa) { S.p.semana = p.semana || semanaAtual(programa); }
+    }
+  } catch (e) { S.data.error = traduzErro(e); }
+  render();
+  if (!p.keepScroll) window.scrollTo(0, 0);
+}
+
+/* =====================================================================
+   RENDERIZAÇÃO
+   ===================================================================== */
+function render(loading = false){
+  let body;
+  if (S.view === "login") body = viewLogin();
+  else if (loading) body = `<p class="muted">Carregando…</p>`;
+  else if (S.data.error) body = `<div class="callout">Não foi possível carregar: ${esc(S.data.error)}</div><div><button class="btn" data-act="reload">Tentar de novo</button></div>`;
+  else body = ({ alunos: viewAlunos, aluno: viewAluno, biblioteca: viewBiblioteca, home: viewHome, treino: viewTreino, relatorio: viewRelatorio, orientacoes: viewOrientacoes })[S.view]();
+  $app.innerHTML = header() + `<main><div class="wrap">${body}</div></main>` + (S.view === "treino" && !loading && S.data.programa ? saveBar() : "");
+}
+
+function header(){
+  const isP = S.user?.role === "personal";
+  const nav = !S.user ? "" : isP
+    ? `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="alunos" ${["alunos","aluno"].includes(S.view) ? 'aria-current="page"' : ""}>Alunos</button><button data-act="nav" data-v="biblioteca" ${S.view === "biblioteca" ? 'aria-current="page"' : ""}>Biblioteca</button><button data-act="nav" data-v="home" ${["home","treino"].includes(S.view) ? 'aria-current="page"' : ""}>Meu treino</button><button data-act="nav" data-v="orientacoes" ${S.view === "orientacoes" ? 'aria-current="page"' : ""}>Orientações</button><button data-act="logout">Sair</button></nav>`
+    : `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="home" ${["home","treino","relatorio"].includes(S.view) ? 'aria-current="page"' : ""}>Meus treinos</button><button data-act="nav" data-v="orientacoes" ${S.view === "orientacoes" ? 'aria-current="page"' : ""}>Orientações</button><button data-act="logout">Sair</button></nav>`;
+  const demo = DEMO ? `<div class="demo"><div class="wrap">Modo demonstração: dados de exemplo, nada é salvo de verdade.${S.user ? ` Você está como <b>${esc(S.user.role === "personal" ? "personal" : "aluno")}</b>.` : ""}</div></div>` : "";
+  return `<header class="top"><div class="wrap"><div class="brand">${MARK(30, "#F4F1EC", "#5CC9D2")}<div>Alessandro Borges<small>Personal trainer · CREF 018010-G/GO</small></div></div>${nav}</div></header>${demo}`;
+}
+
+/* ---------- Login ---------- */
+function viewLogin(){
+  if (DEMO) return `<div class="login panel">
+    <div class="hero-mark">${MARK(40)}<div><h1>Treinos</h1><p class="muted">Acompanhamento online</p></div></div>
+    <p>Escolha como quer ver o app:</p>
+    <button class="btn primary" data-act="demoLogin" data-id="p1">Entrar como personal</button>
+    <button class="btn" data-act="demoLogin" data-id="a1">Entrar como aluno (Lucas, exemplo)</button>
+    <p class="small muted">Na versão publicada, aqui aparece o login com e-mail e senha.</p></div>`;
+  const cad = S.p.cad;
+  return `<form class="login panel" id="authForm" novalidate>
+    <div class="hero-mark">${MARK(40)}<div><h1>${cad ? "Criar conta" : "Entrar"}</h1><p class="muted">Treinos com Alessandro Borges</p></div></div>
+    ${cad ? `<label class="field"><span>Nome completo</span><input id="fNome" type="text" autocomplete="name" required></label>` : ""}
+    <label class="field"><span>E-mail</span><input id="fEmail" type="email" autocomplete="email" required></label>
+    <label class="field"><span>Senha</span><input id="fSenha" type="password" autocomplete="${cad ? "new-password" : "current-password"}" minlength="6" required></label>
+    <div id="authMsg" class="small" role="alert"></div>
+    <button class="btn primary" type="submit">${cad ? "Criar conta" : "Entrar"}</button>
+    <button class="btn ghost" type="button" data-act="toggleCad">${cad ? "Já tenho conta" : "Primeiro acesso? Criar conta"}</button>
+  </form>`;
+}
+
+/* ---------- Personal: lista de alunos ---------- */
+function viewAlunos(){
+  const { alunos, progs } = S.data;
+  const pm = Object.fromEntries(progs.map(p => [p.aluno_id, p]));
+  const cards = alunos.map(a => {
+    const p = pm[a.id];
+    const st = p ? `<span class="chip acc">${esc(p.nome)}</span><span class="chip num">Semana ${semanaAtual(p)} de ${p.semanas}</span>` : `<span class="chip warn">Sem programa</span>`;
+    return `<div class="item"><div class="grow"><h3>${esc(a.nome)}</h3><p class="small muted">${esc(a.email)}</p></div><div class="row">${st}</div><button class="btn sm primary" data-act="openAluno" data-id="${esc(a.id)}">Abrir</button></div>`;
+  }).join("");
+  const link = location.href.split("#")[0];
+  return `<div class="row"><div><h1>Alunos</h1><p class="muted num">${alunos.length} ${alunos.length === 1 ? "aluno" : "alunos"}</p></div></div>
+    ${alunos.length ? `<div class="list">${cards}</div>` : `<div class="empty">Nenhum aluno cadastrado ainda.</div>`}
+    <div class="item"><div class="grow"><h3>Meu treino</h3><p class="small muted">Monte e acompanhe o seu próprio programa (análise técnica)</p></div><div class="row">${pm[S.user.id] ? `<span class="chip acc">${esc(pm[S.user.id].nome)}</span><span class="chip num">Semana ${semanaAtual(pm[S.user.id])} de ${pm[S.user.id].semanas}</span>` : `<span class="chip warn">Sem programa</span>`}</div><button class="btn sm" data-act="openAluno" data-id="${esc(S.user.id)}">Editar programa</button></div>
+    <div class="panel"><h3>Adicionar aluno</h3><p class="small muted">Envie este link para o aluno. Ele cria a conta com e-mail e senha e aparece nesta lista para você montar o programa.</p>
+    <div class="row"><input id="shareLink" type="text" readonly value="${esc(DEMO ? "https://seu-usuario.github.io/treinos/" : link)}" style="flex:1;min-width:0"><button class="btn sm" data-act="copy">Copiar</button></div></div>`;
+}
+
+/* ---------- Personal: aluno (programa / evolução) ---------- */
+function viewAluno(){
+  const { aluno, programa } = S.data;
+  if (!aluno) return `<div class="callout">Aluno não encontrado.</div>`;
+  const tab = S.p.tab;
+  return `<div><button class="btn ghost sm" data-act="nav" data-v="alunos">← Alunos</button></div>
+    <div><h1>${aluno.id === S.user.id ? "Meu treino" : esc(aluno.nome)}</h1><p class="muted small">${esc(aluno.email)}</p></div>
+    <div class="tabs" role="tablist"><button role="tab" data-act="tab" data-tab="programa" aria-selected="${tab === "programa"}">Programa</button><button role="tab" data-act="tab" data-tab="evolucao" aria-selected="${tab === "evolucao"}">Evolução</button></div>
+    ${tab === "programa" ? editorPrograma() : (programa?.id ? (aluno.id === S.user.id ? "" : painelEnvio()) + evolucao({ prog: programa, regs: S.data.regs, exercicios: S.data.exercicios, modo: aluno.id === S.user.id ? "proprio" : "personal", obs: S.data.obs, sess: S.data.sess, editavel: true }) : `<div class="empty">Monte e salve um programa para acompanhar a evolução.</div>`)}`;
+}
+
+function legendaTipos(compacta){
+  return `<div class="legend-t">${ORDEM_TIPOS.map(k => { const t = TIPOS[k]; return `<div class="lt t-${k}"><div class="row" style="gap:8px"><span class="t-pill">${t.nome}</span><span class="small num"><b>RIR ${t.rir}</b> · descanso ${t.descanso}</span></div><span class="small muted">${compacta ? t.resumo : t.intuito}</span></div>`; }).join("")}</div>`;
+}
+function editorPrograma(){
+  const d = S.data.draft, exs = S.data.exercicios;
+  const exMap = Object.fromEntries(exs.map(e => [e.id, e]));
+  const ti = LETRAS.indexOf(S.p.letra), t = d.treinos[ti];
+  const letters = d.treinos.map((tr, i) => `<button role="tab" data-act="letra" data-l="${tr.letra}" aria-selected="${i === ti}" aria-label="Treino ${tr.letra}">${tr.letra}${tr.itens.length ? '<span class="dot"></span>' : ""}</button>`).join("");
+  const opts = sel => exs.map(e => `<option value="${e.id}" ${e.id === sel ? "selected" : ""}>${esc(e.nome)}${e.grupo ? " · " + esc(e.grupo) : ""}</option>`).join("");
+  const used = new Set(t.itens.map(i => i.exercicio_id));
+  const items = t.itens.map((it, ii) => {
+    const sets = it.sets.map((st, k) => `<div class="set-row t-${st.tipo}">
+        <span class="n num">${k + 1}</span>
+        <select class="tipo-sel" data-sf="tipo" data-t="${ti}" data-i="${ii}" data-k="${k}" aria-label="Tipo da série ${k + 1}">${ORDEM_TIPOS.map(o => `<option value="${o}" ${o === st.tipo ? "selected" : ""}>${TIPOS[o].nome}</option>`).join("")}</select>
+        <input type="text" data-sf="reps" data-t="${ti}" data-i="${ii}" data-k="${k}" value="${esc(st.reps)}" placeholder="reps (ex.: 6-8)" aria-label="Repetições da série ${k + 1}">
+        <input class="rir-in" type="text" data-sf="rir" data-t="${ti}" data-i="${ii}" data-k="${k}" value="${esc(st.rir)}" placeholder="RIR" aria-label="RIR da série ${k + 1}">
+        <button type="button" class="btn sm danger rm" data-act="rmSet" data-t="${ti}" data-i="${ii}" data-k="${k}" aria-label="Remover série ${k + 1}" ${it.sets.length === 1 ? "disabled" : ""}>✕</button></div>`).join("");
+    return `<div class="ex-edit" data-idx="${ii}" data-t="${ti}">
+      <div class="head"><button type="button" class="drag" data-drag data-t="${ti}" data-i="${ii}" aria-label="Arrastar para mudar a ordem (ou use as setas do teclado)" title="Arraste para mudar a ordem">⠿</button><select class="pos num" data-pos data-t="${ti}" data-i="${ii}" aria-label="Posição do exercício" title="Posição">${t.itens.map((_, k) => `<option value="${k}" ${k === ii ? "selected" : ""}>${k + 1}º</option>`).join("")}</select>
+        <select data-f="exercicio_id" data-t="${ti}" data-i="${ii}" aria-label="Exercício" style="flex:1;min-width:0">${exMap[it.exercicio_id] ? "" : '<option value="">(exercício removido)</option>'}${opts(it.exercicio_id)}</select>
+        <button class="btn sm danger" data-act="rmItem" data-t="${ti}" data-i="${ii}" aria-label="Remover exercício">✕</button></div>
+      <div class="sets-edit"><span class="label">Séries · tipo, repetições e RIR</span>${sets}
+        <div class="add-sets">${it.sets.length < 8 ? ORDEM_TIPOS.map(o => `<button type="button" class="btn sm t-${o}" data-act="addSet" data-tipo="${o}" data-t="${ti}" data-i="${ii}">+ ${TIPOS[o].nome}</button>`).join("") : `<span class="small muted">Máximo de 8 séries.</span>`}</div></div>
+      <div class="grid2">
+        <label class="field"><span>Descanso (só se diferente da cor)</span><input type="text" data-f="descanso" data-t="${ti}" data-i="${ii}" value="${esc(it.descanso)}" placeholder="padrão: 60 / 90 / 120 s"></label>
+        <label class="field"><span>Observação de execução</span><input type="text" data-f="obs" data-t="${ti}" data-i="${ii}" value="${esc(it.obs)}" placeholder="Ex.: 1 drop na última série"></label>
+      </div>
+    </div>`;
+  }).join("");
+  const free = exs.filter(e => !used.has(e.id));
+  return `<div class="panel">
+      <div class="grid2">
+        <label class="field"><span>Nome do programa</span><input type="text" data-f="nome" value="${esc(d.nome)}"></label>
+        <label class="field"><span>Objetivo</span><input type="text" data-f="objetivo" value="${esc(d.objetivo)}" placeholder="Ex.: Hipertrofia"></label>
+        <label class="field"><span>Início do bloco</span><input type="date" data-f="inicio" value="${esc(d.inicio)}"></label>
+        <label class="field"><span>Reavaliação</span><input type="date" data-f="reavaliacao" value="${esc(d.reavaliacao)}"></label>
+        <label class="field"><span>Duração (semanas)</span><input type="number" min="1" max="52" data-f="semanas" value="${esc(d.semanas)}"></label>
+        <label class="field"><span>Frequência semanal</span><input type="number" min="1" max="7" data-f="frequencia" value="${esc(d.frequencia)}" placeholder="Ex.: 4"></label>
+        ${d.aluno_id === S.user.id ? "" : `<label class="field"><span>Modalidade</span><select data-f="modalidade">${["feedback semanal", "feedback mensal", "sem feedback"].map(m => `<option ${m === d.modalidade ? "selected" : ""}>${m}</option>`).join("")}</select></label>`}
+      </div>
+      <label class="field"><span>Restrições</span><input type="text" data-f="restricoes" value="${esc(d.restricoes)}" placeholder="Ex.: Sem restrições"></label>
+    </div>
+    <details class="panel legend-card"><summary>Sistema de cores das séries</summary>${legendaTipos(false)}<p class="small muted">O aluno vê esta legenda no topo de cada treino e as orientações completas no menu Orientações. Só as séries de trabalho são registradas e entram na Evolução.</p></details>
+    <div class="panel">
+      <div class="row"><div class="letters" role="tablist" aria-label="Treinos">${letters}</div><span class="spacer"></span><span class="small muted">Treinos sem exercício não aparecem para o aluno.</span></div>
+      <label class="field"><span>Foco da sessão (treino ${t.letra})</span><input type="text" data-f="tnome" data-t="${ti}" value="${esc(t.nome)}" placeholder="Ex.: Push, Pull, Membros inferiores"></label>
+      ${items ? `<p class="small muted">Para mudar a ordem: arraste o cartão (pela alça ⠿ ou, no celular, segurando o cartão por meio segundo) ou escolha a posição no número ao lado da alça.</p><div class="ex-list" id="exList">${items}</div>` : `<div class="empty">Treino ${t.letra} ainda sem exercícios.</div>`}
+      ${exs.length ? `<div class="row"><select id="addEx" style="flex:1;min-width:0" aria-label="Exercício a adicionar">${free.map(e => `<option value="${e.id}">${esc(e.nome)}${e.grupo ? " · " + esc(e.grupo) : ""}</option>`).join("")}</select><button class="btn" data-act="addItem" data-t="${ti}" ${free.length ? "" : "disabled"}>Adicionar</button></div>`
+        : `<div class="callout">Cadastre exercícios na Biblioteca antes de montar o treino.</div>`}
+    </div>
+    <div class="row"><button class="btn primary" data-act="savePrograma">${d.id ? "Salvar alterações" : "Salvar e enviar ao aluno"}</button><span id="dirtyMsg" class="small ${S.data.dirty ? "" : "muted"}" style="color:${S.data.dirty ? "var(--warn)" : ""}">${S.data.dirty ? "Alterações não salvas" : (d.id ? "Tudo salvo. O aluno já vê esta versão." : "")}</span></div>`;
+}
+
+/* ---------- Biblioteca ---------- */
+function viewBiblioteca(){
+  const { exercicios, q, edit, confirm } = S.data;
+  const f = q ? exercicios.filter(e => (e.nome + " " + (e.grupo || "")).toLowerCase().includes(q.toLowerCase())) : exercicios;
+  const form = edit ? `<form class="panel" id="exForm">
+      <h2>${edit.id ? "Editar exercício" : "Novo exercício"}</h2>
+      <div class="grid2">
+        <label class="field"><span>Nome</span><input id="exNome" type="text" value="${esc(edit.nome)}" required></label>
+        <label class="field"><span>Grupo muscular</span><input id="exGrupo" type="text" value="${esc(edit.grupo)}" list="grupos"></label>
+      </div>
+      <datalist id="grupos">${[...new Set(exercicios.map(e => e.grupo).filter(Boolean))].map(g => `<option value="${esc(g)}">`).join("")}</datalist>
+      <label class="field"><span>Link do vídeo no YouTube (não listado)</span><input id="exVideo" type="url" value="${esc(edit.video_url === "demo" ? "" : edit.video_url)}" placeholder="https://youtu.be/..."></label>
+      <label class="field"><span>Dicas de execução</span><textarea id="exDesc">${esc(edit.descricao)}</textarea></label>
+      <div class="row"><button class="btn primary" type="submit">Salvar exercício</button><button class="btn ghost" type="button" data-act="cancelEx">Cancelar</button></div>
+    </form>` : "";
+  const list = f.map(e => {
+    const v = e.video_url === "demo" ? `<span class="chip ok">Vídeo (exemplo)</span>` : ytId(e.video_url) ? `<span class="chip ok">Com vídeo</span>` : `<span class="chip warn">Sem vídeo</span>`;
+    const act = confirm === e.id
+      ? `<span class="small">Excluir?</span><button class="btn sm danger" data-act="delEx" data-id="${e.id}">Excluir</button><button class="btn sm ghost" data-act="noDel">Não</button>`
+      : `<button class="btn sm" data-act="editEx" data-id="${e.id}">Editar</button><button class="btn sm ghost danger" data-act="askDel" data-id="${e.id}">Excluir</button>`;
+    return `<div class="item"><div class="grow"><h3>${esc(e.nome)}</h3><p class="small muted">${esc(e.grupo || "Sem grupo")}${e.descricao ? " · " + esc(e.descricao) : ""}</p></div>${v}<div class="row">${act}</div></div>`;
+  }).join("");
+  return `<div class="row"><div><h1>Biblioteca</h1><p class="muted num">${exercicios.length} exercícios</p></div><span class="spacer"></span><button class="btn primary" data-act="newEx">Novo exercício</button></div>
+    ${form}
+    <input id="exSearch" type="text" placeholder="Buscar por nome ou grupo" value="${esc(q)}" aria-label="Buscar exercício">
+    ${f.length ? `<div class="list">${list}</div>` : `<div class="empty">${exercicios.length ? "Nenhum exercício encontrado." : "Cadastre o primeiro exercício com o seu vídeo explicativo."}</div>`}`;
+}
+
+/* ---------- Aluno: início ---------- */
+function viewHome(){
+  const { programa, regs } = S.data;
+  if (!programa) return `<div><h1>Olá, ${esc(S.user.nome.split(" ")[0])}</h1></div><div class="empty">${S.user.role === "personal" ? "Você ainda não montou o seu próprio programa. Vá em Alunos → Meu treino → Editar programa." : "Seu programa de treino ainda não foi liberado. Assim que estiver pronto, ele aparece aqui."}</div>${S.user.role === "personal" ? "" : listaRelatorios()}`;
+  const sem = S.p.semana, cur = semanaAtual(programa);
+  const treinos = programa.treinos.filter(t => t.itens.length);
+  const cards = treinos.map(t => {
+    const done = regs.filter(r => r.semana === sem && r.letra === t.letra);
+    const total = t.itens.reduce((s, i) => s + serT(i).length, 0);
+    const st = done.length ? (done.length >= total ? `<span class="chip ok">Registrado</span>` : `<span class="chip warn num">${done.length}/${total} séries</span>`) : `<span class="chip">A fazer</span>`;
+    return `<div class="item"><div class="letters"><button tabindex="-1" aria-hidden="true" aria-selected="true">${t.letra}</button></div><div class="grow"><h3>${esc(t.nome || "Treino " + t.letra)}</h3><p class="small muted num">${t.itens.length} exercícios</p></div>${st}<button class="btn primary" data-act="openTreino" data-l="${t.letra}">Abrir</button></div>`;
+  }).join("");
+  const semOpts = Array.from({ length: programa.semanas }, (_, i) => i + 1).map(w => `<option value="${w}" ${w === sem ? "selected" : ""} ${w > cur ? "disabled" : ""}>Semana ${w}${w === cur ? " (atual)" : ""}</option>`).join("");
+  return `<div><p class="label">${esc(programa.nome)}</p><h1>Olá, ${esc(S.user.nome.split(" ")[0])}</h1></div>
+    <div class="panel"><div class="info-grid">
+      ${programa.objetivo ? `<div><span class="label">Objetivo</span><b>${esc(programa.objetivo)}</b></div>` : ""}
+      <div><span class="label">Início do bloco</span><b class="num">${fmtData(programa.inicio)}</b></div>
+      ${programa.reavaliacao ? `<div><span class="label">Reavaliação</span><b class="num">${fmtData(programa.reavaliacao)}</b></div>` : ""}
+      ${programa.frequencia ? `<div><span class="label">Frequência</span><b class="num">${esc(programa.frequencia)}x por semana</b></div>` : ""}
+      ${programa.restricoes ? `<div><span class="label">Restrições</span><b>${esc(programa.restricoes)}</b></div>` : ""}
+    </div><div class="row"><button class="btn" data-act="nav" data-v="orientacoes">Orientações do treino</button><span class="small muted">Sistema de cores, RIR, como progredir e segurança.</span></div></div>
+    <div class="row"><label class="field" style="min-width:200px"><span>Semana do programa</span><select id="semSel">${semOpts}</select></label><span class="small muted num" style="align-self:flex-end;padding-bottom:10px">de ${programa.semanas} semanas</span></div>
+    <div class="list">${cards}</div>
+    ${S.user.role === "personal" ? `<h2 style="margin-top:12px">Registro do meu treino</h2>${evolucao({ prog: programa, regs, exercicios: S.data.exercicios, modo: "proprio", obs: S.data.obs, sess: S.data.sess, editavel: true })}` : listaRelatorios()}`;
+}
+
+/* ---------- Aluno: treino ---------- */
+function viewTreino(){
+  const { programa, regs, exercicios } = S.data;
+  if (!programa) return `<div class="empty">Programa não encontrado.</div>`;
+  const t = programa.treinos.find(x => x.letra === S.p.letra);
+  const sem = S.p.semana;
+  const exMap = Object.fromEntries(exercicios.map(e => [e.id, e]));
+  const find = (w, id, s) => regs.find(r => r.semana === w && r.letra === t.letra && r.exercicio_id === id && r.serie === s);
+  const sessao = (S.data.sess || []).find(x => x.semana === sem && x.letra === t.letra);
+  const cards = t.itens.map((it, i) => {
+    const e = exMap[it.exercicio_id] || { nome: "Exercício", grupo: "" };
+    const open = S.p.video === i;
+    let video = "";
+    if (open) {
+      const id = ytId(e.video_url);
+      video = (DEMO || e.video_url === "demo")
+        ? `<div class="video-ph">${MARK(36)}<span>Seu vídeo explicando o exercício aparece aqui</span><span class="small muted">No app publicado, o vídeo do YouTube toca nesta área.</span></div>`
+        : id ? `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1" title="${esc(e.nome)}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div><a class="small" href="https://youtu.be/${id}" target="_blank" rel="noopener">Abrir no YouTube</a>`
+        : `<div class="obs">Vídeo ainda não cadastrado para este exercício.</div>`;
+    }
+    const cont = Object.fromEntries(ORDEM_TIPOS.map(k => [k, it.sets.filter(x => x.tipo === k).length]));
+    let ordT = 0;
+    const sets = it.sets.map((st, k) => {
+      const tp = TIPOS[st.tipo];
+      const meta = [st.reps && `${st.reps}${/^\d+(\s*(-|–|a)\s*\d+)?$/.test(st.reps.trim()) ? " reps" : ""}`, st.rir && `RIR ${st.rir}`].filter(Boolean).join(" · ");
+      const desc = st.tipo === "trabalho" && it.descanso ? it.descanso : tp.descanso;
+      const head = `<div class="set-head"><span class="t-pill">${k + 1}ª · ${tp.nome}${st.tipo === "trabalho" ? ` ${ordT + 1}` : ""}</span><span class="meta">${esc(meta)}</span><span class="desc">descanso ${esc(desc)}</span></div>`;
+      if (st.tipo !== "trabalho") return `<div class="set t-${st.tipo}">${head}<span class="skip">${tp.curto} (${tp.carga}). Não precisa registrar.</span></div>`;
+      const s = ++ordT;
+      const r = find(sem, it.exercicio_id, s), pv = find(sem - 1, it.exercicio_id, s);
+      return `<div class="set t-trabalho">${head}<div class="set-in">
+        <input id="c-${i}-${s}" type="text" inputmode="decimal" value="${esc(fmt(r?.carga))}" placeholder="${pv?.carga != null ? esc(fmt(pv.carga)) : "kg"}" aria-label="Carga em kg, série de trabalho ${s}"><span class="x">kg ×</span>
+        <input id="r-${i}-${s}" type="text" inputmode="tel" value="${esc(r?.reps_txt ?? r?.reps ?? "")}" placeholder="${pv?.reps != null ? esc(pv.reps_txt ?? pv.reps) : "reps"}" aria-label="Repetições, série de trabalho ${s}"><span class="x">reps</span>
+        ${pv && (pv.carga != null || pv.reps != null) ? `<span class="prev">Sem. ${sem - 1}: ${esc(fmt(pv.carga) || "–")} kg × ${esc(pv.reps_txt ?? pv.reps ?? "–")}</span>` : ""}</div></div>`;
+    }).join("");
+    return `<article class="ex-card"><header><span class="n num">${i + 1}</span><div style="flex:1;min-width:0"><h3>${esc(e.nome)}</h3><div class="presc-line" style="margin-top:6px">
+        ${ORDEM_TIPOS.filter(k => cont[k]).map(k => `<span class="t-pill t-${k}">${cont[k]} ${TIPOS[k].nome.toLowerCase()}</span>`).join("")}${it.descanso ? `<span class="chip warn num">Descanso diferente: ${esc(it.descanso)}</span>` : ""}</div></div></header>
+      <div class="body">
+        ${it.obs || e.descricao ? `<div class="obs">${esc([it.obs, e.descricao].filter(Boolean).join(" · "))}</div>` : ""}
+        <div><button class="btn sm" data-act="video" data-i="${i}" aria-expanded="${open}">${open ? "Fechar vídeo" : "▶ Ver vídeo do exercício"}</button></div>
+        ${video}
+        <div class="sets-list">${sets}</div>
+      </div></article>`;
+  }).join("");
+  return `<div><button class="btn ghost sm" data-act="nav" data-v="home">← Meus treinos</button></div>
+    <div><p class="label num">Treino ${t.letra} · Semana ${sem} de ${programa.semanas}</p><h1>${esc(t.nome || "Treino " + t.letra)}</h1>
+    <p class="small muted" style="margin-top:4px">Siga a ordem dos exercícios. Registre carga e repetições só nas séries de trabalho; o número claro em cada campo é o da semana anterior. Série com pausa no meio? Anote assim: 6+4.</p></div>
+    <details class="panel legend-card" ${S.p.legenda === false ? "" : "open"}><summary>Como ler as séries · sistema de cores</summary>${legendaTipos(false)}
+      <div class="row"><button class="btn sm" data-act="nav" data-v="orientacoes">Orientações completas</button><span class="small muted">5 a 8 min de aquecimento geral antes do primeiro exercício.</span></div></details>
+    <div id="treinoCards" style="display:flex;flex-direction:column;gap:20px">${cards}</div>
+    <div class="panel"><label class="field"><span>Observações da sessão</span><textarea id="sessObs" placeholder="Como foi o treino? Exercício que travou, desconforto, ajuste de máquina...">${esc(sessao?.obs || "")}</textarea></label>
+      <p class="small muted">O Alessandro lê estas observações. Em caso de dor no peito, tontura, falta de ar desproporcional ou dor articular aguda, pare o treino e avise na hora.</p></div>`;
+}
+
+/* ---------- Orientações ---------- */
+function viewOrientacoes(){
+  const p = S.data.programa;
+  const blocos = ORIENTACOES.map(b => `<section class="panel"><h2>${esc(b.titulo)}</h2><div>${b.itens.map(([k, v]) => `<div class="ori"><b>${esc(k)}</b><p>${esc(k === "Reavaliação" && p?.reavaliacao ? `Ao final do bloco, em ${fmtData(p.reavaliacao)}.` : v)}</p></div>`).join("")}</div></section>`).join("");
+  return `<div><p class="label">Leia antes de treinar</p><h1>Orientações</h1></div>
+    <section class="panel"><h2>O sistema de cores</h2><p>A cor de cada série diz a intensidade dela: quanto mais escura, mais pesada. O descanso depois da série segue a cor; o exercício avisa quando for diferente.</p>${legendaTipos(false)}
+      <p class="small muted">Registre carga e repetições apenas nas séries de trabalho. Aquecimento e reconhecimento não entram nos registros.</p></section>
+    ${blocos}`;
+}
+function saveBar(){
+  return `<div class="savebar"><div class="wrap"><span class="small muted num">Treino ${esc(S.p.letra)} · Semana ${S.p.semana}</span><span class="spacer"></span><button class="btn primary" data-act="saveTreino">Salvar treino</button></div></div>`;
+}
+
+/* ---------- Evolução: acompanhamento de cargas (regras da skill registro-semanal-cargas) ---------- */
+const range = (a, b) => Array.from({ length: Math.max(0, b - a + 1) }, (_, i) => a + i);
+const repsLbl = r => r?.reps_txt || (r?.reps ?? "–");
+const vlSerie = r => (r && r.carga != null && r.reps != null) ? Number(r.carga) * Number(r.reps) : null;
+const sinal = n => n > 0 ? "+" + n : String(n);
+const corPts = n => n > 0 ? "var(--up)" : n < 0 ? "var(--down)" : "inherit";
+const pctTxt = (a, b) => a ? `${b >= a ? "+" : ""}${fmt(Math.round((b - a) / a * 1000) / 10)}%` : "";
+function cellSet(r){
+  if (!r || (r.carga == null && r.reps == null)) return `<span class="muted">–</span>`;
+  const main = `${r.carga != null ? fmt(r.carga) : "–"} kg × ${esc(repsLbl(r))}`;
+  return r.reps_txt && vlSerie(r) != null ? `${main}<span class="sub">${r.reps} reps somadas · ${fmtKg(vlSerie(r))} kg</span>` : main;
+}
+/* Pontos de evolução: mesma série da semana anterior */
+function pontoSerie(a, b){
+  if (!a || !b || a.carga == null || b.carga == null || a.reps == null || b.reps == null) return null;
+  const ca = Number(a.carga), cb = Number(b.carga);
+  if (cb > ca) return { p: 1, s: "▲ carga", c: "ok" };
+  if (cb < ca) return { p: -1, s: "▼ carga", c: "bad" };
+  if (Number(b.reps) > Number(a.reps)) return { p: 1, s: "▲ reps", c: "ok" };
+  if (Number(b.reps) < Number(a.reps)) return { p: -1, s: "▼ reps", c: "bad" };
+  return { p: 0, s: "= igual", c: "" };
+}
+function subTabs(key, opts, def){
+  const v = opts.some(o => o.v === S.p[key]) ? S.p[key] : def;
+  return { v, html: `<div class="tabs sub" role="tablist">${opts.map(o => `<button role="tab" data-act="sub" data-k="${key}" data-v="${esc(o.v)}" aria-selected="${o.v === v}">${esc(o.l)}</button>`).join("")}</div>` };
+}
+const tile = (lbl, val, sub, cls = "") => `<div class="tile ${cls}"><span class="label">${lbl}</span><b class="num">${val}</b>${sub ? `<span class="small muted num">${sub}</span>` : ""}</div>`;
+
+function evolucao(ctx){
+  const { prog, regs, exercicios } = ctx;
+  const modo = ctx.modo, proprio = modo === "proprio", paraAluno = modo === "aluno", editavel = !!ctx.editavel;
+  const obs = ctx.obs || {};
+  const exMap = Object.fromEntries(exercicios.map(e => [e.id, e]));
+  const nomeEx = id => exMap[id]?.nome || "Exercício";
+  const treinos = prog.treinos.filter(t => t.itens.length);
+  const N = prog.semanas, cur = ctx.cur || semanaAtual(prog);
+  if (!regs.length || !treinos.length) return `<div class="empty">Ainda não há nenhum treino registrado neste programa.</div>`;
+  const de = Math.max(1, ctx.de || 1);
+  const feito = (w, l) => w >= de && regs.some(r => r.semana === w && r.letra === l);
+  const F = (w, l, ex, s) => w < de ? undefined : regs.find(r => r.semana === w && r.letra === l && r.exercicio_id === ex && r.serie === s);
+  const vlT = (w, l) => volume(regs.filter(r => r.semana === w && r.letra === l));
+  const vlW = w => volume(regs.filter(r => r.semana === w));
+  const vlEx = (w, l, ex) => { const rs = regs.filter(r => r.semana === w && r.letra === l && r.exercicio_id === ex); return rs.length ? volume(rs) : null; };
+  const semanasReg = [...new Set(regs.map(r => r.semana))].filter(w => w >= de && (!ctx.ate || w <= ctx.ate)).sort((a, b) => a - b);
+  if (!semanasReg.length) return `<div class="empty">Nenhum treino registrado nas semanas selecionadas.</div>`;
+  const ultima = semanasReg[semanasReg.length - 1];
+  const semanas = range(de, ultima);
+  const periodo = de === ultima ? `semana ${de}` : `semanas ${de} a ${ultima}`;
+  const ptsEx = (w, t, it) => {
+    if (w <= de || !feito(w, t.letra) || !feito(w - 1, t.letra)) return null;
+    let s = 0, any = false;
+    serT(it).forEach(k => { const p = pontoSerie(F(w - 1, t.letra, it.exercicio_id, k), F(w, t.letra, it.exercicio_id, k)); if (p) { s += p.p; any = true; } });
+    return any ? s : null;
+  };
+  const ptsTreino = (w, t) => (w <= de || !feito(w, t.letra) || !feito(w - 1, t.letra)) ? null : t.itens.reduce((s, it) => s + (ptsEx(w, t, it) || 0), 0);
+  const ptsSemana = w => treinos.reduce((s, t) => s + (ptsTreino(w, t) || 0), 0);
+  const ausente = (w, l) => !feito(w, l) && w < cur;
+  const statusTxt = (w, l) => ausente(w, l) ? `ausência na semana ${w}` : `ainda não registrado na semana ${w}`;
+  const T = (a, t) => proprio ? t : a;
+  const obsBox = k => editavel
+    ? `<label class="field obsf"><span>Minhas observações</span><textarea id="obs-${k}" data-obs="${k}" placeholder="${proprio ? "Anotações sobre esta parte." : "O que você quer comentar sobre esta parte. Vai junto quando você enviar ao aluno."}">${esc(obs[k] || "")}</textarea></label>`
+    : (obs[k] ? `<div class="obs-pt"><span class="label">Observações do Alessandro</span><p>${esc(obs[k]).replace(/\n/g, "<br>")}</p></div>` : "");
+  const sec = (n, k, titulo, corpo) => `<section class="panel" id="sec-${k}"><div><p class="sec-n">${n}</p><h2>${titulo}</h2></div>${corpo}${obsBox(k)}</section>`;
+  const wTabs = (key, extra) => subTabs(key, [...semanas.map(w => ({ v: String(w), l: `Semana ${w}` })), ...(extra ? [extra] : [])], String(ultima));
+  const tTabs = (key, extra) => subTabs(key, [...treinos.map(t => ({ v: t.letra, l: `Treino ${t.letra}` })), ...(extra ? [extra] : [])], treinos[0].letra);
+
+  /* Conferência — só o personal vê, nunca vai para o aluno */
+  let conf = "";
+  if (!paraAluno) {
+    const falt = regs.filter(r => (r.carga == null) !== (r.reps == null)).sort((a, b) => a.semana - b.semana || a.letra.localeCompare(b.letra) || a.serie - b.serie);
+    S.data.falt = falt;
+    const sumiu = [];
+    semanasReg.forEach(w => treinos.forEach(t => {
+      if (!feito(w, t.letra)) return;
+      t.itens.forEach(it => { if (!regs.some(r => r.semana === w && r.letra === t.letra && r.exercicio_id === it.exercicio_id)) sumiu.push(`Semana ${w}, treino ${t.letra}: ${esc(nomeEx(it.exercicio_id))} ficou sem registro num treino realizado. Confirme o motivo antes de tratar como queda.`); });
+    }));
+    const notas = (ctx.sess || []).filter(x => x.obs && x.semana >= de).sort((a, b) => b.semana - a.semana || a.letra.localeCompare(b.letra));
+    if (notas.length) sumiu.push(...notas.slice(0, 6).map(x => `<div class="sess-note"><b>Observação do aluno · semana ${x.semana}, treino ${x.letra}:</b> ${esc(x.obs)}</div>`));
+    if (falt.length || sumiu.length) conf = `<div class="callout"><b>Conferência</b>
+      ${falt.map((r, k) => `<div style="margin-top:8px">Semana ${r.semana}, treino ${r.letra}, ${esc(nomeEx(r.exercicio_id))}, série ${r.serie}: falta ${r.carga == null ? "a carga" : "o número de repetições"}. Fica fora das contas até ser lançado.
+        <div class="fix"><input id="fix-${k}" type="text" inputmode="${r.carga == null ? "decimal" : "tel"}" placeholder="${r.carga == null ? "kg" : "reps"}" aria-label="Valor que falta"><button class="btn sm" data-act="fixReg" data-k="${k}">Lançar</button></div></div>`).join("")}
+      ${sumiu.map(s => `<div style="margin-top:8px">${s}</div>`).join("")}</div>`;
+  }
+
+  /* Topo */
+  const topo = `<section class="panel rep-head">
+      <div class="row">${MARK(34)}<div><div style="font-weight:500;letter-spacing:.06em">ALESSANDRO <b style="font-weight:800">BORGES</b></div><span class="sub" style="letter-spacing:.22em">PERSONAL TRAINER · CREF 018010-G/GO</span></div></div>
+      <h2>${proprio ? "Registro do meu treino" : "Acompanhamento de cargas"} · ${esc(prog.nome)}</h2>
+      ${proprio ? "" : `<span class="selo">Modalidade · ${esc(prog.modalidade)}</span>`}
+      <p>Período: <b>${periodo}</b> (programa de ${N} semanas).${de > 1 ? ` A semana ${de} é o ponto de partida: as comparações começam na semana ${de + 1}.` : ""} ${T("Em cada parte, toque na semana ou no treino que quer ver. Toda comparação é feita com a semana anterior.", "Comparações sempre contra a semana anterior.")}</p>
+      <div class="legend"><span><i style="background:var(--prev)"></i>Semana anterior</span><span><i style="background:var(--cur)"></i>Semana analisada</span><span><i style="border:1.5px dashed var(--muted)"></i>Não registrado</span><span style="color:var(--up)">▲ subiu</span><span>= manteve</span><span style="color:var(--down)">▼ caiu</span></div>
+    </section>`;
+
+  /* 01 · A medida */
+  const exRow = regs.find(r => r.semana === ultima && vlSerie(r) != null);
+  const exemplo = exRow ? `<p class="obs num">Exemplo da semana ${ultima}: ${esc(nomeEx(exRow.exercicio_id))}, série ${exRow.serie} → ${fmt(exRow.carga)} kg × ${exRow.reps}${exRow.reps_txt ? ` (${esc(exRow.reps_txt)})` : ""} = <b>${fmtKg(vlSerie(exRow))} kg</b></p>` : "";
+  const s1 = sec("01 · A medida", "medida", "Volume load", T(
+    `<p><b>Volume load = carga × repetições</b>, somado em todas as séries de trabalho (aquecimento não entra).</p>${exemplo}
+     <p><b>Para que serve:</b> mostrar quanto trabalho você fez em cada exercício, treino e semana, e acompanhar isso ao longo do programa.</p>
+     <p><b>Para que não serve:</b> dizer sozinho se o treino foi melhor ou pior. Se a carga sobe e as repetições caem, o volume pode diminuir e mesmo assim ser evolução. Por isso carga e repetições aparecem sempre separadas, e o volume load é uma terceira informação.</p>`,
+    `<p><b>VL = Σ (carga × reps)</b> das séries de trabalho.</p>${exemplo}
+     <p>Indicador de trabalho mecânico total. Não mede intensidade relativa nem qualidade técnica; carga e reps reportadas em separado.</p>`));
+
+  /* 02 · Panorama — por semana + geral */
+  const pan = wTabs("pan", { v: "geral", l: "Geral" });
+  let panBody;
+  if (pan.v === "geral") {
+    const tiles = semanas.map(w => semanasReg.includes(w)
+      ? tile(`Semana ${w}`, `${fmtKg(vlW(w))} kg`, `${treinos.filter(t => feito(w, t.letra)).length} de ${treinos.length} treinos`)
+      : tile(`Semana ${w}`, "–", "sem registro")).join("");
+    const head = `<tr><th>Treino</th>${semanas.map(w => `<th class="c">S${w}</th>`).join("")}<th>Primeira → última</th></tr>`;
+    const linhas = treinos.map(t => {
+      const sw = semanas.filter(w => feito(w, t.letra));
+      const ev = sw.length >= 2 ? `${fmtKg(vlT(sw[0], t.letra))} → ${fmtKg(vlT(sw[sw.length - 1], t.letra))} kg <span class="muted">(${pctTxt(vlT(sw[0], t.letra), vlT(sw[sw.length - 1], t.letra))})</span>` : "–";
+      return `<tr><td>${t.letra} · ${esc(t.nome)}</td>${semanas.map(w => `<td class="c">${feito(w, t.letra) ? fmtKg(vlT(w, t.letra)) : `<span class="muted small">${ausente(w, t.letra) ? "aus." : "–"}</span>`}</td>`).join("")}<td>${ev}</td></tr>`;
+    }).join("");
+    const total = `<tr><td><b>Total realizado</b></td>${semanas.map(w => `<td class="c"><b>${semanasReg.includes(w) ? fmtKg(vlW(w)) : "–"}</b></td>`).join("")}<td></td></tr>`;
+    const nAus = treinos.reduce((s, t) => s + semanas.filter(w => ausente(w, t.letra)).length, 0);
+    panBody = `<p>${T(`Visão de todo o período. ${de === ultima ? "Na" : "Nas"} ${periodo} foram ${semanas.reduce((s, w) => s + treinos.filter(t => feito(w, t.letra)).length, 0)} treinos realizados${nAus ? ` e ${nAus} ${nAus === 1 ? "ausência" : "ausências"}` : ""}.`, `Consolidado: ${periodo}.`)}</p>
+      <div class="tiles">${tiles}</div>
+      <div class="chart">${weekBars(semanas.map(w => ({ label: "S" + w, v: semanasReg.includes(w) ? vlW(w) : null, col: w === ultima ? "var(--cur)" : "var(--prev)" })), "Volume load total por semana")}</div>
+      <div class="tbl-wrap"><table class="data"><thead>${head}</thead><tbody>${linhas}${total}</tbody></table></div>
+      <p class="small muted">Valores em kg. "aus." = ausência (não é zero nem queda de desempenho).</p>`;
+  } else {
+    const w = Number(pan.v), p = w - 1, tem = p >= de;
+    const comuns = tem ? treinos.filter(t => feito(w, t.letra) && feito(p, t.letra)) : [];
+    const compA = comuns.reduce((s, t) => s + vlT(p, t.letra), 0), compB = comuns.reduce((s, t) => s + vlT(w, t.letra), 0);
+    const nW = treinos.filter(t => feito(w, t.letra)).length;
+    const faltando = treinos.filter(t => !feito(w, t.letra));
+    const tiles = [
+      tile(`Realizado · semana ${w}`, `${fmtKg(vlW(w))} kg`, `${nW} de ${treinos.length} treinos`, "cur"),
+      tem && comuns.length ? tile(`Comparável · ${comuns.map(t => t.letra).join(", ")}`, `${fmtKg(compA)} → ${fmtKg(compB)} kg`, pctTxt(compA, compB) + ` vs semana ${p}`) : "",
+      tem ? tile(`Pontos · semana ${w}`, `<span style="color:${corPts(ptsSemana(w))}">${sinal(ptsSemana(w))}</span>`, "pontos de evolução") : ""
+    ].join("");
+    const tbl = `<div class="tbl-wrap"><table class="data"><thead><tr><th>Treino</th>${tem ? `<th>Semana ${p}</th>` : ""}<th>Semana ${w}</th>${tem ? "<th>Variação</th>" : ""}</tr></thead><tbody>${treinos.map(t => {
+      const b = feito(w, t.letra) ? `${fmtKg(vlT(w, t.letra))} kg` : `<span class="muted">${ausente(w, t.letra) ? "ausência" : "não registrado"}</span>`;
+      const a = !tem ? null : feito(p, t.letra) ? `${fmtKg(vlT(p, t.letra))} kg` : `<span class="muted">${ausente(p, t.letra) ? "ausência" : "não registrado"}</span>`;
+      const v = tem && feito(w, t.letra) && feito(p, t.letra) ? pctTxt(vlT(p, t.letra), vlT(w, t.letra)) : "–";
+      return `<tr><td>${t.letra} · ${esc(t.nome)}</td>${tem ? `<td class="num">${a}</td>` : ""}<td class="num"><b>${b}</b></td>${tem ? `<td class="num">${v}</td>` : ""}</tr>`;
+    }).join("")}</tbody></table></div>`;
+    panBody = `<p>${tem ? `Semana ${w} comparada com a semana ${p}.` : `Semana ${w}: ponto de partida, sem comparação.`}</p>
+      <div class="tiles">${tiles}</div>
+      ${faltando.length ? `<p class="small muted">${faltando.map(t => `Treino ${t.letra}: ${statusTxt(w, t.letra)}.`).join(" ")}</p>` : ""}
+      <div class="chart">${groupedBars(treinos.map(t => ({ label: "Treino " + t.letra, a: tem ? (feito(p, t.letra) ? vlT(p, t.letra) : null) : undefined, b: feito(w, t.letra) ? vlT(w, t.letra) : null })), { aName: `Semana ${p}`, bName: `Semana ${w}`, label: "Volume load por treino" })}</div>
+      ${tbl}`;
+  }
+  const s2 = sec("02 · Panorama", "panorama", "Volume load por semana", pan.html + panBody);
+
+  /* 03 · Detalhe — por treino, em todas as semanas */
+  const dt = tTabs("det");
+  const td = treinos.find(x => x.letra === dt.v);
+  const semT = semanas.filter(w => feito(w, td.letra));
+  const lastT = semT[semT.length - 1];
+  let detBody;
+  if (!semT.length) detBody = `<p class="muted">Treino ${td.letra} ainda sem registro.</p>`;
+  else {
+    detBody = td.itens.map((it, i) => {
+      const ks = serT(it), nS = ks.length;
+      const bars = semanas.map(w => ({ label: "S" + w, v: feito(w, td.letra) ? vlEx(w, td.letra, it.exercicio_id) : null, col: w === lastT ? "var(--cur)" : "var(--prev)" }));
+      const rows = semanas.map(w => {
+        if (!feito(w, td.letra)) return `<tr><td class="num"><b>S${w}</b></td><td colspan="${nS + 1}" class="muted small">${ausente(w, td.letra) ? "Ausência" : "Ainda não registrado"}</td></tr>`;
+        const cells = ks.map(k => {
+          const b = F(w, td.letra, it.exercicio_id, k), a = w > de && feito(w - 1, td.letra) ? F(w - 1, td.letra, it.exercicio_id, k) : null, p = pontoSerie(a, b);
+          const tag = w === de || !b ? "" : !a ? `<span class="sub">linha de base</span>` : p ? `<span class="sub" style="color:${corPts(p.p)}">${p.s}</span>` : "";
+          return `<td>${cellSet(b)}${tag}</td>`;
+        }).join("");
+        const v = vlEx(w, td.letra, it.exercicio_id);
+        return `<tr><td class="num"><b>S${w}</b></td>${cells}<td class="num">${v != null ? fmtKg(v) + " kg" : "–"}</td></tr>`;
+      }).join("");
+      return `<div class="exd"><h4>${i + 1}. ${esc(nomeEx(it.exercicio_id))}</h4><div class="ex-detail"><div class="chart">${weekBars(bars, "Volume load do exercício por semana", 150)}</div>
+        <div class="tbl-wrap"><table class="data"><thead><tr><th>Semana</th>${ks.map(k => `<th>Trab. ${k}</th>`).join("")}<th>Volume</th></tr></thead><tbody>${rows}</tbody></table></div></div></div>`;
+    }).join("");
+    const pT = lastT - 1;
+    detBody += `<div class="exd tot-blk"><h4>Treino ${td.letra} completo</h4><div class="chart">${weekBars(semanas.map(w => ({ label: "S" + w, v: feito(w, td.letra) ? vlT(w, td.letra) : null, col: w === lastT ? "var(--cur)" : "var(--prev)" })), "Volume load do treino por semana")}</div>
+      <p class="tot num">${pT >= de && feito(pT, td.letra) ? `Semana ${pT}: <b>${fmtKg(vlT(pT, td.letra))} kg</b> → ` : ""}semana ${lastT}: <b>${fmtKg(vlT(lastT, td.letra))} kg</b></p></div>`;
+  }
+  const notasT = paraAluno ? [] : (ctx.sess || []).filter(x => x.letra === td.letra && x.obs && x.semana >= de).sort((a, b) => a.semana - b.semana);
+  if (notasT.length) detBody += `<div class="exd"><h4>Observações do aluno nas sessões</h4>${notasT.map(x => `<div class="sess-note"><b>Semana ${x.semana}:</b> ${esc(x.obs)}</div>`).join("")}</div>`;
+  const s3 = sec("03 · Detalhe", "detalhe", "Treino a treino, semana a semana", dt.html + `<h3>Treino ${td.letra}${td.nome ? " · " + esc(td.nome) : ""}</h3><p class="small muted">${T("Cada série é comparada com a mesma série da semana anterior. Carga e repetições aparecem separadas.", "Série n vs série n da semana anterior.")}</p>` + detBody);
+
+  /* 04 · O ciclo — por treino + todos */
+  const ct = tTabs("cic", { v: "todos", l: "Todos" });
+  const serieT = t => range(1, ultima).map(w => w < de ? undefined : feito(w, t.letra) ? vlT(w, t.letra) : null);
+  let cicBody;
+  if (ct.v === "todos") {
+    const allV = treinos.flatMap(serieT).filter(v => v != null);
+    const mx = Math.max(1, ...allV), st = niceStep(mx / 2), top = Math.ceil(mx / st) * st;
+    cicBody = `<p class="small muted">Todos os treinos na mesma escala. Ponto vazado tracejado = ausência. Faixa sombreada = semanas aguardando registro.</p>
+      <div class="multiples">${treinos.map(t => `<div class="mult"><h4>Treino ${t.letra}${t.nome ? " · " + esc(t.nome) : ""}</h4><div class="chart">${cicloSVG(serieT(t), N, ultima, top, st, `Treino ${t.letra}`)}</div></div>`).join("")}</div>`;
+  } else {
+    const t = treinos.find(x => x.letra === ct.v);
+    const vT = serieT(t), mxT = Math.max(1, ...vT.filter(v => v != null)), stT = niceStep(mxT / 3), topT = Math.ceil(mxT / stT) * stT;
+    const serieE = it => range(1, ultima).map(w => w < de ? undefined : feito(w, t.letra) ? (vlEx(w, t.letra, it.exercicio_id) ?? 0) : null);
+    const allE = t.itens.flatMap(serieE).filter(v => v != null);
+    const mxE = Math.max(1, ...allE), stE = niceStep(mxE / 2), topE = Math.ceil(mxE / stE) * stE;
+    cicBody = `<h3>Treino ${t.letra}${t.nome ? " · " + esc(t.nome) : ""} nas ${N} semanas</h3>
+      <div class="chart">${cicloSVG(vT, N, ultima, topT, stT, `Treino ${t.letra}`, 420)}</div>
+      <p class="small muted">Cada exercício do treino, na mesma escala:</p>
+      <div class="multiples">${t.itens.map((it, i) => `<div class="mult"><h4>${i + 1}. ${esc(nomeEx(it.exercicio_id))}</h4><div class="chart">${cicloSVG(serieE(it), N, ultima, topE, stE, nomeEx(it.exercicio_id))}</div></div>`).join("")}</div>`;
+  }
+  const s4 = sec("04 · O ciclo", "ciclo", `Volume load nas ${N} semanas`, ct.html + cicBody);
+
+  /* 05 · Pontuação — tabela de regras, por semana + geral */
+  const regras = `<div class="tbl-wrap"><table class="data"><thead><tr><th>Situação (mesma série, semana anterior)</th><th class="c">Pontos</th></tr></thead><tbody>
+    <tr><td>A carga subiu (repetições não contam nessa série)</td><td class="c" style="color:var(--up)"><b>+1</b></td></tr>
+    <tr><td>Mesma carga, mais repetições</td><td class="c" style="color:var(--up)"><b>+1</b></td></tr>
+    <tr><td>Mesma carga, mesmas repetições</td><td class="c"><b>0</b></td></tr>
+    <tr><td>A carga caiu (repetições não contam)</td><td class="c" style="color:var(--down)"><b>−1</b></td></tr>
+    <tr><td>Mesma carga, menos repetições</td><td class="c" style="color:var(--down)"><b>−1</b></td></tr>
+    <tr><td>Série sem par na semana anterior · ausência</td><td class="c muted">não pontua</td></tr></tbody></table></div>`;
+  const pt = wTabs("pts", { v: "geral", l: "Geral" });
+  let ptsBody;
+  if (pt.v === "geral") {
+    const ws = range(de + 1, ultima);
+    if (!ws.length) ptsBody = `<p>Sem comparações neste período: a semana ${de} vale zero, é o ponto de partida.</p>`;
+    else {
+      let acc = 0;
+      const head = `<tr><th>Treino</th>${ws.map(w => `<th class="c">S${w}</th>`).join("")}<th class="c">Total</th></tr>`;
+      const linhas = treinos.map(t => { const v = ws.map(w => ptsTreino(w, t)); const tot = v.reduce((s, x) => s + (x || 0), 0); return `<tr><td>${t.letra} · ${esc(t.nome)}</td>${v.map((x, i) => `<td class="c">${x == null ? `<span class="muted small" title="${statusTxt(feito(ws[i], t.letra) ? ws[i] - 1 : ws[i], t.letra)}">–</span>` : `<b style="color:${corPts(x)}">${sinal(x)}</b>`}</td>`).join("")}<td class="c"><b style="color:${corPts(tot)}">${sinal(tot)}</b></td></tr>`; }).join("");
+      const totW = ws.map(w => ptsSemana(w));
+      const total = `<tr><td><b>Saldo da semana</b></td>${totW.map(x => `<td class="c"><b style="color:${corPts(x)}">${sinal(x)}</b></td>`).join("")}<td class="c"><b style="color:${corPts(totW.reduce((a, b) => a + b, 0))}">${sinal(totW.reduce((a, b) => a + b, 0))}</b></td></tr>`;
+      const accRow = `<tr><td class="muted">Acumulado</td>${totW.map(x => `<td class="c muted">${sinal(acc += x)}</td>`).join("")}<td></td></tr>`;
+      const porEx = treinos.map(t => `<div class="exd"><h4>Treino ${t.letra} · por exercício no ciclo</h4><div class="tbl-wrap"><table class="data"><thead><tr><th>Exercício</th>${ws.map(w => `<th class="c">S${w}</th>`).join("")}<th class="c">Total</th></tr></thead><tbody>${t.itens.map(it => { const v = ws.map(w => ptsEx(w, t, it)); const tot = v.reduce((s, x) => s + (x || 0), 0); return `<tr><td>${esc(nomeEx(it.exercicio_id))}</td>${v.map(x => `<td class="c">${x == null ? `<span class="muted">–</span>` : `<span style="color:${corPts(x)}">${sinal(x)}</span>`}</td>`).join("")}<td class="c"><b style="color:${corPts(tot)}">${sinal(tot)}</b></td></tr>`; }).join("")}</tbody></table></div></div>`).join("");
+      ptsBody = `<p>Pontos de todas as semanas. A semana ${de} vale zero (ponto de partida); "–" = sem comparação naquela semana.</p>
+        <div class="tbl-wrap"><table class="data"><thead>${head}</thead><tbody>${linhas}${total}${accRow}</tbody></table></div>${porEx}`;
+    }
+  } else {
+    const w = Number(pt.v), p = w - 1;
+    if (w === de) ptsBody = `<p>A semana ${de} vale zero: é o ponto de partida${de === 1 ? ", não há semana antes dela" : " deste período"}.</p>`;
+    else ptsBody = `<p>Semana ${w} comparada com a semana ${p}.</p>` + treinos.map(t => {
+      if (!feito(w, t.letra) || !feito(p, t.letra)) return `<p class="small muted"><b>Treino ${t.letra}:</b> sem comparação (${!feito(w, t.letra) ? statusTxt(w, t.letra) : statusTxt(p, t.letra)}). Não pontua e não perde pontos.</p>`;
+      const maxS = Math.max(...t.itens.map(it => serT(it).length));
+      const linhas = t.itens.map(it => {
+        const cells = range(1, maxS).map(j => {
+          const k = serT(it)[j - 1];
+          if (k === undefined) return `<td class="c"></td>`;
+          const a = F(p, t.letra, it.exercicio_id, k), q = pontoSerie(a, F(w, t.letra, it.exercicio_id, k));
+          if (!a) return `<td class="c muted small">base</td>`;
+          if (!q) return `<td class="c muted">–</td>`;
+          return `<td class="c" style="color:${q.p > 0 ? "var(--up)" : q.p < 0 ? "var(--down)" : "var(--muted)"}">${q.s}</td>`;
+        }).join("");
+        const tot = ptsEx(w, t, it);
+        return `<tr><td>${esc(nomeEx(it.exercicio_id))}</td>${cells}<td class="c"><b style="color:${corPts(tot || 0)}">${tot == null ? "–" : sinal(tot)}</b></td></tr>`;
+      }).join("");
+      return `<div class="exd"><h4>Treino ${t.letra} · ${esc(t.nome)} <span class="muted">· ${sinal(ptsTreino(w, t))} pts</span></h4><div class="tbl-wrap"><table class="data"><thead><tr><th>Exercício</th>${range(1, maxS).map(k => `<th class="c">Trab. ${k}</th>`).join("")}<th class="c">Pontos</th></tr></thead><tbody>${linhas}</tbody></table></div></div>`;
+    }).join("") + `<p class="saldo num">Saldo da semana ${w}: <b style="color:${corPts(ptsSemana(w))}">${sinal(ptsSemana(w))} ${Math.abs(ptsSemana(w)) === 1 ? "ponto" : "pontos"}</b></p>`;
+  }
+  const s5 = sec("05 · Pontuação", "pontuacao", "Pontos de evolução", regras + pt.html + ptsBody);
+
+  /* 06 · Fechamento */
+  let acc = 0;
+  const cum = range(1, N).map(w => w < de ? undefined : w <= ultima ? (acc += ptsSemana(w)) : null);
+  const saldos = range(de + 1, ultima).map(w => `S${w} <b style="color:${corPts(ptsSemana(w))}">${sinal(ptsSemana(w))}</b>`).join(" · ");
+  const s6 = sec("06 · Fechamento", "fechamento", `Pontos acumulados: ${sinal(acc)}`, `<p class="small muted">${T("A linha sobe quando a semana soma pontos, fica parada quando você mantém tudo e desce quando há recuo.", "Acumulado semanal. Ausência não pontua.")}</p>
+    <div class="chart">${linhaPontos(cum, N, ultima)}</div>${saldos ? `<p class="small num">Saldo por semana: ${saldos}</p>` : ""}`);
+
+  const rodape = `<footer class="rep-foot">${MARK(22)}<span>Alessandro Borges · CREF 018010-G/GO · Números dos registros série a série do app, considerando apenas séries de trabalho. Fechamento em ${esc(ctx.data || new Date().toLocaleDateString("pt-BR"))}.</span></footer>`;
+  return conf + topo + s1 + s2 + s3 + s4 + s5 + s6 + rodape;
+}
+
+/* ---------- Gráficos (SVG desenhado a partir dos registros) ---------- */
+const svgOpen = (W, H, label) => `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(label)}" font-family="Manrope, system-ui, sans-serif" style="max-width:640px">`;
+function niceStep(x){ const p = Math.pow(10, Math.floor(Math.log10(x || 1))); const n = x / p; return (n <= 1 ? 1 : n <= 2 ? 2 : n <= 5 ? 5 : 10) * p; }
+function gridY(bot, top, st, y, pl, W, pr, f = fmtKg){
+  let s = "";
+  for (let v = bot; v <= top + 1e-9; v += st) s += `<line x1="${pl}" x2="${W - pr}" y1="${y(v)}" y2="${y(v)}" stroke="var(--line)" stroke-width="${v === 0 ? 1.4 : 1}"/><text x="${pl - 6}" y="${y(v) + 3.5}" text-anchor="end" font-size="10" fill="var(--muted)">${f(v)}</text>`;
+  return s;
+}
+function groupedBars(groups, o = {}){
+  const W = 420, H = o.h || 190, pl = 44, pr = 8, pt = 16, pb = 26, iw = W - pl - pr, ih = H - pt - pb;
+  const vals = groups.flatMap(g => [g.a, g.b]).filter(v => typeof v === "number");
+  const max = Math.max(1, ...vals), st = niceStep(max / 3), top = Math.ceil(max / st) * st;
+  const y = v => pt + ih - (v / top) * ih;
+  const two = groups.some(g => g.a !== undefined);
+  const gw = iw / groups.length, bw = Math.min(32, gw * 0.72 / (two ? 2 : 1));
+  let s = gridY(0, top, st, y, pl, W, pr);
+  groups.forEach((g, i) => {
+    const cx = pl + gw * (i + .5);
+    const slots = two ? [["a", -bw / 2 - 1, "var(--prev)", o.aName], ["b", bw / 2 + 1, "var(--cur)", o.bName]] : [["b", 0, "var(--cur)", o.bName]];
+    slots.forEach(([k, off, col, nm]) => {
+      const v = g[k], x = cx + off - bw / 2;
+      if (v === undefined) return;
+      if (v === null) { const hh = ih * .3; s += `<rect x="${x}" y="${pt + ih - hh}" width="${bw}" height="${hh}" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 3"><title>${esc(g.label)} · ${esc(nm)}: não registrado</title></rect>`; return; }
+      s += `<rect x="${x}" y="${y(v)}" width="${bw}" height="${Math.max(0, pt + ih - y(v))}" rx="3" fill="${col}"><title>${esc(g.label)} · ${esc(nm)}: ${fmtKg(v)} kg</title></rect><text x="${x + bw / 2}" y="${y(v) - 4}" text-anchor="middle" font-size="9" font-weight="700" fill="var(--fg)">${fmtKg(v)}</text>`;
+    });
+    s += `<text x="${cx}" y="${H - 8}" text-anchor="middle" font-size="11" font-weight="700" fill="var(--muted)">${esc(g.label)}</text>`;
+  });
+  return svgOpen(W, H, o.label || "Volume load") + s + "</svg>";
+}
+function weekBars(items, label, h = 170){
+  const W = 420, H = h, pl = 46, pr = 8, pt = 16, pb = 24, iw = W - pl - pr, ih = H - pt - pb;
+  const vals = items.map(i => i.v).filter(v => typeof v === "number");
+  const max = Math.max(1, ...vals), st = niceStep(max / 3), top = Math.ceil(max / st) * st;
+  const y = v => pt + ih - (v / top) * ih;
+  const gw = iw / items.length, bw = Math.min(34, gw * 0.62);
+  let s = gridY(0, top, st, y, pl, W, pr);
+  items.forEach((it, i) => {
+    const cx = pl + gw * (i + .5), x = cx - bw / 2;
+    if (it.v === null) s += `<rect x="${x}" y="${pt + ih * .7}" width="${bw}" height="${ih * .3}" fill="none" stroke="var(--muted)" stroke-width="1.2" stroke-dasharray="4 3"><title>${esc(it.label)}: não registrado</title></rect>`;
+    else s += `<rect x="${x}" y="${y(it.v)}" width="${bw}" height="${Math.max(0, pt + ih - y(it.v))}" rx="3" fill="${it.col}"><title>${esc(it.label)}: ${fmtKg(it.v)} kg</title></rect>${items.length <= 10 ? `<text x="${cx}" y="${y(it.v) - 4}" text-anchor="middle" font-size="9" font-weight="700" fill="var(--fg)">${fmtKg(it.v)}</text>` : ""}`;
+    s += `<text x="${cx}" y="${H - 7}" text-anchor="middle" font-size="10.5" font-weight="700" fill="var(--muted)">${esc(it.label)}</text>`;
+  });
+  return svgOpen(W, H, label) + s + "</svg>";
+}
+/* vals[w-1] = número (registrado) ou null (ausência), até a última semana registrada */
+function cicloSVG(vals, N, ultima, top, st, label, W = 280){
+  const H = W > 300 ? 180 : 140, pl = 42, pr = 10, pt = 12, pb = 22, iw = W - pl - pr, ih = H - pt - pb;
+  const x = w => pl + (N === 1 ? iw / 2 : (w - 1) * iw / (N - 1));
+  const y = v => pt + ih - (v / top) * ih;
+  let s = "";
+  if (ultima < N) { const x0 = (x(ultima) + x(ultima + 1)) / 2; s += `<rect x="${x0}" y="${pt}" width="${W - pr - x0}" height="${ih}" fill="var(--sunken)"/><text x="${(x0 + W - pr) / 2}" y="${pt + 12}" text-anchor="middle" font-size="9" fill="var(--muted)">aguardando registro</text>`; }
+  s += gridY(0, top, st, y, pl, W, pr);
+  range(1, N).forEach(w => s += `<text x="${x(w)}" y="${H - 6}" text-anchor="middle" font-size="9.5" fill="var(--muted)">S${w}</text>`);
+  let lines = "", dots = "", last = null;
+  vals.forEach((v, i) => {
+    const w = i + 1;
+    if (v === undefined) return;
+    if (v != null) {
+      const px = x(w), py = y(v);
+      if (last && last.w === w - 1) lines += `<line x1="${last.x}" y1="${last.y}" x2="${px}" y2="${py}" stroke="var(--accent)" stroke-width="2"/>`;
+      dots += `<circle cx="${px}" cy="${py}" r="3.6" fill="${w === ultima ? "var(--cur)" : "var(--accent)"}"><title>${esc(label)} · semana ${w}: ${fmtKg(v)} kg</title></circle>`;
+      if (W > 300) dots += `<text x="${px}" y="${py - 8}" text-anchor="middle" font-size="9.5" font-weight="700" fill="var(--fg)">${fmtKg(v)}</text>`;
+      last = { w, x: px, y: py };
+    } else dots += `<circle cx="${x(w)}" cy="${pt + ih}" r="3.6" fill="var(--surface)" stroke="var(--muted)" stroke-width="1.3" stroke-dasharray="2 2"><title>${esc(label)} · semana ${w}: ausência</title></circle>`;
+  });
+  return svgOpen(W, H, `${label} nas ${N} semanas`) + s + lines + dots + "</svg>";
+}
+function linhaPontos(cum, N, ultima){
+  const W = 420, H = 190, pl = 36, pr = 16, pt = 22, pb = 24, iw = W - pl - pr, ih = H - pt - pb;
+  const vals = cum.filter(v => v != null);
+  const mxv = Math.max(1, ...vals), mnv = Math.min(0, ...vals);
+  const st = Math.max(1, niceStep((mxv - mnv) / 4)), top = Math.ceil(mxv / st) * st, bot = Math.floor(mnv / st) * st;
+  const x = w => pl + (N === 1 ? iw / 2 : (w - 1) * iw / (N - 1)), y = v => pt + ih - (v - bot) / (top - bot || 1) * ih;
+  let s = "";
+  if (ultima < N) { const x0 = (x(ultima) + x(ultima + 1)) / 2; s += `<rect x="${x0}" y="${pt}" width="${W - pr - x0}" height="${ih}" fill="var(--sunken)"/><text x="${(x0 + W - pr) / 2}" y="${pt + 12}" text-anchor="middle" font-size="9" fill="var(--muted)">aguardando registro</text>`; }
+  s += gridY(bot, top, st, y, pl, W, pr, v => String(Math.round(v)));
+  range(1, N).forEach(w => s += `<text x="${x(w)}" y="${H - 6}" text-anchor="middle" font-size="9.5" fill="var(--muted)">S${w}</text>`);
+  const pts = range(1, ultima).filter(w => cum[w - 1] != null).map(w => [x(w), y(cum[w - 1]), cum[w - 1], w]);
+  s += `<polyline points="${pts.map(p => p[0] + "," + p[1]).join(" ")}" fill="none" stroke="var(--accent)" stroke-width="2.4" stroke-linejoin="round"/>`;
+  pts.forEach(([px, py, v, w]) => s += `<circle cx="${px}" cy="${py}" r="4" fill="var(--accent)"><title>Semana ${w}: ${sinal(v)} acumulados</title></circle><text x="${px}" y="${py - 9}" text-anchor="middle" font-size="10" font-weight="700" fill="var(--fg)">${sinal(v)}</text>`);
+  return svgOpen(W, H, "Pontos acumulados por semana") + s + "</svg>";
+}
+
+/* ---------- Envio ao aluno ---------- */
+const tituloEnvio = (de, ate) => `Acompanhamento · semanas ${de} a ${ate}`;
+function snapshot(de, ate){
+  const d = S.data, p = d.programa;
+  const used = new Set(p.treinos.flatMap(t => t.itens.map(i => i.exercicio_id)));
+  return {
+    programa: { nome: p.nome, modalidade: p.modalidade, inicio: p.inicio, semanas: p.semanas, treinos: p.treinos },
+    regs: d.regs.filter(r => r.semana >= de && r.semana <= ate).map(({ id, updated_at, ...r }) => r),
+    exercicios: d.exercicios.filter(e => used.has(e.id)).map(e => ({ id: e.id, nome: e.nome })),
+    obs: { ...(d.obs || {}) }, cur: semanaAtual(p), data: new Date().toLocaleDateString("pt-BR"), de, ate
+  };
+}
+function painelEnvio(){
+  const d = S.data, regs = d.regs;
+  if (!regs.length) return "";
+  const ultima = Math.max(...regs.map(r => r.semana));
+  const rels = d.rels || [];
+  const dt = r => new Date(r.created_at).toLocaleDateString("pt-BR");
+  const lista = rels.length ? `<div class="list">${rels.map(r => `<div class="item"><div class="grow"><b>${esc(r.titulo)}</b><p class="small muted">Enviado em ${dt(r)}</p></div><div class="row">${d.relDel === r.id
+      ? `<span class="small">Remover do app do aluno?</span><button class="btn sm danger" data-act="delRel" data-id="${r.id}">Remover</button><button class="btn sm ghost" data-act="noDelRel">Não</button>`
+      : `<button class="btn sm" data-act="openRel" data-id="${r.id}">Ver</button><button class="btn sm ghost danger" data-act="askDelRel" data-id="${r.id}">Remover</button>`}</div></div>`).join("")}</div>` : `<p class="small muted">Nenhum acompanhamento enviado ainda.</p>`;
+  const topo = `<div><h3>Enviar ao aluno</h3><p class="small muted">O aluno não tem acesso a esta aba. Escolha a semana inicial e a semana final, confira a prévia e envie: ele recebe uma cópia do acompanhamento desse período, com as suas observações, na tela inicial do app. A Conferência nunca vai junto.</p></div>`;
+  if (ultima < 2) return `<div class="panel send">${topo}<div class="callout">Para enviar é preciso ter pelo menos duas semanas registradas: uma de partida e outra para comparar.</div>${lista}</div>`;
+  const e = d.envio = d.envio || { de: 1, ate: ultima, editado: false };
+  if (e.de > ultima - 1) e.de = ultima - 1;
+  if (e.ate > ultima) e.ate = ultima;
+  if (e.ate <= e.de) e.ate = e.de + 1;
+  if (!e.editado) e.titulo = tituloEnvio(e.de, e.ate);
+  const falt = regs.filter(r => r.semana >= e.de && r.semana <= e.ate && (r.carga == null) !== (r.reps == null)).length;
+  const optsDe = range(1, ultima - 1).map(w => `<option value="${w}" ${w === e.de ? "selected" : ""}>Semana ${w}</option>`).join("");
+  const optsAte = range(e.de + 1, ultima).map(w => `<option value="${w}" ${w === e.ate ? "selected" : ""}>Semana ${w}</option>`).join("");
+  return `<div class="panel send">${topo}
+    <div class="grid2">
+      <label class="field"><span>1. Semana inicial (ponto de partida da comparação)</span><select id="repDe">${optsDe}</select></label>
+      <label class="field"><span>2. Semana final</span><select id="repAte">${optsAte}</select></label>
+    </div>
+    <p class="small muted">Vai para o aluno: semanas ${e.de} a ${e.ate}. A semana ${e.de} é a base; as comparações começam na semana ${e.de + 1}.</p>
+    ${falt ? `<div class="callout">${falt} ${falt === 1 ? "série deste período está" : "séries deste período estão"} com carga ou repetições faltando. Lance na Conferência antes de enviar; no envio elas aparecem sem valor.</div>` : ""}
+    <label class="field"><span>Título</span><input id="repTitulo" type="text" value="${esc(e.titulo)}"></label>
+    <div class="row"><button class="btn" data-act="previewRep">Ver como o aluno recebe</button><button class="btn primary" data-act="sendRep">Enviar semanas ${e.de} a ${e.ate}</button></div>
+    ${lista}
+  </div>`;
+}
+function listaRelatorios(){
+  const rels = S.data.rels || [];
+  return `<h2 style="margin-top:12px">Meus acompanhamentos</h2>${rels.length
+    ? `<div class="list">${rels.map(r => `<div class="item"><div class="grow"><h3>${esc(r.titulo)}</h3><p class="small muted">Enviado em ${new Date(r.created_at).toLocaleDateString("pt-BR")}</p></div><button class="btn primary sm" data-act="openRel" data-id="${r.id}">Abrir</button></div>`).join("")}</div>`
+    : `<div class="empty">Quando o Alessandro enviar um acompanhamento da sua evolução, ele aparece aqui.</div>`}`;
+}
+function viewRelatorio(){
+  const r = S.data.rel;
+  if (!r) return `<div class="callout">Acompanhamento não encontrado.</div>`;
+  const d = r.dados, isP = S.user.role === "personal";
+  return `<div>${isP ? `<button class="btn ghost sm" data-act="backAluno">← Voltar ao aluno</button>` : `<button class="btn ghost sm" data-act="nav" data-v="home">← Início</button>`}</div>
+    ${S.p.snapshot ? `<div class="callout">Prévia: é assim que o aluno vai receber. Nada foi enviado ainda.</div>` : ""}
+    <div><p class="label">${S.p.snapshot ? "Prévia" : "Enviado em " + new Date(r.created_at).toLocaleDateString("pt-BR")}</p><h1>${esc(r.titulo)}</h1></div>
+    ${evolucao({ prog: normPrograma(clone(d.programa)), regs: d.regs, exercicios: d.exercicios, modo: "aluno", obs: d.obs, cur: d.cur, data: d.data, de: d.de, ate: d.ate })}`;
+}
+
+/* =====================================================================
+   AÇÕES
+   ===================================================================== */
+document.addEventListener("click", async ev => {
+  const el = ev.target.closest("[data-act]"); if (!el) return;
+  const a = el.dataset.act, d = S.data;
+  try {
+    if (a === "nav") return go(el.dataset.v);
+    if (a === "reload") return go(S.view, S.p);
+    if (a === "demoLogin") { S.user = await db.demoLogin(el.dataset.id); return go(S.user.role === "personal" ? "alunos" : "home"); }
+    if (a === "toggleCad") { S.p.cad = !S.p.cad; return render(); }
+    if (a === "logout") { await db.signOut(); S.user = null; S.view = "login"; S.p = {}; return render(); }
+    if (a === "copy") { const i = document.getElementById("shareLink"); try { await navigator.clipboard.writeText(i.value); toast("Link copiado"); } catch { i.select(); toast("Selecionado. Copie com Ctrl+C."); } return; }
+    if (a === "openAluno") return go("aluno", { alunoId: el.dataset.id });
+    if (a === "tab") { S.p.tab = el.dataset.tab; return render(); }
+    if (a === "letra") { S.p.letra = el.dataset.l; return render(); }
+    if (a === "addItem") {
+      const sel = document.getElementById("addEx"); if (!sel?.value) return;
+      d.draft.treinos[+el.dataset.t].itens.push(normItem({ exercicio_id: Number(sel.value), descanso: "", obs: "", sets: [novaSerie("trabalho"), novaSerie("trabalho"), novaSerie("trabalho")] }));
+      d.dirty = true; return render();
+    }
+    if (a === "addSet") {
+      const it = d.draft.treinos[+el.dataset.t].itens[+el.dataset.i], tipo = el.dataset.tipo, rank = ORDEM_TIPOS.indexOf(tipo);
+      let pos = 0; it.sets.forEach((st, k) => { if (ORDEM_TIPOS.indexOf(st.tipo) <= rank) pos = k + 1; });
+      const base = [...it.sets].reverse().find(st => st.tipo === tipo);
+      it.sets.splice(pos, 0, novaSerie(tipo, base)); normItem(it); d.dirty = true;
+      const y = window.scrollY; render(); window.scrollTo(0, y); return;
+    }
+    if (a === "rmSet") {
+      const it = d.draft.treinos[+el.dataset.t].itens[+el.dataset.i];
+      if (it.sets.length > 1) { it.sets.splice(+el.dataset.k, 1); normItem(it); d.dirty = true; }
+      const y = window.scrollY; render(); window.scrollTo(0, y); return;
+    }
+    if (a === "rmItem") { d.draft.treinos[+el.dataset.t].itens.splice(+el.dataset.i, 1); d.dirty = true; return render(); }
+    if (a === "sub") { S.p[el.dataset.k] = el.dataset.v; const y = window.scrollY; render(); window.scrollTo(0, y); return; }
+    if (a === "repRange") { const e = d.envio; e.de = Number(el.dataset.de); e.ate = Number(el.dataset.ate); const y = window.scrollY; render(); window.scrollTo(0, y); return; }
+    if (a === "previewRep") { const e = d.envio; if (!e || e.ate <= e.de) return toast("Escolha uma semana final depois da semana inicial."); return go("relatorio", { snapshot: { titulo: e.titulo.trim() || tituloEnvio(e.de, e.ate), dados: snapshot(e.de, e.ate), created_at: new Date().toISOString() }, alunoId: S.p.alunoId, envio: e }); }
+    if (a === "sendRep") {
+      if (!d.envio || d.envio.ate <= d.envio.de) return toast("Escolha uma semana final depois da semana inicial.");
+      const e = d.envio, titulo = e.titulo.trim() || tituloEnvio(e.de, e.ate);
+      el.disabled = true;
+      await db.saveRelatorio({ aluno_id: d.aluno.id, programa_id: d.programa.id, titulo, dados: snapshot(e.de, e.ate) });
+      d.envio = null;
+      d.rels = await db.listRelatorios(d.aluno.id);
+      toast("Acompanhamento enviado. O aluno já vê na tela inicial."); const y = window.scrollY; render(); window.scrollTo(0, y); return;
+    }
+    if (a === "openRel") return go("relatorio", { id: Number(el.dataset.id), alunoId: S.p.alunoId });
+    if (a === "backAluno") return go("aluno", { alunoId: S.p.alunoId, tab: "evolucao", envio: S.p.envio });
+    if (a === "askDelRel") { d.relDel = Number(el.dataset.id); return render(); }
+    if (a === "noDelRel") { d.relDel = null; return render(); }
+    if (a === "delRel") { await db.deleteRelatorio(Number(el.dataset.id)); d.rels = await db.listRelatorios(d.aluno.id); d.relDel = null; toast("Removido do app do aluno"); return render(); }
+    if (a === "fixReg") {
+      const f = d.falt[+el.dataset.k], inp = document.getElementById("fix-" + el.dataset.k);
+      const { id, updated_at, ...row } = f;
+      if (f.carga == null) { const c = parseN(inp.value); if (c == null || Number.isNaN(c)) return toast("Informe a carga em kg."); row.carga = c; }
+      else { const rr = parseReps(inp.value); if (!rr || Number.isNaN(rr)) return toast("Informe as repetições."); row.reps = rr.reps; row.reps_txt = rr.txt; }
+      el.disabled = true;
+      await db.saveRegistros([row], []);
+      d.regs = await db.getRegistros(f.aluno_id, f.programa_id);
+      toast("Registro lançado"); const y = window.scrollY; render(); window.scrollTo(0, y); return;
+    }
+    if (a === "savePrograma") {
+      const p = d.draft;
+      if (!p.nome.trim()) return toast("Dê um nome ao programa.");
+      if (!p.treinos.some(t => t.itens.length)) return toast("Adicione pelo menos um exercício.");
+      const dup = p.treinos.find(t => new Set(t.itens.map(i => i.exercicio_id)).size !== t.itens.length);
+      if (dup) return toast(`O treino ${dup.letra} tem um exercício repetido.`);
+      const semTrab = p.treinos.find(t => t.itens.some(it => !serT(it).length));
+      if (semTrab) return toast(`No treino ${semTrab.letra} há exercício sem série de trabalho. Toda ficha precisa de pelo menos uma.`, 4500);
+      el.disabled = true;
+      const saved = normPrograma(await db.savePrograma(p));
+      d.programa = saved; d.draft = clone(saved); d.dirty = false;
+      if (!d.regs.length && saved.id) d.regs = await db.getRegistros(saved.aluno_id, saved.id);
+      toast("Programa salvo. O aluno já pode ver."); return render();
+    }
+    if (a === "newEx") { d.edit = { nome: "", grupo: "", video_url: "", descricao: "" }; render(); document.getElementById("exNome")?.focus(); return; }
+    if (a === "editEx") { d.edit = clone(d.exercicios.find(e => e.id === Number(el.dataset.id))); render(); window.scrollTo(0, 0); return; }
+    if (a === "cancelEx") { d.edit = null; return render(); }
+    if (a === "askDel") { d.confirm = Number(el.dataset.id); return render(); }
+    if (a === "noDel") { d.confirm = null; return render(); }
+    if (a === "delEx") { await db.deleteExercicio(Number(el.dataset.id)); d.exercicios = await db.listExercicios(); d.confirm = null; toast("Exercício excluído"); return render(); }
+    if (a === "openTreino") return go("treino", { letra: el.dataset.l, semana: S.p.semana });
+    if (a === "video") { const i = Number(el.dataset.i); S.p.video = S.p.video === i ? null : i; S.p.legenda = !!document.querySelector("details.legend-card")?.open; keepInputs(render); return; }
+    if (a === "saveTreino") return salvarTreino(el);
+  } catch (e) { toast(traduzErro(e), 4000); el.disabled = false; }
+});
+
+function keepInputs(fn){
+  const vals = {}; document.querySelectorAll(".set-in input, #sessObs").forEach(i => vals[i.id] = i.value);
+  const y = window.scrollY; fn();
+  Object.entries(vals).forEach(([id, v]) => { const i = document.getElementById(id); if (i) i.value = v; });
+  window.scrollTo(0, y);
+}
+
+async function salvarTreino(btn){
+  const { programa, regs } = S.data;
+  const t = programa.treinos.find(x => x.letra === S.p.letra), sem = S.p.semana;
+  const up = [], del = []; let incompletas = 0;
+  for (const [i, it] of t.itens.entries()) {
+    for (const s of serT(it)) {
+      const c = parseN(document.getElementById(`c-${i}-${s}`)?.value), rr = parseReps(document.getElementById(`r-${i}-${s}`)?.value);
+      if (Number.isNaN(c) || Number.isNaN(rr)) return toast(`Valor inválido no exercício ${i + 1}, série ${s}. Use números (repetições com pausa: 6+4).`, 4500);
+      const key = { aluno_id: S.user.id, programa_id: programa.id, semana: sem, letra: t.letra, exercicio_id: it.exercicio_id, serie: s };
+      if (c == null && rr == null) { if (regs.some(x => x.semana === sem && x.letra === t.letra && x.exercicio_id === it.exercicio_id && x.serie === s)) del.push(key); continue; }
+      if (c == null || rr == null) incompletas++;
+      up.push({ ...key, carga: c, reps: rr ? rr.reps : null, reps_txt: rr ? rr.txt : null });
+    }
+  }
+  const obsTxt = (document.getElementById("sessObs")?.value || "").trim();
+  const sessAnt = (S.data.sess || []).find(x => x.semana === sem && x.letra === t.letra);
+  const mudouObs = obsTxt !== (sessAnt?.obs || "");
+  if (!up.length && !del.length && !mudouObs) return toast("Preencha pelo menos uma série de trabalho.");
+  btn.disabled = true;
+  try {
+    if (up.length || del.length) await db.saveRegistros(up, del);
+    if (mudouObs) { await db.saveSessao({ aluno_id: S.user.id, programa_id: programa.id, semana: sem, letra: t.letra, obs: obsTxt }); S.data.sess = await db.getSessoes(S.user.id, programa.id); }
+    S.data.regs = await db.getRegistros(S.user.id, programa.id);
+    toast(incompletas ? `Treino salvo. Faltou carga ou repetições em ${incompletas} série(s).` : "Treino salvo. Bom trabalho!", 3500);
+  } catch (e) { toast(traduzErro(e), 4000); }
+  btn.disabled = false;
+}
+
+document.addEventListener("input", ev => {
+  const el = ev.target;
+  if (el.id === "exSearch") { S.data.q = el.value; const pos = el.selectionStart; render(); const n = document.getElementById("exSearch"); n.focus(); n.setSelectionRange(pos, pos); return; }
+  if (el.dataset.obs) { S.data.obs = S.data.obs || {}; S.data.obs[el.dataset.obs] = el.value; return; }
+  if (el.dataset.sf && S.data.draft) {
+    const st = S.data.draft.treinos[+el.dataset.t].itens[+el.dataset.i].sets[+el.dataset.k], f = el.dataset.sf;
+    if (f === "tipo") { const velho = TIPOS[st.tipo]; if (!st.rir || st.rir === velho.rir) st.rir = TIPOS[el.value].rir; st.tipo = el.value; S.data.dirty = true; const y = window.scrollY; render(); window.scrollTo(0, y); return; }
+    st[f] = el.value; S.data.dirty = true;
+    const m = document.getElementById("dirtyMsg"); if (m) { m.textContent = "Alterações não salvas"; m.style.color = "var(--warn)"; m.classList.remove("muted"); }
+    return;
+  }
+  if (el.id === "repTitulo" && S.data.envio) { S.data.envio.titulo = el.value; S.data.envio.editado = true; return; }
+  if (el.dataset.f && S.data.draft) {
+    const d = S.data.draft, f = el.dataset.f;
+    if (el.dataset.i != null) {
+      const it = d.treinos[+el.dataset.t].itens[+el.dataset.i];
+      it[f] = f === "exercicio_id" ? Number(el.value) : el.value;
+    } else if (f === "tnome") d.treinos[+el.dataset.t].nome = el.value;
+    else d[f] = (f === "semanas") ? Math.max(1, Math.min(52, parseInt(el.value) || 8)) : el.value;
+    S.data.dirty = true;
+    const m = document.getElementById("dirtyMsg"); if (m) { m.textContent = "Alterações não salvas"; m.style.color = "var(--warn)"; m.classList.remove("muted"); }
+  }
+});
+document.addEventListener("change", ev => {
+  const el = ev.target;
+  if (el.id === "semSel") { S.p.semana = Number(el.value); return render(); }
+  if ((el.id === "repDe" || el.id === "repAte") && S.data.envio) {
+    const e = S.data.envio, v = Number(el.value);
+    if (el.id === "repDe") { e.de = v; if (e.ate <= v) e.ate = v + 1; } else { e.ate = v; }
+    const y = window.scrollY; render(); window.scrollTo(0, y); return;
+  }
+  if (el.id === "cmpSel") { S.p.cmp = Number(el.value); const y = window.scrollY; render(); window.scrollTo(0, y); return; }
+  if (el.dataset.f === "exercicio_id") render();
+  if (el.dataset.pos !== undefined) {
+    const arr = S.data.draft.treinos[+el.dataset.t].itens, from = +el.dataset.i, to = Number(el.value);
+    const [m] = arr.splice(from, 1); arr.splice(to, 0, m); S.data.dirty = true;
+    const y = window.scrollY; render(); window.scrollTo(0, y); toast(`Exercício movido para a posição ${to + 1}`); return;
+  }
+  if (el.dataset.obs && S.data.programa?.id) {
+    db.saveObs(S.data.programa.id, S.data.obs).then(() => toast("Observação salva")).catch(e => toast(traduzErro(e), 4000));
+  }
+});
+document.addEventListener("submit", async ev => {
+  ev.preventDefault();
+  const f = ev.target;
+  if (f.id === "exForm") {
+    const nome = document.getElementById("exNome").value.trim();
+    if (!nome) return toast("Informe o nome do exercício.");
+    const video = document.getElementById("exVideo").value.trim();
+    if (video && !ytId(video)) return toast("Link do YouTube não reconhecido. Cole o link do vídeo.", 4000);
+    const prev = S.data.edit;
+    const ex = { ...prev, nome, grupo: document.getElementById("exGrupo").value.trim(), video_url: video || (prev.video_url === "demo" ? "demo" : ""), descricao: document.getElementById("exDesc").value.trim() };
+    try { await db.saveExercicio(ex); S.data.exercicios = await db.listExercicios(); S.data.edit = null; toast("Exercício salvo"); render(); }
+    catch (e) { toast(traduzErro(e), 4000); }
+  }
+  if (f.id === "authForm") {
+    const msg = document.getElementById("authMsg"); msg.textContent = ""; msg.style.color = "var(--down)";
+    const email = document.getElementById("fEmail").value.trim(), senha = document.getElementById("fSenha").value;
+    const btn = f.querySelector("[type=submit]"); btn.disabled = true;
+    try {
+      if (S.p.cad) {
+        const nome = document.getElementById("fNome").value.trim();
+        if (!nome) throw new Error("Informe seu nome.");
+        const u = await db.signUp(nome, email, senha);
+        if (!u) { msg.style.color = "var(--up)"; msg.textContent = "Conta criada. Confirme pelo link enviado ao seu e-mail e depois entre."; S.p.cad = false; btn.disabled = false; return; }
+        S.user = u;
+      } else S.user = await db.signIn(email, senha);
+      go(S.user.role === "personal" ? "alunos" : "home");
+    } catch (e) { msg.textContent = traduzErro(e); btn.disabled = false; }
+  }
+});
+
+/* ---------- Arrastar exercícios (mouse e toque) ---------- */
+let drag = null;
+const NAO_ARRASTA = "input,select,textarea,a,button:not([data-drag])";
+document.addEventListener("pointerdown", ev => {
+  const card = ev.target.closest(".ex-edit"); if (!card || drag) return;
+  if (ev.pointerType === "mouse" && ev.button !== 0) return;
+  const naAlca = !!ev.target.closest("[data-drag]");
+  if (!naAlca && ev.target.closest(NAO_ARRASTA)) return;
+  drag = { card, list: card.parentElement, t: +card.dataset.t, pid: ev.pointerId, x0: ev.clientX, y0: ev.clientY, y: ev.clientY, active: false, tipo: ev.pointerType };
+  if (ev.pointerType === "mouse" || naAlca) ev.preventDefault();
+  if (naAlca) iniciarArraste();
+  else if (ev.pointerType !== "mouse") drag.timer = setTimeout(() => { if (drag && !drag.active) iniciarArraste(); }, 350);
+});
+function iniciarArraste(){
+  const d = drag, r = d.card.getBoundingClientRect();
+  d.active = true; d.off = d.y - r.top;
+  d.ph = document.createElement("div"); d.ph.className = "ex-ph"; d.ph.style.height = r.height + "px";
+  d.list.insertBefore(d.ph, d.card);
+  Object.assign(d.card.style, { position: "fixed", left: r.left + "px", top: r.top + "px", width: r.width + "px", zIndex: 30, pointerEvents: "none", margin: 0 });
+  d.card.classList.add("dragging"); document.body.classList.add("is-dragging");
+  try { navigator.vibrate && navigator.vibrate(15); } catch {}
+  const loop = () => {
+    if (drag !== d || !d.active) return;
+    if (d.y < 90) window.scrollBy(0, -12); else if (d.y > window.innerHeight - 90) window.scrollBy(0, 12);
+    posicionar(d.y); requestAnimationFrame(loop);
+  };
+  requestAnimationFrame(loop);
+}
+function posicionar(y){
+  const d = drag;
+  d.card.style.top = (y - d.off) + "px";
+  const outros = [...d.list.children].filter(c => c !== d.card && c !== d.ph);
+  const antes = outros.find(c => { const r = c.getBoundingClientRect(); return y < r.top + r.height / 2; });
+  if (antes) { if (d.ph.nextElementSibling !== antes) d.list.insertBefore(d.ph, antes); }
+  else if (d.list.lastElementChild !== d.ph) d.list.appendChild(d.ph);
+}
+document.addEventListener("pointermove", ev => {
+  const d = drag; if (!d || ev.pointerId !== d.pid) return;
+  d.y = ev.clientY;
+  if (!d.active) {
+    const mov = Math.hypot(ev.clientX - d.x0, ev.clientY - d.y0);
+    if (d.tipo === "mouse") { if (mov > 5) iniciarArraste(); else return; }
+    else { if (mov > 10) { clearTimeout(d.timer); drag = null; } return; }
+  }
+  ev.preventDefault();
+  posicionar(ev.clientY);
+}, { passive: false });
+document.addEventListener("touchmove", ev => { if (drag && drag.active) ev.preventDefault(); }, { passive: false });
+document.addEventListener("contextmenu", ev => { if (drag) ev.preventDefault(); });
+function endDrag(ev){
+  const d = drag; if (!d || ev.pointerId !== d.pid) return;
+  clearTimeout(d.timer); drag = null;
+  if (!d.active) return;
+  const resto = [...d.list.children].filter(c => c !== d.card);
+  const to = resto.indexOf(d.ph), from = +d.card.dataset.idx;
+  const arr = S.data.draft.treinos[d.t].itens;
+  if (to >= 0 && to !== from) { const [m] = arr.splice(from, 1); arr.splice(to, 0, m); S.data.dirty = true; }
+  document.body.classList.remove("is-dragging");
+  const y = window.scrollY; render(); window.scrollTo(0, y);
+  if (to >= 0 && to !== from) toast(`Exercício movido para a posição ${to + 1}`);
+}
+document.addEventListener("pointerup", endDrag);
+document.addEventListener("pointercancel", endDrag);
+document.addEventListener("keydown", ev => {
+  const h = ev.target.closest?.("[data-drag]"); if (!h || !["ArrowUp", "ArrowDown"].includes(ev.key)) return;
+  ev.preventDefault();
+  const t = +h.dataset.t, i = +h.dataset.i, j = i + (ev.key === "ArrowUp" ? -1 : 1), arr = S.data.draft.treinos[t].itens;
+  if (j < 0 || j >= arr.length) return;
+  [arr[i], arr[j]] = [arr[j], arr[i]]; S.data.dirty = true; render();
+  document.querySelector(`[data-drag][data-i="${j}"]`)?.focus();
+});
+
+/* =====================================================================
+   INÍCIO
+   ===================================================================== */
+async function start(){
+  if (DEMO) { db = makeDemo(); render(); return; }
+  $app.innerHTML = `<main><div class="wrap"><p class="muted">Carregando…</p></div></main>`;
+  try {
+    await new Promise((res, rej) => { const s = document.createElement("script"); s.src = "https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/dist/umd/supabase.min.js"; s.onload = res; s.onerror = () => rej(new Error("Failed to fetch")); document.head.appendChild(s); });
+    db = makeSupabase();
+    S.user = await db.current();
+  } catch (e) { $app.innerHTML = `<main><div class="wrap"><div class="callout">${esc(traduzErro(e))}</div></div></main>`; return; }
+  if (S.user) go(S.user.role === "personal" ? "alunos" : "home"); else render();
+}
+start();
+</script>
+<!--BODY-END-->
+</body>
+</html>
