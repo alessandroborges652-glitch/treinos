@@ -1107,7 +1107,7 @@ function viewHome(){
     <div class="row"><label class="field" style="min-width:200px"><span>Semana do programa</span><select id="semSel">${semOpts}</select></label><span class="small muted num" style="align-self:flex-end;padding-bottom:10px">de ${programa.semanas} semanas</span></div>
     <div class="prog-treino" style="margin-top:-8px"><div class="bar"><i style="width:${treinos.length ? Math.round(nFin / treinos.length * 100) : 0}%"></i></div><span class="small muted num">${nFin === treinos.length && treinos.length ? `Semana ${sem} concluída` : `${nFin} de ${treinos.length} treinos finalizados na semana ${sem}`}</span></div>
     <div class="list">${cards}</div>
-    ${isPers() ? `<p class="small muted">A evolução do seu treino fica em Alunos → Meu treino → aba Evolução.</p>` : listaRelatorios()}`;
+    ${isPers() ? `<h2 style="margin-top:12px">Registro do meu treino</h2>${evolucao({ prog: programa, regs, exercicios: S.data.exercicios, modo: "proprio", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) })}` : listaRelatorios()}`;
 }
 
 /* ---------- Aluno: treino ---------- */
