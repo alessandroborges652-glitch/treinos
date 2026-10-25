@@ -242,6 +242,80 @@ select.tipo-sel{background:var(--tc);color:var(--tt);font-weight:800;border-colo
 .zona-risco h3{color:var(--down)}
 .toast{position:fixed;left:50%;bottom:calc(84px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:10px;font-weight:700;z-index:20;max-width:calc(100% - 32px);box-shadow:0 6px 24px rgba(0,0,0,.2)}
 @media (prefers-reduced-motion:no-preference){.toast{animation:pop .2s ease-out}@keyframes pop{from{transform:translate(-50%,8px);opacity:.4}}}
+/* Minha conta */
+.info-grid b{overflow-wrap:anywhere}
+/* Seletor de exercício com busca (lista abre embaixo do campo) */
+.combo{position:relative;flex:1;min-width:0}
+.combo-list{position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 14px 34px rgba(0,0,0,.2);max-height:min(320px,45vh);overflow-y:auto;padding:4px;display:flex;flex-direction:column;-webkit-user-select:none;user-select:none}
+.combo-list[hidden]{display:none}
+.combo-opt{flex:none;border:0;background:none;text-align:left;display:flex;justify-content:space-between;gap:10px;align-items:baseline;padding:10px 12px;border-radius:8px;cursor:pointer;min-height:42px;color:var(--fg)}
+.combo-opt span{min-width:0;overflow-wrap:anywhere}
+@media (max-width:600px){.ex-edit .head{flex-wrap:wrap}.ex-edit .head .combo{order:3;flex-basis:100%}.ex-edit .head [data-act="rmItem"]{margin-left:auto}}
+.combo-opt small{color:var(--muted);font-size:.78rem;text-align:right;flex:none;max-width:45%}
+.combo-opt:hover,.combo-opt.ativo{background:var(--accent-soft)}
+.combo-opt[aria-selected="true"]{font-weight:800;color:var(--accent)}
+.combo-vazio{padding:10px 12px;color:var(--muted);font-size:.9rem}
+.combo-add{border:1.5px dashed var(--accent-2);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:6px;background:var(--accent-soft)}
+.combo-add .field span{color:var(--accent)}
+.freq-aviso{font-size:.85rem}
+/* Treino do aluno: lista enxuta, exercício abre ao tocar */
+.prog-treino{display:flex;align-items:center;gap:10px;margin-top:10px}
+.prog-treino .bar{flex:1;height:8px;border-radius:99px;background:var(--sunken);overflow:hidden}
+.prog-treino .bar i{display:block;height:100%;background:var(--up);border-radius:99px;transition:width .3s}
+.ex-acc-list{display:flex;flex-direction:column;gap:10px}
+details.ex-acc{background:var(--surface);border:1px solid var(--line);border-radius:14px;scroll-margin-top:var(--topo,90px)}
+details.ex-acc[open]{border-color:var(--accent-2);box-shadow:0 4px 18px rgba(14,76,85,.08)}
+details.ex-acc>summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:12px;padding:14px 16px;min-height:64px}
+details.ex-acc>summary::-webkit-details-marker{display:none}
+details.ex-acc>summary::after{content:"▸";color:var(--muted);font-size:1rem;flex:none}
+details.ex-acc[open]>summary::after{content:"▾"}
+.ex-acc .n{font-weight:800;color:var(--accent-2);font-size:1.05rem;width:22px;flex:none;text-align:center}
+.ex-acc .nm{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+.ex-acc .nm b{font-size:1rem;line-height:1.25}
+.ex-acc .sq-row{display:flex;gap:3px;align-items:center;flex-wrap:wrap}
+.ex-acc .sq{width:12px;height:12px;border-radius:3px;background:var(--tc);box-shadow:inset 0 0 0 1px rgba(127,160,165,.45)}
+.ex-acc .sq-row span{font-size:.8rem;color:var(--muted);margin-left:4px}
+.ex-st{flex:none;font-size:.78rem;font-weight:800;padding:3px 8px;border-radius:99px;background:var(--sunken);color:var(--muted);font-variant-numeric:tabular-nums}
+.ex-st.parcial{background:var(--warn-soft);color:var(--warn)}
+.ex-st.ok{background:var(--up-soft);color:var(--up)}
+.ex-acc .body{padding:0 16px 16px;display:flex;flex-direction:column;gap:10px}
+.ex-acc .dicas{font-size:.85rem;color:var(--muted)}
+.ex-acc .nota{font-size:.9rem;border-left:3px solid var(--accent-2);background:var(--accent-soft);border-radius:0 8px 8px 0;padding:8px 10px}
+.set-l{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.set-l b{font-size:.85rem}
+.set-l .meta{font-size:.85rem;font-weight:600;font-variant-numeric:tabular-nums}
+.set-l .nr{margin-left:auto;font-size:.75rem;color:var(--muted)}
+.set.leve{padding:6px 10px;background:var(--surface)}
+.ex-acc .fim{display:flex;justify-content:flex-end}
+.autosave{font-size:.8rem;color:var(--muted)}
+/* Anamnese */
+.an-sec{display:flex;flex-direction:column;gap:16px}
+.an-q{display:flex;flex-direction:column;gap:6px;scroll-margin-top:calc(var(--topo,90px) + 64px)}
+.an-q>b{font-size:.95rem;line-height:1.35}
+.an-q.falta b{color:var(--down)}
+.an-q.falta textarea,.an-q.falta input[type=text],.an-q.falta input[type=number]{border-color:var(--down)}
+.an-ops{display:flex;gap:6px;flex-wrap:wrap}
+.an-ops label{position:relative}
+.an-ops input{position:absolute;opacity:0;pointer-events:none}
+.an-ops span{display:inline-flex;align-items:center;min-height:40px;padding:6px 14px;border:1.5px solid var(--line);border-radius:99px;background:var(--surface);font-weight:700;cursor:pointer}
+.an-ops input:checked+span{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.an-ops input:focus-visible+span{outline:2px solid var(--accent-2);outline-offset:2px}
+.an-nums{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
+.an-un{display:flex;align-items:center;gap:6px}
+.an-un input{min-width:0}
+.an-un small{color:var(--muted);font-weight:700}
+.an-prog{position:sticky;top:var(--topo,90px);z-index:4;background:var(--bg);padding-block:8px}
+.an-prog .bar{height:6px;border-radius:99px;background:var(--sunken);overflow:hidden;margin-top:4px}
+.an-prog .bar i{display:block;height:100%;background:var(--accent-2)}
+.consent{display:flex;gap:10px;align-items:flex-start;font-size:.9rem}
+.consent input{width:20px;height:20px;flex:none;margin-top:2px;accent-color:var(--accent)}
+.an-resp{display:flex;flex-direction:column}
+.an-resp>div{display:flex;flex-direction:column;gap:2px;padding-block:10px;border-top:1px solid var(--line)}
+.an-resp>div:first-child{border-top:0;padding-top:0}
+.an-resp .q{font-size:.8rem;font-weight:700;color:var(--muted)}
+.an-resp .a{white-space:pre-wrap;overflow-wrap:anywhere}
+.an-resp h3{margin-top:10px;color:var(--accent-2);font-size:.75rem;letter-spacing:.14em;text-transform:uppercase}
+.lock{display:flex;flex-direction:column;gap:10px;align-items:flex-start}
 </style>
 <!--HEAD-END-->
 </head>
@@ -297,12 +371,56 @@ const ORIENTACOES = [
     ["Profissional", CONTATO] ] }
 ];
 
+/* =====================================================================
+   ANAMNESE (primeira tela do aluno; edite as perguntas aqui se quiser)
+   tipo: opcoes (botões), num (número curto), linha (texto curto), texto (texto longo)
+   ===================================================================== */
+const WHATSAPP = "5562986306701";
+const ANAMNESE = [
+  { id: "objetivo", sec: "Objetivo", q: "Qual é seu objetivo principal com o treino?", tipo: "opcoes", opcoes: ["Hipertrofia", "Emagrecimento", "Força", "Resistência", "Saúde"] },
+  { id: "idade", sec: "Sobre você", q: "Idade", tipo: "num", un: "anos", grupo: "medidas" },
+  { id: "altura", q: "Altura", tipo: "num", un: "cm", grupo: "medidas" },
+  { id: "peso", q: "Peso", tipo: "num", un: "kg", grupo: "medidas" },
+  { id: "sexo", q: "Qual seu sexo?", tipo: "opcoes", opcoes: ["Feminino", "Masculino"] },
+  { id: "ja_treinou", sec: "Experiência", q: "Já treinou musculação antes?", tipo: "opcoes", opcoes: ["Sim", "Não"] },
+  { id: "tempo_nivel", q: "Há quanto tempo treina e qual seu nível atual?", tipo: "texto", ph: "Ex.: treino há 1 ano, me considero intermediário", se: ["ja_treinou", "Sim"] },
+  { id: "dias", sec: "Disponibilidade", q: "Quantos dias por semana pode treinar?", tipo: "opcoes", opcoes: ["1", "2", "3", "4", "5", "6", "7"] },
+  { id: "tempo_sessao", q: "Quanto tempo tem disponível por sessão?", tipo: "linha", ph: "Ex.: 1 hora" },
+  { id: "academia", q: "Em qual academia treina e quais equipamentos tem disponíveis?", tipo: "texto", whats: true },
+  { id: "rotina", sec: "Rotina e saúde", q: "Qual sua rotina diária, profissão, nível de atividade física e qualidade do sono?", tipo: "texto" },
+  { id: "alimentacao", q: "Como é sua alimentação e hidratação?", tipo: "texto" },
+  { id: "saude", q: "Possui alguma doença, condição crônica, histórico de cirurgia, lesão, dor ou limitação de movimento?", tipo: "texto", ph: "Se não tiver, escreva “Não”." },
+  { id: "medicamentos", q: "Usa medicamentos ou suplementos?", tipo: "texto", ph: "Se não usar, escreva “Não”." },
+  { id: "contraindicacao", q: "Tem alguma contraindicação médica para exercícios?", tipo: "texto", ph: "Se não tiver, escreva “Não”." },
+  { id: "treino_atual", sec: "Treino", q: "Quais exercícios realiza atualmente, e como está dividido seu treino?", tipo: "texto", ph: "Se não treina hoje, escreva “Não treino”." },
+  { id: "prioridade", q: "Quais grupos musculares deseja priorizar?", tipo: "texto" },
+  { id: "gosta", q: "Quais exercícios gosta, não gosta ou não consegue executar?", tipo: "texto" },
+  { id: "metodo", q: "Tem preferência por algum método de treino?", tipo: "texto" },
+  { id: "recuperacao", q: "Como avalia sua recuperação muscular, disposição e nível de estresse?", tipo: "texto" },
+  { id: "dores", q: "Sente dores ou desconfortos durante ou após os treinos?", tipo: "texto" },
+  { id: "esportes", q: "Pratica outros esportes ou atividades físicas?", tipo: "texto" },
+  { id: "consistencia", q: "Como é sua frequência e consistência nos treinos?", tipo: "texto" },
+  { id: "acompanhamento", sec: "Histórico", q: "Já teve acompanhamento profissional? Quais resultados alcançou e quais dificuldades encontrou?", tipo: "texto" },
+  { id: "prazo", q: "Existe alguma data ou prazo para atingir seu objetivo?", tipo: "linha" },
+  { id: "outras", q: "Há alguma outra informação sobre sua saúde, rotina ou preferências que seja importante considerar na montagem do treino?", tipo: "texto", opcional: true }
+];
+const anVisivel = (q, r) => !q.se || r[q.se[0]] === q.se[1];
+const anFalta = r => ANAMNESE.filter(q => !q.opcional && anVisivel(q, r) && !String(r[q.id] ?? "").trim());
+const LS = {
+  get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
+  del(k){ try { localStorage.removeItem(k); } catch {} },
+  keys(pre){ try { return Object.keys(localStorage).filter(k => k.startsWith(pre)); } catch { return []; } }
+};
+const semAcento = s => String(s || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+const alturaTopo = () => (document.querySelector(".top")?.offsetHeight || 80) + 10;
+
 const DEMO = !CONFIG.SUPABASE_URL || !CONFIG.SUPABASE_ANON_KEY;
 /* Papéis: master (login mestre), personal (aprovado pelo mestre) e aluno */
 const statusDe = u => u?.status || "ativo";
 const isPers = () => !!S.user && ["personal", "master"].includes(S.user.role) && statusDe(S.user) === "ativo";
 const isMaster = () => S.user?.role === "master" && statusDe(S.user) === "ativo";
-const rotaInicial = () => !S.user ? "login" : isPers() ? "alunos" : S.user.role === "personal" ? "pendente" : "home";
+const rotaInicial = () => !S.user ? "login" : isPers() ? "alunos" : S.user.role === "personal" ? "pendente" : S.anamneseOk === false ? "anamnese" : "home";
 const RECUPERANDO = /type=recovery/.test(location.hash);
 const CONVITE = (() => { try { return new URLSearchParams(location.search).get("p") || ""; } catch { return ""; } })();
 const PROF_PADRAO = { nome: "Alessandro Borges", cref: "018010-G/GO", role: "master" };
@@ -365,6 +483,8 @@ const traduzErro = e => {
   if (/Email not confirmed/i.test(m)) return "Confirme seu e-mail pelo link enviado antes de entrar.";
   if (/already registered/i.test(m)) return "Este e-mail já tem conta. Use a opção Entrar.";
   if (/rate limit|security purposes/i.test(m)) return "Muitas tentativas seguidas. Aguarde alguns minutos e tente de novo.";
+  if (/should be different from the old/i.test(m)) return "A nova senha precisa ser diferente da atual.";
+  if (/Auth session missing|JWT expired/i.test(m)) return "Sua sessão expirou. Saia e entre de novo.";
   if (/Password should be/i.test(m)) return "A senha precisa ter pelo menos 6 caracteres.";
   if (/Failed to fetch|NetworkError/i.test(m)) return "Sem conexão com o servidor. Verifique sua internet.";
   return m;
@@ -410,6 +530,10 @@ function makeSupabase(){
     async resetSenha(email){ ok(await c.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname })); },
     async novaSenha(password){ ok(await c.auth.updateUser({ password })); },
     async listAlunos(){ return ok(await c.from("profiles").select("*").eq("role", "aluno").eq("personal_id", S.user.id).order("nome")); },
+    async salvarNome(nome){ ok(await c.from("profiles").update({ nome }).eq("id", S.user.id)); },
+    async getAnamnese(alunoId){ return ok(await c.from("anamneses").select("*").eq("aluno_id", alunoId).maybeSingle()); },
+    async listAnamneses(){ return ok(await c.from("anamneses").select("aluno_id,created_at,updated_at")); },
+    async saveAnamnese(respostas){ ok(await c.from("anamneses").upsert({ aluno_id: S.user.id, respostas, consentimento: true, updated_at: new Date().toISOString() }, { onConflict: "aluno_id" })); },
     async listProgramas(){ return ok(await c.from("programas").select("id,aluno_id,nome,inicio,semanas,updated_at").eq("ativo", true)); },
     async listExercicios(){ return ok(await c.from("exercicios").select("*").order("nome")); },
     async saveExercicio(ex){
@@ -454,6 +578,21 @@ function makeDemo(){
     { id: "a2", nome: "Carla Souza (exemplo)", email: "carla@exemplo.com", role: "aluno", personal_id: "p1" },
     { id: "a3", nome: "Rafael Lima (exemplo)", email: "rafael@exemplo.com", role: "aluno", personal_id: "p1" }
   ];
+  const anams = {
+    a1: { aluno_id: "a1", consentimento: true, created_at: ago(46) + "T12:00:00Z", updated_at: ago(46) + "T12:00:00Z", respostas: {
+      objetivo: "Hipertrofia", idade: "29", altura: "178", peso: "76", sexo: "Masculino", ja_treinou: "Sim", tempo_nivel: "Treino há 2 anos, com pausas. Me considero intermediário.",
+      dias: "3", tempo_sessao: "1 hora", academia: "Academia do bairro (exemplo). Tem máquinas de peito, costas e pernas, polias e halteres até 40 kg.",
+      rotina: "Trabalho sentado 8 h por dia (escritório). Caminho pouco. Durmo cerca de 6 h e acordo cansado às vezes.", alimentacao: "Faço 3 refeições, como pouca proteína no café. Bebo uns 2 litros de água.",
+      saude: "Não", medicamentos: "Whey protein.", contraindicacao: "Não", treino_atual: "ABC: peito e tríceps, costas e bíceps, pernas.", prioridade: "Peito e ombros.",
+      gosta: "Gosto de supino e puxada. Não gosto de agachamento livre.", metodo: "Sem preferência.", recuperacao: "Recupero bem, estresse médio por causa do trabalho.",
+      dores: "Às vezes incômodo no ombro direito no supino.", esportes: "Futebol no fim de semana.", consistencia: "Faltava 1 vez por semana.",
+      acompanhamento: "Nunca tive. Ganhei força no início e depois estagnei.", prazo: "Sem prazo.", outras: "" } },
+    a2: { aluno_id: "a2", consentimento: true, created_at: ago(10) + "T12:00:00Z", updated_at: ago(10) + "T12:00:00Z", respostas: {
+      objetivo: "Saúde", idade: "41", altura: "164", peso: "68", sexo: "Feminino", ja_treinou: "Não", dias: "2", tempo_sessao: "50 minutos", academia: "Academia do prédio (exemplo).",
+      rotina: "Professora, fico em pé boa parte do dia. Sono bom.", alimentacao: "Equilibrada, bebo pouca água.", saude: "Não", medicamentos: "Não", contraindicacao: "Não",
+      treino_atual: "Não treino", prioridade: "Pernas e postura.", gosta: "Ainda não sei.", metodo: "Não", recuperacao: "Boa disposição.", dores: "Não", esportes: "Caminhada 2x por semana.",
+      consistencia: "Começando agora.", acompanhamento: "Não.", prazo: "Não", outras: "" } }
+  };
   const exs = [
     [1, "Supino reto com barra", "Peitoral", "Escápulas retraídas, barra desce até a linha do mamilo."],
     [2, "Supino inclinado com halteres", "Peitoral", "Banco a 30°, cotovelos a ~45° do tronco."],
@@ -527,6 +666,10 @@ function makeDemo(){
     async demoLogin(id){ me = users.find(u => u.id === id); return me; },
     async signOut(){ me = null; },
     async resetSenha(){}, async novaSenha(){},
+    async salvarNome(nome){ if (me) me.nome = nome; },
+    async getAnamnese(a){ return anams[a] ? clone(anams[a]) : null; },
+    async listAnamneses(){ return Object.values(anams).map(({ respostas, ...x }) => clone(x)); },
+    async saveAnamnese(respostas){ const agora = new Date().toISOString(); anams[me.id] = { aluno_id: me.id, consentimento: true, created_at: anams[me.id]?.created_at || agora, updated_at: agora, respostas: clone(respostas) }; },
     async listAlunos(){ return clone(users.filter(u => u.role === "aluno" && u.personal_id === me.id)); },
     async getPerfil(id){ const u = users.find(x => x.id === id); return u ? clone(u) : null; },
     async listPersonais(){ return clone(users.filter(u => u.role === "personal")); },
@@ -581,22 +724,33 @@ function toast(msg, ms = 2600){
 }
 
 async function go(view, p = {}){
+  if (S.user?.role === "aluno" && S.anamneseOk === false && !["anamnese", "conta"].includes(view)) view = "anamnese";
+  if (S.view === "treino" && view !== "treino") salvarAgora();
   S.view = view; S.p = p; S.data = {};
   render(true);
   try {
     if (view === "alunos") {
-      const [alunos, progs] = await Promise.all([db.listAlunos(), db.listProgramas()]);
-      S.data = { alunos, progs };
+      const [alunos, progs, anams] = await Promise.all([db.listAlunos(), db.listProgramas(), db.listAnamneses().catch(() => null)]);
+      S.data = { alunos, progs, anams: anams ? Object.fromEntries(anams.map(a => [a.aluno_id, a])) : null };
+    } else if (view === "anamnese") {
+      const atual = await db.getAnamnese(S.user.id);
+      const rasc = LS.get("anamnese:" + S.user.id);
+      S.data = { atual, resp: { ...(atual?.respostas || {}), ...(rasc || {}) }, consent: !!atual, faltando: [] };
     } else if (view === "aluno") {
-      const [alunos, prog, exercicios] = await Promise.all([db.listAlunos(), db.getPrograma(p.alunoId), db.listExercicios()]);
-      const aluno = alunos.find(a => a.id === p.alunoId) || (p.alunoId === S.user.id ? S.user : null);
+      const proprio = p.alunoId === S.user.id;
+      const [alunos, prog, exercicios, anamnese] = await Promise.all([db.listAlunos(), db.getPrograma(p.alunoId), db.listExercicios(), proprio ? null : db.getAnamnese(p.alunoId).catch(() => null)]);
+      const aluno = alunos.find(a => a.id === p.alunoId) || (proprio ? S.user : null);
       const programa = prog ? normPrograma(prog) : null;
+      const anR = anamnese?.respostas || {};
       const regs = programa?.id ? await db.getRegistros(p.alunoId, programa.id) : [];
       const [obs, rels, sess] = programa?.id ? await Promise.all([db.getObs(programa.id), db.listRelatorios(p.alunoId), db.getSessoes(p.alunoId, programa.id)]) : [{}, [], []];
-      S.data = { aluno, programa, regs, exercicios, obs, rels, sess, envio: p.envio || null,
-        draft: programa ? clone(programa) : { aluno_id: p.alunoId, nome: "Programa 1", modalidade: "feedback semanal", inicio: todayISO(), semanas: 8, treinos: LETRAS.map(l => ({ letra: l, nome: "", itens: [] })) },
+      S.data = { aluno, programa, regs, exercicios, obs, rels, sess, anamnese, proprio, envio: p.envio || null,
+        draft: programa ? clone(programa) : { aluno_id: p.alunoId, nome: "Programa 1", modalidade: "feedback semanal", inicio: todayISO(), semanas: 8,
+          objetivo: anR.objetivo || "", frequencia: /^[1-7]$/.test(anR.dias || "") ? anR.dias : "", reavaliacao: "", restricoes: "",
+          treinos: LETRAS.map(l => ({ letra: l, nome: "", itens: [] })) },
         dirty: false };
-      S.p.tab = p.tab || "programa"; S.p.letra = p.letra || "A";
+      if (programa && !Number(programa.frequencia)) { const u = programa.treinos.reduce((m, tr, i) => tr.itens.length ? i + 1 : m, 0); if (u) S.data.draft.frequencia = String(u); }
+      S.p.tab = p.tab || (!proprio && !anamnese && !programa ? "anamnese" : "programa"); S.p.letra = p.letra || "A";
     } else if (view === "orientacoes") {
       const prog = S.user.role === "aluno" ? await db.getPrograma(S.user.id) : null;
       S.data = { programa: prog ? normPrograma(prog) : null };
@@ -614,8 +768,9 @@ async function go(view, p = {}){
       const regs = programa ? await db.getRegistros(S.user.id, programa.id) : [];
       const obs = programa && isPers() ? await db.getObs(programa.id) : {};
       const rels = S.user.role === "aluno" ? await db.listRelatorios(S.user.id) : [];
-      const sess = programa ? await db.getSessoes(S.user.id, programa.id) : [];
+      let sess = programa ? await db.getSessoes(S.user.id, programa.id) : [];
       S.data = { programa, regs, exercicios, obs, rels, sess };
+      if (programa && await sincronizarRascunhos(programa)) { S.data.regs = await db.getRegistros(S.user.id, programa.id); S.data.sess = await db.getSessoes(S.user.id, programa.id); }
       if (programa) { S.p.semana = p.semana || semanaAtual(programa); }
     }
   } catch (e) { S.data.error = traduzErro(e); }
@@ -631,14 +786,17 @@ function render(loading = false){
   if (S.view === "login") body = viewLogin();
   else if (loading) body = `<p class="muted">Carregando…</p>`;
   else if (S.data.error) body = `<div class="callout">Não foi possível carregar: ${esc(S.data.error)}</div><div><button class="btn" data-act="reload">Tentar de novo</button></div>`;
-  else body = ({ alunos: viewAlunos, aluno: viewAluno, biblioteca: viewBiblioteca, home: viewHome, treino: viewTreino, relatorio: viewRelatorio, orientacoes: viewOrientacoes, personais: viewPersonais, pendente: viewPendente, conta: viewConta, novaSenha: viewNovaSenha })[S.view]();
+  else body = ({ alunos: viewAlunos, aluno: viewAluno, biblioteca: viewBiblioteca, home: viewHome, treino: viewTreino, relatorio: viewRelatorio, orientacoes: viewOrientacoes, personais: viewPersonais, pendente: viewPendente, conta: viewConta, novaSenha: viewNovaSenha, anamnese: viewAnamnese })[S.view]();
   $app.innerHTML = header() + `<main><div class="wrap">${body}</div></main>` + (S.view === "treino" && !loading && S.data.programa ? saveBar() : "");
+  document.documentElement.style.setProperty("--topo", alturaTopo() + "px");
+  if (S.view === "treino" && !loading && S.data.programa) posTreino();
 }
 
 function header(){
   const isP = isPers();
   const nav = !S.user ? "" : (S.user.role === "personal" && !isP) ? `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="pendente" ${S.view === "pendente" ? 'aria-current="page"' : ""}>Cadastro</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>` : isP
     ? `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="alunos" ${["alunos","aluno"].includes(S.view) ? 'aria-current="page"' : ""}>Alunos</button>${isMaster() ? `<button data-act="nav" data-v="personais" ${S.view === "personais" ? 'aria-current="page"' : ""}>Personais${S.pendentes ? `<span class="badge">${S.pendentes}</span>` : ""}</button>` : ""}<button data-act="nav" data-v="biblioteca" ${S.view === "biblioteca" ? 'aria-current="page"' : ""}>Biblioteca</button><button data-act="nav" data-v="home" ${["home","treino"].includes(S.view) ? 'aria-current="page"' : ""}>Meu treino</button><button data-act="nav" data-v="orientacoes" ${S.view === "orientacoes" ? 'aria-current="page"' : ""}>Orientações</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>`
+    : S.anamneseOk === false ? `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="anamnese" ${S.view === "anamnese" ? 'aria-current="page"' : ""}>Anamnese</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>`
     : `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="home" ${["home","treino","relatorio"].includes(S.view) ? 'aria-current="page"' : ""}>Meus treinos</button><button data-act="nav" data-v="orientacoes" ${S.view === "orientacoes" ? 'aria-current="page"' : ""}>Orientações</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>`;
   const demo = DEMO ? `<div class="demo"><div class="wrap">Modo demonstração: dados de exemplo, nada é salvo de verdade.${S.user ? ` Você está como <b>${esc({ master: "login mestre", personal: isPers() ? "personal" : "personal em análise", aluno: "aluno" }[S.user.role])}</b>.` : ""}</div></div>` : "";
   return `<header class="top"><div class="wrap"><div class="brand">${MARK(30, "#F4F1EC", "#5CC9D2")}<div>Alessandro Borges<small>Personal trainer · CREF 018010-G/GO</small></div></div>${nav}</div></header>${demo}`;
@@ -652,6 +810,7 @@ function viewLogin(){
     <button class="btn primary" data-act="demoLogin" data-id="p1">Entrar como Alessandro (login mestre)</button>
     <button class="btn" data-act="demoLogin" data-id="p2">Entrar como personal aguardando aprovação (exemplo)</button>
     <button class="btn" data-act="demoLogin" data-id="a1">Entrar como aluno (Lucas, exemplo)</button>
+    <button class="btn" data-act="demoLogin" data-id="a3">Entrar como aluno novo (primeiro acesso: anamnese)</button>
     <p class="small muted">Na versão publicada, aqui aparece o login com e-mail e senha.</p></div>`;
   const cad = S.p.cad;
   if (S.p.esqueci) return `<form class="login panel" id="resetForm" novalidate>
@@ -687,8 +846,9 @@ function viewAlunos(){
   const { alunos, progs } = S.data;
   const pm = Object.fromEntries(progs.map(p => [p.aluno_id, p]));
   const cards = alunos.map(a => {
-    const p = pm[a.id];
-    const st = p ? `<span class="chip acc">${esc(p.nome)}</span><span class="chip num">Semana ${semanaAtual(p)} de ${p.semanas}</span>` : `<span class="chip warn">Sem programa</span>`;
+    const p = pm[a.id], an = S.data.anams ? S.data.anams[a.id] : true;
+    const st = (p ? `<span class="chip acc">${esc(p.nome)}</span><span class="chip num">Semana ${semanaAtual(p)} de ${p.semanas}</span>` : an ? `<span class="chip ok">Anamnese respondida</span><span class="chip warn">Montar treino</span>` : "")
+      + (an ? "" : `<span class="chip warn">Anamnese pendente</span>`);
     return `<div class="item"><div class="grow"><h3>${esc(a.nome)}</h3><p class="small muted">${esc(a.email)}</p></div><div class="row">${st}</div><button class="btn sm primary" data-act="openAluno" data-id="${esc(a.id)}">Abrir</button></div>`;
   }).join("");
   const link = location.origin + location.pathname + "?p=" + S.user.id;
@@ -704,11 +864,17 @@ function viewAlunos(){
 function viewAluno(){
   const { aluno, programa } = S.data;
   if (!aluno) return `<div class="callout">Aluno não encontrado.</div>`;
-  const tab = S.p.tab;
+  const tab = S.p.tab, proprio = S.data.proprio, an = S.data.anamnese;
+  const bloqueado = !proprio && !an && !programa?.id;
+  const conteudo = tab === "anamnese" ? painelAnamnese()
+    : tab === "programa" ? (bloqueado
+      ? `<div class="panel lock"><h3>Montagem bloqueada até o aluno responder a anamnese</h3><p class="small muted">A anamnese é a primeira tela que o aluno vê ao entrar no app. Assim que ele enviar as respostas, elas aparecem na aba Anamnese e a montagem do treino é liberada.</p><button class="btn sm" data-act="tab" data-tab="anamnese">Ver situação da anamnese</button></div>`
+      : (!proprio && !an ? `<div class="callout">Este aluno ainda não respondeu a anamnese. Ela aparece para ele na próxima vez que entrar no app.</div>` : "") + editorPrograma())
+    : null;
   return `<div><button class="btn ghost sm" data-act="nav" data-v="alunos">← Alunos</button></div>
-    <div><h1>${aluno.id === S.user.id ? "Meu treino" : esc(aluno.nome)}</h1><p class="muted small">${esc(aluno.email)}</p></div>
-    <div class="tabs" role="tablist"><button role="tab" data-act="tab" data-tab="programa" aria-selected="${tab === "programa"}">Programa</button><button role="tab" data-act="tab" data-tab="evolucao" aria-selected="${tab === "evolucao"}">Evolução</button></div>
-    ${tab === "programa" ? editorPrograma() : (programa?.id ? (aluno.id === S.user.id ? "" : painelEnvio()) + evolucao({ prog: programa, regs: S.data.regs, exercicios: S.data.exercicios, modo: aluno.id === S.user.id ? "proprio" : "personal", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) }) : `<div class="empty">Monte e salve um programa para acompanhar a evolução.</div>`)}`;
+    <div><h1>${proprio ? "Meu treino" : esc(aluno.nome)}</h1><p class="muted small">${esc(aluno.email)}</p></div>
+    <div class="tabs" role="tablist">${proprio ? "" : `<button role="tab" data-act="tab" data-tab="anamnese" aria-selected="${tab === "anamnese"}">Anamnese${an ? "" : ' <span class="chip warn">pendente</span>'}</button>`}<button role="tab" data-act="tab" data-tab="programa" aria-selected="${tab === "programa"}">Programa</button><button role="tab" data-act="tab" data-tab="evolucao" aria-selected="${tab === "evolucao"}">Evolução</button></div>
+    ${conteudo !== null ? conteudo : (programa?.id ? (aluno.id === S.user.id ? "" : painelEnvio()) + evolucao({ prog: programa, regs: S.data.regs, exercicios: S.data.exercicios, modo: aluno.id === S.user.id ? "proprio" : "personal", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) }) : `<div class="empty">Monte e salve um programa para acompanhar a evolução.</div>`)}`;
 }
 
 function legendaTipos(compacta){
@@ -717,10 +883,13 @@ function legendaTipos(compacta){
 function editorPrograma(){
   const d = S.data.draft, exs = S.data.exercicios;
   const exMap = Object.fromEntries(exs.map(e => [e.id, e]));
-  const ti = LETRAS.indexOf(S.p.letra), t = d.treinos[ti];
-  const letters = d.treinos.map((tr, i) => `<button role="tab" data-act="letra" data-l="${tr.letra}" aria-selected="${i === ti}" aria-label="Treino ${tr.letra}">${tr.letra}${tr.itens.length ? '<span class="dot"></span>' : ""}</button>`).join("");
-  const opts = sel => exs.map(e => `<option value="${e.id}" ${e.id === sel ? "selected" : ""}>${esc(e.nome)}${e.grupo ? " · " + esc(e.grupo) : ""}</option>`).join("");
-  const used = new Set(t.itens.map(i => i.exercicio_id));
+  const freq = Number(d.frequencia) || 0;
+  const usadas = d.treinos.reduce((m, tr, i) => tr.itens.length ? i + 1 : m, 0);
+  const nT = freq ? Math.min(LETRAS.length, freq) : 0;
+  let ti = LETRAS.indexOf(S.p.letra); if (ti < 0 || ti >= Math.max(nT, 1)) { ti = 0; S.p.letra = "A"; }
+  const t = d.treinos[ti];
+  const letters = d.treinos.slice(0, nT).map((tr, i) => `<button role="tab" data-act="letra" data-l="${tr.letra}" aria-selected="${i === ti}" aria-label="Treino ${tr.letra}">${tr.letra}${tr.itens.length ? '<span class="dot"></span>' : ""}</button>`).join("");
+  const sobra = d.treinos.slice(nT).filter(tr => tr.itens.length).map(tr => tr.letra);
   const items = t.itens.map((it, ii) => {
     const sets = it.sets.map((st, k) => `<div class="set-row t-${st.tipo}">
         <span class="n num">${k + 1}</span>
@@ -730,7 +899,7 @@ function editorPrograma(){
         <button type="button" class="btn sm danger rm" data-act="rmSet" data-t="${ti}" data-i="${ii}" data-k="${k}" aria-label="Remover série ${k + 1}" ${it.sets.length === 1 ? "disabled" : ""}>✕</button></div>`).join("");
     return `<div class="ex-edit" data-idx="${ii}" data-t="${ti}">
       <div class="head"><button type="button" class="drag" data-drag data-t="${ti}" data-i="${ii}" aria-label="Arrastar para mudar a ordem (ou use as setas do teclado)" title="Arraste para mudar a ordem">⠿</button><select class="pos num" data-pos data-t="${ti}" data-i="${ii}" aria-label="Posição do exercício" title="Posição">${t.itens.map((_, k) => `<option value="${k}" ${k === ii ? "selected" : ""}>${k + 1}º</option>`).join("")}</select>
-        <select data-f="exercicio_id" data-t="${ti}" data-i="${ii}" aria-label="Exercício" style="flex:1;min-width:0">${exMap[it.exercicio_id] ? "" : '<option value="">(exercício removido)</option>'}${opts(it.exercicio_id)}</select>
+        ${comboEx("item", ti, ii, it.exercicio_id)}
         <button class="btn sm danger" data-act="rmItem" data-t="${ti}" data-i="${ii}" aria-label="Remover exercício">✕</button></div>
       <div class="sets-edit"><span class="label">Séries · tipo, repetições e RIR</span>${sets}
         <div class="add-sets">${it.sets.length < 8 ? ORDEM_TIPOS.map(o => `<button type="button" class="btn sm t-${o}" data-act="addSet" data-tipo="${o}" data-t="${ti}" data-i="${ii}">+ ${TIPOS[o].nome}</button>`).join("") : `<span class="small muted">Máximo de 8 séries.</span>`}</div></div>
@@ -740,7 +909,14 @@ function editorPrograma(){
       </div>
     </div>`;
   }).join("");
-  const free = exs.filter(e => !used.has(e.id));
+  const sobraAviso = sobra.length && freq ? `<div class="callout freq-aviso">${sobra.length > 1 ? "Os treinos" : "O treino"} ${sobra.join(", ")} ${sobra.length > 1 ? "têm" : "tem"} exercícios, mas a frequência é ${freq}x. Aumente a frequência ou <button class="btn sm" data-act="limparSobra">apague ${sobra.length > 1 ? "esses treinos" : "esse treino"}</button></div>` : "";
+  const blocoTreinos = !nT
+    ? `<div class="empty">Escolha a <b>frequência semanal</b> acima para liberar os treinos.<br><span class="small">Ex.: 3x por semana libera os treinos A, B e C.</span></div>`
+    : `<div class="row"><div class="letters" role="tablist" aria-label="Treinos">${letters}</div><span class="spacer"></span><span class="small muted">${freq > LETRAS.length ? `${freq}x por semana: até ${LETRAS.length} treinos (A a E), repetidos na semana.` : `${freq}x por semana · ${nT} ${nT > 1 ? "treinos" : "treino"}`}</span></div>
+      <label class="field"><span>Foco da sessão (treino ${t.letra})</span><input type="text" data-f="tnome" data-t="${ti}" value="${esc(t.nome)}" placeholder="Ex.: Push, Pull, Membros inferiores"></label>
+      ${items ? `<p class="small muted">Para mudar a ordem: arraste o cartão (pela alça ⠿ ou, no celular, segurando o cartão por meio segundo) ou escolha a posição no número ao lado da alça.</p><div class="ex-list" id="exList">${items}</div>` : `<div class="empty">Treino ${t.letra} ainda sem exercícios.</div>`}
+      ${exs.length ? `<div class="combo-add"><label class="field"><span>Adicionar exercício ao treino ${t.letra}</span></label>${comboEx("add", ti, null, null)}<span class="small muted">Digite parte do nome ou do grupo muscular e toque no exercício para adicionar.</span></div>`
+        : `<div class="callout">Cadastre exercícios na Biblioteca antes de montar o treino.</div>`}`;
   return `<div class="panel">
       <div class="grid2">
         <label class="field"><span>Nome do programa</span><input type="text" data-f="nome" value="${esc(d.nome)}"></label>
@@ -748,21 +924,82 @@ function editorPrograma(){
         <label class="field"><span>Início do bloco</span><input type="date" data-f="inicio" value="${esc(d.inicio)}"></label>
         <label class="field"><span>Reavaliação</span><input type="date" data-f="reavaliacao" value="${esc(d.reavaliacao)}"></label>
         <label class="field"><span>Duração (semanas)</span><input type="number" min="1" max="52" data-f="semanas" value="${esc(d.semanas)}"></label>
-        <label class="field"><span>Frequência semanal</span><input type="number" min="1" max="7" data-f="frequencia" value="${esc(d.frequencia)}" placeholder="Ex.: 4"></label>
+        <label class="field"><span>Frequência semanal (define os treinos)</span><select data-f="frequencia"><option value="" ${freq ? "" : "selected"}>Escolha…</option>${[1,2,3,4,5,6,7].map(n => `<option value="${n}" ${n === freq ? "selected" : ""}>${n}x por semana · ${LETRAS.slice(0, Math.min(5, n)).join("")}</option>`).join("")}</select></label>
         ${d.aluno_id === S.user.id ? "" : `<label class="field"><span>Modalidade</span><select data-f="modalidade">${["feedback semanal", "feedback mensal", "sem feedback"].map(m => `<option ${m === d.modalidade ? "selected" : ""}>${m}</option>`).join("")}</select></label>`}
       </div>
       <label class="field"><span>Restrições</span><input type="text" data-f="restricoes" value="${esc(d.restricoes)}" placeholder="Ex.: Sem restrições"></label>
     </div>
     <details class="panel legend-card"><summary>Sistema de cores das séries</summary>${legendaTipos(false)}<p class="small muted">O aluno vê esta legenda no topo de cada treino e as orientações completas no menu Orientações. Só as séries de trabalho são registradas e entram na Evolução.</p></details>
-    <div class="panel">
-      <div class="row"><div class="letters" role="tablist" aria-label="Treinos">${letters}</div><span class="spacer"></span><span class="small muted">Treinos sem exercício não aparecem para o aluno.</span></div>
-      <label class="field"><span>Foco da sessão (treino ${t.letra})</span><input type="text" data-f="tnome" data-t="${ti}" value="${esc(t.nome)}" placeholder="Ex.: Push, Pull, Membros inferiores"></label>
-      ${items ? `<p class="small muted">Para mudar a ordem: arraste o cartão (pela alça ⠿ ou, no celular, segurando o cartão por meio segundo) ou escolha a posição no número ao lado da alça.</p><div class="ex-list" id="exList">${items}</div>` : `<div class="empty">Treino ${t.letra} ainda sem exercícios.</div>`}
-      ${exs.length ? `<div class="row"><select id="addEx" style="flex:1;min-width:0" aria-label="Exercício a adicionar">${free.map(e => `<option value="${e.id}">${esc(e.nome)}${e.grupo ? " · " + esc(e.grupo) : ""}</option>`).join("")}</select><button class="btn" data-act="addItem" data-t="${ti}" ${free.length ? "" : "disabled"}>Adicionar</button></div>`
-        : `<div class="callout">Cadastre exercícios na Biblioteca antes de montar o treino.</div>`}
-    </div>
+    ${sobraAviso}
+    <div class="panel">${blocoTreinos}</div>
     <div class="row"><button class="btn primary" data-act="savePrograma">${d.id ? "Salvar alterações" : "Salvar e enviar ao aluno"}</button><span id="dirtyMsg" class="small ${S.data.dirty ? "" : "muted"}" style="color:${S.data.dirty ? "var(--warn)" : ""}">${S.data.dirty ? "Alterações não salvas" : (d.id ? "Tudo salvo. O aluno já vê esta versão." : "")}</span></div>`;
 }
+
+/* ---------- Seletor de exercício com busca (a lista abre embaixo do campo) ---------- */
+function comboEx(kind, ti, ii, selId){
+  const e = S.data.exercicios.find(x => x.id === selId);
+  const ph = kind === "add" ? "Buscar exercício…" : (selId && !e ? "(exercício removido) · escolha outro" : "Buscar exercício…");
+  return `<div class="combo" data-combo="${kind}" data-t="${ti}"${ii != null ? ` data-i="${ii}"` : ""}><input type="text" class="combo-in" role="combobox" aria-expanded="false" aria-autocomplete="list" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" value="${esc(e ? e.nome : "")}" placeholder="${esc(ph)}" aria-label="${kind === "add" ? "Buscar exercício para adicionar" : "Exercício"}"><div class="combo-list" role="listbox" hidden></div></div>`;
+}
+function comboOpcoes(combo, q){
+  const d = S.data.draft, t = +combo.dataset.t, i = combo.dataset.i != null ? +combo.dataset.i : null;
+  const itens = d.treinos[t].itens, atual = i != null ? itens[i].exercicio_id : null;
+  const usados = new Set(itens.filter((_, k) => k !== i).map(x => x.exercicio_id));
+  const termos = semAcento(q).split(/\s+/).filter(Boolean);
+  const lista = S.data.exercicios.filter(e => !usados.has(e.id) && termos.every(w => semAcento(e.nome + " " + (e.grupo || "")).includes(w)));
+  const box = combo.querySelector(".combo-list");
+  box.innerHTML = lista.length
+    ? lista.slice(0, 150).map((e, k) => `<button type="button" class="combo-opt${k === 0 && q ? " ativo" : ""}" role="option" tabindex="-1" data-act="comboPick" data-id="${e.id}" aria-selected="${e.id === atual}"><span>${esc(e.nome)}</span>${e.grupo ? `<small>${esc(e.grupo)}</small>` : ""}</button>`).join("")
+    : `<div class="combo-vazio">${S.data.exercicios.length ? "Nenhum exercício encontrado. Cadastre novos na Biblioteca." : "Biblioteca vazia."}</div>`;
+  if (!q && atual != null) box.querySelector('[aria-selected="true"]')?.scrollIntoView({ block: "nearest" });
+}
+function abrirCombo(inp){
+  const combo = inp.closest(".combo"), box = combo.querySelector(".combo-list");
+  if (!box.hidden) return;
+  comboOpcoes(combo, combo.dataset.combo === "add" ? inp.value : "");
+  box.hidden = false; inp.setAttribute("aria-expanded", "true");
+  if (combo.dataset.combo === "item") inp.select();
+  const r = inp.getBoundingClientRect(), topo = alturaTopo();
+  const precisa = r.bottom + Math.min(320, window.innerHeight * .45) - window.innerHeight;
+  if (precisa > 0 || r.top < topo) window.scrollBy({ top: r.top < topo ? r.top - topo : Math.min(precisa + 12, r.top - topo), behavior: "smooth" });
+}
+function fecharCombo(combo){
+  if (!combo) return;
+  const box = combo.querySelector(".combo-list"), inp = combo.querySelector(".combo-in");
+  box.hidden = true; inp.setAttribute("aria-expanded", "false");
+  if (combo.dataset.combo === "item") { const it = S.data.draft.treinos[+combo.dataset.t].itens[+combo.dataset.i]; inp.value = S.data.exercicios.find(e => e.id === it.exercicio_id)?.nome || ""; }
+}
+function escolherCombo(combo, id){
+  const d = S.data.draft, t = +combo.dataset.t, ex = S.data.exercicios.find(e => e.id === id);
+  if (combo.dataset.combo === "add") {
+    d.treinos[t].itens.push(normItem({ exercicio_id: id, descanso: "", obs: "", sets: [novaSerie("trabalho"), novaSerie("trabalho"), novaSerie("trabalho")] }));
+    S.data.dirty = true; render();
+    document.querySelector("#exList")?.lastElementChild?.scrollIntoView({ block: "center", behavior: "smooth" });
+    toast(`${ex?.nome || "Exercício"} adicionado ao treino ${d.treinos[t].letra}`);
+  } else {
+    d.treinos[t].itens[+combo.dataset.i].exercicio_id = id; S.data.dirty = true;
+    const y = window.scrollY; render(); window.scrollTo(0, y);
+  }
+}
+document.addEventListener("focusin", ev => { if (ev.target.classList?.contains("combo-in")) abrirCombo(ev.target); });
+document.addEventListener("focusout", ev => {
+  if (!ev.target.classList?.contains("combo-in")) return;
+  const combo = ev.target.closest(".combo");
+  setTimeout(() => { if (!combo.contains(document.activeElement)) fecharCombo(combo); }, 120);
+});
+document.addEventListener("mousedown", ev => { if (ev.target.closest(".combo-list")) ev.preventDefault(); });
+document.addEventListener("keydown", ev => {
+  if (!ev.target.classList?.contains("combo-in")) return;
+  const combo = ev.target.closest(".combo"), box = combo.querySelector(".combo-list");
+  const ops = [...box.querySelectorAll(".combo-opt")], k = ops.findIndex(o => o.classList.contains("ativo"));
+  if (ev.key === "ArrowDown" || ev.key === "ArrowUp") {
+    ev.preventDefault(); if (box.hidden) return abrirCombo(ev.target); if (!ops.length) return;
+    const n = ev.key === "ArrowDown" ? Math.min(ops.length - 1, k + 1) : Math.max(0, k - 1);
+    ops.forEach(o => o.classList.remove("ativo")); ops[n].classList.add("ativo"); ops[n].scrollIntoView({ block: "nearest" });
+  } else if (ev.key === "Enter") {
+    ev.preventDefault(); const o = ops[k >= 0 ? k : 0]; if (o) escolherCombo(combo, Number(o.dataset.id));
+  } else if (ev.key === "Escape") { fecharCombo(combo); ev.target.blur(); }
+});
 
 /* ---------- Biblioteca ---------- */
 function viewBiblioteca(){
@@ -819,6 +1056,7 @@ function viewHome(){
 }
 
 /* ---------- Aluno: treino ---------- */
+const repsTxt = r => r && `${r}${/^\d+(\s*(-|–|a)\s*\d+)?$/.test(String(r).trim()) ? " reps" : ""}`;
 function viewTreino(){
   const { programa, regs, exercicios } = S.data;
   if (!programa) return `<div class="empty">Programa não encontrado.</div>`;
@@ -829,47 +1067,211 @@ function viewTreino(){
   const sessao = (S.data.sess || []).find(x => x.semana === sem && x.letra === t.letra);
   const cards = t.itens.map((it, i) => {
     const e = exMap[it.exercicio_id] || { nome: "Exercício", grupo: "" };
-    const open = S.p.video === i;
+    const open = S.p.video === i, ex = it.exercicio_id;
     let video = "";
     if (open) {
       const id = ytId(e.video_url);
       video = (DEMO || e.video_url === "demo")
         ? `<div class="video-ph">${MARK(36)}<span>Seu vídeo explicando o exercício aparece aqui</span><span class="small muted">No app publicado, o vídeo do YouTube toca nesta área.</span></div>`
-        : id ? `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1" title="${esc(e.nome)}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div><a class="small" href="https://youtu.be/${id}" target="_blank" rel="noopener">Abrir no YouTube</a>`
-        : `<div class="obs">Vídeo ainda não cadastrado para este exercício.</div>`;
+        : id ? `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1" title="${esc(e.nome)}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div>`
+        : "";
     }
-    const cont = Object.fromEntries(ORDEM_TIPOS.map(k => [k, it.sets.filter(x => x.tipo === k).length]));
+    const temVideo = DEMO || e.video_url === "demo" || !!ytId(e.video_url);
+    const nT = serT(it).length;
+    const repsT = [...new Set(it.sets.filter(x => x.tipo === "trabalho").map(x => x.reps).filter(Boolean))].join(" / ");
     let ordT = 0;
-    const sets = it.sets.map((st, k) => {
+    const sets = it.sets.map(st => {
       const tp = TIPOS[st.tipo];
-      const meta = [st.reps && `${st.reps}${/^\d+(\s*(-|–|a)\s*\d+)?$/.test(st.reps.trim()) ? " reps" : ""}`, st.rir && `RIR ${st.rir}`].filter(Boolean).join(" · ");
       const desc = st.tipo === "trabalho" && it.descanso ? it.descanso : tp.descanso;
-      const head = `<div class="set-head"><span class="t-pill">${k + 1}ª · ${tp.nome}${st.tipo === "trabalho" ? ` ${ordT + 1}` : ""}</span><span class="meta">${esc(meta)}</span><span class="desc">descanso ${esc(desc)}</span></div>`;
-      if (st.tipo !== "trabalho") return `<div class="set t-${st.tipo}">${head}<span class="skip">${tp.curto} (${tp.carga}). Não precisa registrar.</span></div>`;
+      const meta = [repsTxt(st.reps), st.rir && `RIR ${st.rir}`, `descanso ${desc}`].filter(Boolean).join(" · ");
+      if (st.tipo !== "trabalho") return `<div class="set leve t-${st.tipo}"><div class="set-l"><span class="t-pill">${tp.nome}</span><span class="meta">${esc(meta)}</span></div></div>`;
       const s = ++ordT;
-      const r = find(sem, it.exercicio_id, s), pv = find(sem - 1, it.exercicio_id, s);
-      return `<div class="set t-trabalho">${head}<div class="set-in">
-        <input id="c-${i}-${s}" type="text" inputmode="decimal" value="${esc(fmt(r?.carga))}" placeholder="${pv?.carga != null ? esc(fmt(pv.carga)) : "kg"}" aria-label="Carga em kg, série de trabalho ${s}"><span class="x">kg ×</span>
-        <input id="r-${i}-${s}" type="text" inputmode="tel" value="${esc(r?.reps_txt ?? r?.reps ?? "")}" placeholder="${pv?.reps != null ? esc(pv.reps_txt ?? pv.reps) : "reps"}" aria-label="Repetições, série de trabalho ${s}"><span class="x">reps</span>
-        ${pv && (pv.carga != null || pv.reps != null) ? `<span class="prev">Sem. ${sem - 1}: ${esc(fmt(pv.carga) || "–")} kg × ${esc(pv.reps_txt ?? pv.reps ?? "–")}</span>` : ""}</div></div>`;
+      const r = find(sem, ex, s), pv = find(sem - 1, ex, s);
+      return `<div class="set t-trabalho"><div class="set-l"><span class="t-pill">Trabalho ${s}</span><span class="meta">${esc(meta)}</span></div><div class="set-in">
+        <input id="c-${ex}-${s}" type="text" inputmode="decimal" value="${esc(fmt(r?.carga))}" placeholder="${pv?.carga != null ? esc(fmt(pv.carga)) : "kg"}" aria-label="Carga em kg, ${esc(e.nome)}, série de trabalho ${s}"><span class="x">kg ×</span>
+        <input id="r-${ex}-${s}" type="text" inputmode="tel" value="${esc(r?.reps_txt ?? r?.reps ?? "")}" placeholder="${pv?.reps != null ? esc(pv.reps_txt ?? pv.reps) : "reps"}" aria-label="Repetições, ${esc(e.nome)}, série de trabalho ${s}"><span class="x">reps</span>
+        ${pv && (pv.carga != null || pv.reps != null) ? `<span class="prev">sem. ${sem - 1}: ${esc(fmt(pv.carga) || "–")} kg × ${esc(pv.reps_txt ?? pv.reps ?? "–")}</span>` : ""}</div></div>`;
     }).join("");
-    return `<article class="ex-card"><header><span class="n num">${i + 1}</span><div style="flex:1;min-width:0"><h3>${esc(e.nome)}</h3><div class="presc-line" style="margin-top:6px">
-        ${ORDEM_TIPOS.filter(k => cont[k]).map(k => `<span class="t-pill t-${k}">${cont[k]} ${TIPOS[k].nome.toLowerCase()}</span>`).join("")}${it.descanso ? `<span class="chip warn num">Descanso diferente: ${esc(it.descanso)}</span>` : ""}</div></div></header>
+    const ultimo = i === t.itens.length - 1;
+    return `<details class="ex-acc" data-i="${i}" ${S.p.aberto === i ? "open" : ""}>
+      <summary><span class="n num">${i + 1}</span><span class="nm"><b>${esc(e.nome)}</b><span class="sq-row">${it.sets.map(x => `<i class="sq t-${x.tipo}" title="${TIPOS[x.tipo].nome}"></i>`).join("")}<span class="num">${nT} de trabalho${repsT ? " · " + esc(repsT) : ""}</span></span></span><span class="ex-st" data-st="${ex}" data-n="${nT}"></span></summary>
       <div class="body">
-        ${it.obs || e.descricao ? `<div class="obs">${esc([it.obs, e.descricao].filter(Boolean).join(" · "))}</div>` : ""}
-        <div><button class="btn sm" data-act="video" data-i="${i}" aria-expanded="${open}">${open ? "Fechar vídeo" : "▶ Ver vídeo do exercício"}</button></div>
+        ${it.obs ? `<div class="nota"><b>Atenção:</b> ${esc(it.obs)}</div>` : ""}
+        ${it.descanso ? `<div class="small"><b>Descanso das séries de trabalho:</b> ${esc(it.descanso)}</div>` : ""}
+        <div class="row">${temVideo ? `<button class="btn sm" data-act="video" data-i="${i}" aria-expanded="${open}">${open ? "Fechar vídeo" : "▶ Ver vídeo"}</button>` : ""}${e.descricao ? `<span class="dicas">${esc(e.descricao)}</span>` : ""}</div>
         ${video}
         <div class="sets-list">${sets}</div>
-      </div></article>`;
+        <div class="fim">${ultimo ? `<button class="btn sm" data-act="fecharEx">Fechar</button>` : `<button class="btn sm" data-act="proxEx" data-i="${i}">Próximo exercício ↓</button>`}</div>
+      </div></details>`;
   }).join("");
   return `<div><button class="btn ghost sm" data-act="nav" data-v="home">← Meus treinos</button></div>
     <div><p class="label num">Treino ${t.letra} · Semana ${sem} de ${programa.semanas}</p><h1>${esc(t.nome || "Treino " + t.letra)}</h1>
-    <p class="small muted" style="margin-top:4px">Siga a ordem dos exercícios. Registre carga e repetições só nas séries de trabalho; o número claro em cada campo é o da semana anterior. Série com pausa no meio? Anote assim: 6+4.</p></div>
-    <details class="panel legend-card" ${S.p.legenda === false ? "" : "open"}><summary>Como ler as séries · sistema de cores</summary>${legendaTipos(false)}
-      <div class="row"><button class="btn sm" data-act="nav" data-v="orientacoes">Orientações completas</button><span class="small muted">5 a 8 min de aquecimento geral antes do primeiro exercício.</span></div></details>
-    <div id="treinoCards" style="display:flex;flex-direction:column;gap:20px">${cards}</div>
+      <div class="prog-treino"><div class="bar"><i id="progBar" style="width:0%"></i></div><span id="progTxt" class="small muted num"></span></div></div>
+    <details class="panel legend-card" ${S.p.legenda ? "open" : ""}><summary>Como ler as séries · sistema de cores</summary>${legendaTipos(false)}
+      <p class="small muted">Siga a ordem dos exercícios. Toque no exercício para ver as séries, o vídeo e registrar. Registre carga e repetições só nas séries de trabalho; o número claro no campo é o da semana anterior. Série com pausa no meio? Anote assim: 6+4. Faça 5 a 8 min de aquecimento geral antes do primeiro exercício.</p>
+      <div><button class="btn sm" data-act="nav" data-v="orientacoes">Orientações completas</button></div></details>
+    <div class="ex-acc-list" id="treinoCards">${cards}</div>
     <div class="panel"><label class="field"><span>Observações da sessão</span><textarea id="sessObs" placeholder="Como foi o treino? Exercício que travou, desconforto, ajuste de máquina...">${esc(sessao?.obs || "")}</textarea></label>
       <p class="small muted">${esc(primeiroNome((PROF || PROF_PADRAO).nome))} lê estas observações. Em caso de dor no peito, tontura, falta de ar desproporcional ou dor articular aguda, pare o treino e avise na hora.</p></div>`;
+}
+
+/* ---------- Salvamento automático do treino ---------- */
+let autoTimer = null, salvando = false, salvarDeNovo = false, rascVer = 0;
+const chaveRasc = (sem = S.p.semana, letra = S.p.letra, pid = S.data.programa?.id) => `rasc:${S.user.id}:${pid}:${sem}:${letra}`;
+function lerCampos(){ const v = {}; document.querySelectorAll(".set-in input, #sessObs").forEach(i => v[i.id] = i.value); return v; }
+function autoMsg(txt){ const m = document.getElementById("autoMsg"); if (m) m.textContent = txt; }
+const hora = () => new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+function posTreino(){
+  const r = LS.get(chaveRasc());
+  if (r && !r.sync && r.v) Object.entries(r.v).forEach(([id, val]) => { const i = document.getElementById(id); if (i) i.value = val; });
+  statusTreino();
+  if (r && !r.sync) { autoMsg("Há dados ainda não enviados. Enviando…"); agendarAuto(300); }
+}
+function statusTreino(){
+  let ok = 0, tot = 0;
+  document.querySelectorAll(".ex-st").forEach(el => {
+    const ex = el.dataset.st, n = +el.dataset.n; let f = 0;
+    for (let s = 1; s <= n; s++) if (document.getElementById(`c-${ex}-${s}`)?.value.trim() && document.getElementById(`r-${ex}-${s}`)?.value.trim()) f++;
+    tot++; if (n && f >= n) ok++;
+    el.textContent = !n ? "" : f >= n ? "✓ feito" : `${f}/${n}`;
+    el.className = "ex-st" + (n && f >= n ? " ok" : f ? " parcial" : "");
+  });
+  const b = document.getElementById("progBar"), tx = document.getElementById("progTxt");
+  if (b) b.style.width = (tot ? Math.round(ok / tot * 100) : 0) + "%";
+  if (tx) tx.textContent = `${ok} de ${tot} exercícios registrados`;
+}
+function guardarRascunho(){ rascVer++; LS.set(chaveRasc(), { v: lerCampos(), sync: false, ver: rascVer, t: Date.now() }); }
+function agendarAuto(ms = 2000){ clearTimeout(autoTimer); autoTimer = setTimeout(() => salvarTreino(null, { auto: true }), ms); }
+function salvarAgora(){ if (S.view === "treino" && S.data.programa && (autoTimer || LS.get(chaveRasc())?.sync === false)) { clearTimeout(autoTimer); autoTimer = null; salvarTreino(null, { auto: true }); } }
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") salvarAgora(); });
+window.addEventListener("pagehide", salvarAgora);
+document.addEventListener("toggle", ev => {
+  const d = ev.target; if (!(d instanceof HTMLDetailsElement)) return;
+  if (d.classList.contains("legend-card") && S.view === "treino") { S.p.legenda = d.open; return; }
+  if (!d.classList.contains("ex-acc")) return;
+  const i = +d.dataset.i;
+  if (d.open) {
+    S.p.aberto = i;
+    document.querySelectorAll("details.ex-acc[open]").forEach(o => { if (o !== d) o.open = false; });
+    requestAnimationFrame(() => { const r = d.getBoundingClientRect(); if (r.top < alturaTopo() || r.top > window.innerHeight * .5) d.scrollIntoView({ block: "start", behavior: "smooth" }); });
+  } else if (S.p.aberto === i) S.p.aberto = null;
+}, true);
+
+/* monta os registros a partir dos valores digitados (tela ou rascunho guardado) */
+function montarRegistros(programa, letra, sem, v, regs, auto){
+  const t = programa.treinos.find(x => x.letra === letra);
+  const up = [], del = []; let incompletas = 0, invalido = null;
+  if (!t) return { up, del, incompletas, invalido };
+  for (const [i, it] of t.itens.entries()) {
+    for (const s of serT(it)) {
+      const ck = `c-${it.exercicio_id}-${s}`, rk = `r-${it.exercicio_id}-${s}`;
+      if (!(ck in v) && !(rk in v)) continue;
+      const c = parseN(v[ck]), rr = parseReps(v[rk]);
+      if (Number.isNaN(c) || Number.isNaN(rr)) { if (!invalido) invalido = { i, s }; continue; }
+      const key = { aluno_id: S.user.id, programa_id: programa.id, semana: sem, letra, exercicio_id: it.exercicio_id, serie: s };
+      const ant = regs.find(x => x.semana === sem && x.letra === letra && x.exercicio_id === it.exercicio_id && x.serie === s);
+      if (c == null && rr == null) { if (ant) del.push(key); continue; }
+      if (c == null || rr == null) incompletas++;
+      const row = { ...key, carga: c, reps: rr ? rr.reps : null, reps_txt: rr ? rr.txt : null };
+      if (ant && Number(ant.carga ?? NaN) === Number(row.carga ?? NaN) && (ant.reps ?? null) === row.reps && (ant.reps_txt ?? null) === row.reps_txt) continue;
+      if (ant && ant.carga == null && row.carga == null && (ant.reps ?? null) === row.reps && (ant.reps_txt ?? null) === row.reps_txt) continue;
+      up.push(row);
+    }
+  }
+  return { up, del, incompletas, invalido };
+}
+async function sincronizarRascunhos(programa){
+  let mudou = false;
+  for (const k of LS.keys(`rasc:${S.user.id}:`)) {
+    const r = LS.get(k), [, , pid, sem, letra] = k.split(":");
+    if (!r || r.sync || String(pid) !== String(programa.id)) { if (r?.sync && Date.now() - (r.t || 0) > 864e5) LS.del(k); continue; }
+    try {
+      const regs = S.data.regs || [];
+      const m = montarRegistros(programa, letra, Number(sem), r.v || {}, regs, true);
+      if (m.up.length || m.del.length) await db.saveRegistros(m.up, m.del);
+      const obs = (r.v?.sessObs || "").trim(), ant = (S.data.sess || []).find(x => x.semana === Number(sem) && x.letra === letra);
+      if (obs !== (ant?.obs || "") && "sessObs" in (r.v || {})) await db.saveSessao({ aluno_id: S.user.id, programa_id: programa.id, semana: Number(sem), letra, obs });
+      LS.set(k, { ...r, sync: true, t: Date.now() }); mudou = true;
+    } catch {}
+  }
+  return mudou;
+}
+
+/* ---------- Anamnese ---------- */
+function anCampo(q, r, falta){
+  const v = r[q.id] ?? "", cls = `an-q${falta.includes(q.id) ? " falta" : ""}`;
+  const titulo = `<b>${esc(q.q)}${q.opcional ? ' <span class="small muted">(opcional)</span>' : ""}</b>`;
+  if (q.tipo === "opcoes") return `<fieldset class="${cls}" id="an-${q.id}" style="border:0;padding:0;margin:0"><legend style="padding:0;margin-bottom:6px">${titulo}</legend><div class="an-ops">${q.opcoes.map(o => `<label><input type="radio" name="an-${q.id}" data-an="${q.id}" value="${esc(o)}" ${String(v) === o ? "checked" : ""}><span>${esc(o)}${q.id === "dias" ? "x" : ""}</span></label>`).join("")}</div></fieldset>`;
+  if (q.tipo === "linha") return `<label class="${cls}" id="an-${q.id}">${titulo}<input type="text" data-an="${q.id}" value="${esc(v)}" placeholder="${esc(q.ph || "")}"></label>`;
+  return `<label class="${cls}" id="an-${q.id}">${titulo}<textarea data-an="${q.id}" rows="3" placeholder="${esc(q.ph || "")}">${esc(v)}</textarea>${q.whats ? `<a class="btn sm" style="align-self:flex-start" href="https://wa.me/${WHATSAPP}?text=${encodeURIComponent(`Olá, ${primeiroNome((PROF || PROF_PADRAO).nome)}! Seguem as fotos dos equipamentos da minha academia (${S.user?.nome || ""}).`)}" target="_blank" rel="noopener">Enviar fotos dos equipamentos pelo WhatsApp</a>` : ""}</label>`;
+}
+function viewAnamnese(){
+  const { resp: r, atual, faltando } = S.data, falta = faltando || [];
+  const vis = ANAMNESE.filter(q => anVisivel(q, r)), obrig = vis.filter(q => !q.opcional);
+  const feitas = obrig.filter(q => String(r[q.id] ?? "").trim()).length;
+  let html = "", grupoAberto = false;
+  vis.forEach(q => {
+    if (q.sec) html += `${grupoAberto ? "</div>" : ""}</section><section class="panel an-sec"><h2>${esc(q.sec)}</h2>`, grupoAberto = false;
+    if (q.grupo === "medidas") {
+      if (!grupoAberto) { html += `<div class="an-q ${["idade","altura","peso"].some(k => falta.includes(k)) ? "falta" : ""}" id="an-medidas"><b>Qual sua idade, altura e peso?</b><div class="an-nums">`; grupoAberto = true; }
+      html += `<label class="field" id="an-${q.id}"><span>${esc(q.q)}</span><span class="an-un"><input type="number" inputmode="decimal" data-an="${q.id}" value="${esc(r[q.id] ?? "")}" min="0" step="any"><small>${q.un}</small></span></label>`;
+      if (q.id === "peso") { html += `</div></div>`; grupoAberto = false; }
+      return;
+    }
+    html += anCampo(q, r, falta);
+  });
+  html = html.replace(/^<\/section>/, "") + "</section>";
+  return `<div><p class="label">${atual ? "Atualizar anamnese" : "Primeiro acesso"}</p><h1>Anamnese</h1>
+      <p class="muted" style="margin-top:6px">${atual ? "Revise e atualize o que mudou. O seu personal vê a versão mais recente." : `Antes de montar o seu treino, ${esc(primeiroNome((PROF || PROF_PADRAO).nome))} precisa conhecer você. Responda com calma: leva uns 10 minutos e as respostas ficam guardadas neste aparelho enquanto você preenche.`}</p></div>
+    <div class="an-prog"><div class="row"><span class="small muted num" id="anProgTxt">${feitas} de ${obrig.length} respondidas</span></div><div class="bar"><i id="anProgBar" style="width:${obrig.length ? Math.round(feitas / obrig.length * 100) : 0}%"></i></div></div>
+    ${html}
+    <div class="panel"><label class="consent"><input type="checkbox" id="anConsent" ${S.data.consent ? "checked" : ""}><span>Declaro que as informações são verdadeiras e autorizo o uso delas pelo meu personal trainer para prescrever e acompanhar o meu treino. As respostas ficam visíveis apenas para mim e para o meu personal.</span></label>
+      <p class="small muted">A anamnese não substitui avaliação médica. Se tiver alguma condição de saúde, siga as orientações do seu médico.</p>
+      <div class="row"><button class="btn primary" data-act="enviarAnamnese">${atual ? "Salvar respostas" : "Enviar anamnese"}</button>${atual ? `<button class="btn ghost" data-act="nav" data-v="conta">Cancelar</button>` : ""}</div></div>`;
+}
+function anGuardar(el){
+  const r = S.data.resp, id = el.dataset.an;
+  r[id] = el.value; LS.set("anamnese:" + S.user.id, r);
+  if (S.data.faltando?.includes(id) && String(el.value).trim()) { S.data.faltando = S.data.faltando.filter(x => x !== id); (document.getElementById("an-" + id)?.classList.remove("falta")); }
+  if (ANAMNESE.some(q => q.se && q.se[0] === id)) { const y = window.scrollY; render(); window.scrollTo(0, y); return; }
+  const obrig = ANAMNESE.filter(q => !q.opcional && anVisivel(q, r)), feitas = obrig.filter(q => String(r[q.id] ?? "").trim()).length;
+  const t = document.getElementById("anProgTxt"), b = document.getElementById("anProgBar");
+  if (t) t.textContent = `${feitas} de ${obrig.length} respondidas`; if (b) b.style.width = Math.round(feitas / obrig.length * 100) + "%";
+}
+async function enviarAnamnese(btn){
+  const r = S.data.resp; S.data.consent = !!document.getElementById("anConsent")?.checked;
+  const falta = anFalta(r);
+  if (falta.length) {
+    S.data.faltando = falta.map(q => q.id); const y = window.scrollY; render(); window.scrollTo(0, y);
+    const alvo = document.getElementById("an-" + (["idade","altura","peso"].includes(falta[0].id) ? "medidas" : falta[0].id));
+    alvo?.scrollIntoView({ block: "start", behavior: "smooth" }); setTimeout(() => alvo?.querySelector("input,textarea")?.focus({ preventScroll: true }), 400);
+    return toast(falta.length === 1 ? "Falta responder 1 pergunta." : `Faltam ${falta.length} perguntas.`, 3500);
+  }
+  if (!S.data.consent) return toast("Marque a declaração de autorização para enviar.", 3500);
+  const limpo = Object.fromEntries(ANAMNESE.filter(q => anVisivel(q, r)).map(q => [q.id, String(r[q.id] ?? "").trim()]));
+  btn.disabled = true;
+  try {
+    await db.saveAnamnese(limpo); LS.del("anamnese:" + S.user.id);
+    const primeira = S.anamneseOk === false; S.anamneseOk = true;
+    toast(primeira ? `Anamnese enviada! ${primeiroNome((PROF || PROF_PADRAO).nome)} já pode montar o seu treino.` : "Respostas atualizadas.", 4500);
+    go(primeira ? "home" : "conta");
+  } catch (e) { btn.disabled = false; toast(traduzErro(e), 4500); }
+}
+function painelAnamnese(){
+  const an = S.data.anamnese;
+  if (!an) return `<div class="empty">O aluno ainda não respondeu a anamnese.<br><span class="small">Ela é a primeira tela que ele vê ao entrar no app. A montagem do treino é liberada assim que ele enviar.</span></div>`;
+  const r = an.respostas || {};
+  let html = "";
+  ANAMNESE.forEach(q => {
+    if (q.sec) html += `<h3>${esc(q.sec)}</h3>`;
+    if (!anVisivel(q, r) && !r[q.id]) return;
+    if (q.grupo === "medidas") { if (q.id !== "idade") return; html += `<div><span class="q">Idade, altura e peso</span><span class="a num">${esc(r.idade || "–")} anos · ${esc(r.altura || "–")} cm · ${esc(r.peso || "–")} kg</span></div>`; return; }
+    html += `<div><span class="q">${esc(q.q)}</span><span class="a">${esc(r[q.id] || "–")}${q.id === "dias" && r[q.id] ? "x por semana" : ""}</span></div>`;
+  });
+  const atual = an.updated_at && an.created_at && String(an.updated_at).slice(0, 10) !== String(an.created_at).slice(0, 10);
+  return `<div class="panel"><div class="row"><h2>Anamnese</h2><span class="spacer"></span><span class="chip ok">Respondida em ${fmtData(an.created_at)}</span>${atual ? `<span class="chip acc">Atualizada em ${fmtData(an.updated_at)}</span>` : ""}</div>
+    <div class="an-resp"><div style="display:none"></div>${html.replace("<h3>", '<h3 style="margin-top:0">')}</div>
+    ${S.data.programa?.id ? "" : `<div><button class="btn primary" data-act="tab" data-tab="programa">Montar o treino</button></div>`}</div>`;
 }
 
 /* ---------- Personal aguardando aprovação ---------- */
@@ -895,10 +1297,11 @@ function viewPendente(){
 
 /* ---------- Nova senha ---------- */
 function formSenha(titulo, texto){
-  return `<div class="panel"><h3>${titulo}</h3>${texto ? `<p class="small muted">${texto}</p>` : ""}
+  return `<form class="panel" id="senhaForm" novalidate><h3>${titulo}</h3>${texto ? `<p class="small muted">${texto}</p>` : ""}
+    <input type="email" autocomplete="username" value="${esc(S.user?.email || "")}" hidden readonly>
     <div class="grid2"><label class="field"><span>Nova senha</span><input id="ns1" type="password" autocomplete="new-password" minlength="6"></label>
     <label class="field"><span>Repita a nova senha</span><input id="ns2" type="password" autocomplete="new-password" minlength="6"></label></div>
-    <div><button class="btn primary" data-act="salvarSenha">Salvar nova senha</button></div></div>`;
+    <div><button class="btn primary" type="submit">Salvar nova senha</button></div></form>`;
 }
 function viewNovaSenha(){
   return `<div><p class="label">Acesso</p><h1>Criar nova senha</h1></div>${formSenha("Defina a sua nova senha", "Use pelo menos 6 caracteres. Depois de salvar, você já entra no app.")}`;
@@ -916,17 +1319,21 @@ function viewConta(){
       </div>
       <label class="field"><span>Nova foto (carteira ou certidão)</span><input id="pCrefFoto" type="file" accept="image/*,application/pdf"></label>
       <div><button class="btn primary" data-act="enviarCref">Salvar dados do CREF</button></div></div>` : "";
+  const personalDoAluno = u.role === "aluno" && PROF ? `<div><span class="label">Meu personal</span><b>${esc(PROF.nome)}${PROF.cref || PROF.role === "master" ? ` · CREF ${esc(profDe(PROF).cref)}` : ""}</b></div>` : "";
+  const anamPainel = u.role === "aluno" ? `<div class="panel"><h3>Minha anamnese</h3><p class="small muted">${S.anamneseOk === false ? "Você ainda não respondeu a anamnese. Ela é necessária para o seu treino ser montado." : "Suas respostas ficam visíveis só para você e para o seu personal. Se algo mudou (rotina, dor, lesão, objetivo), atualize."}</p><div><button class="btn ${S.anamneseOk === false ? "primary" : ""}" data-act="nav" data-v="anamnese">${S.anamneseOk === false ? "Responder anamnese" : "Ver ou atualizar respostas"}</button></div></div>` : "";
   const apagar = mestre
     ? `<div class="panel"><h3>Excluir conta</h3><p class="small muted">O login mestre não pode ser excluído pelo app, porque é por ele que os personais são aprovados.</p></div>`
     : `<div class="panel zona-risco"><h3>Excluir minha conta</h3>
-        <p class="small">${u.role === "aluno" ? "Apaga o seu cadastro, os seus programas, registros de carga, observações e acompanhamentos." : "Apaga o seu cadastro, a sua biblioteca de exercícios e a foto do CREF. Os seus alunos passam para o Alessandro Borges."} Não dá para desfazer.</p>
+        <p class="small">${u.role === "aluno" ? "Apaga o seu cadastro, a anamnese, os seus programas, registros de carga, observações e acompanhamentos." : isPers() ? "Apaga o seu cadastro, a sua biblioteca de exercícios e a foto do CREF. Os seus alunos passam para o Alessandro Borges." : "Apaga o seu cadastro e a foto do CREF."} Não dá para desfazer.</p>
         ${S.data.confirmarExclusao
           ? `<label class="field"><span>Para confirmar, digite EXCLUIR</span><input id="confirmaExclusao" type="text" autocomplete="off"></label>
              <div class="row"><button class="btn danger" data-act="excluirMinhaConta">Excluir minha conta definitivamente</button><button class="btn ghost" data-act="cancelarExclusao">Cancelar</button></div>`
           : `<div><button class="btn danger" data-act="pedirExclusao">Excluir minha conta</button></div>`}</div>`;
   return `<div><p class="label">${papel}</p><h1>Minha conta</h1></div>
-    <div class="panel"><div class="info-grid"><div><span class="label">Nome</span><b>${esc(u.nome)}</b></div><div><span class="label">E-mail</span><b>${esc(u.email || "")}</b></div><div><span class="label">Tipo de conta</span><b>${papel}</b></div></div></div>
-    ${crefPainel}${formSenha("Trocar senha", "")}${apagar}`;
+    <div class="panel"><h3>Meus dados</h3>
+      <div class="info-grid"><div style="grid-column:1/-1"><span class="label">E-mail de acesso</span><b>${esc(u.email || "")}</b></div><div><span class="label">Tipo de conta</span><b>${papel}</b></div>${personalDoAluno}</div>
+      <div class="row" style="align-items:flex-end"><label class="field" style="flex:1;min-width:200px"><span>Nome completo</span><input id="cNome" type="text" autocomplete="name" value="${esc(u.nome)}"></label><button class="btn" data-act="salvarNome">Salvar nome</button></div></div>
+    ${anamPainel}${crefPainel}${formSenha("Trocar senha", "")}${apagar}`;
 }
 
 /* ---------- Login mestre: aprovação de personais ---------- */
@@ -969,7 +1376,7 @@ function viewOrientacoes(){
     ${blocos}`;
 }
 function saveBar(){
-  return `<div class="savebar"><div class="wrap"><span class="small muted num">Treino ${esc(S.p.letra)} · Semana ${S.p.semana}</span><span class="spacer"></span><button class="btn primary" data-act="saveTreino">Salvar treino</button></div></div>`;
+  return `<div class="savebar"><div class="wrap"><span id="autoMsg" class="autosave">Salvamento automático ligado</span><span class="spacer"></span><button class="btn primary" data-act="saveTreino">Salvar treino</button></div></div>`;
 }
 
 /* ---------- Evolução: acompanhamento de cargas (regras da skill registro-semanal-cargas) ---------- */
@@ -1401,7 +1808,7 @@ document.addEventListener("click", async ev => {
       const f = document.getElementById("pCrefFoto")?.files?.[0], cref = document.getElementById("pCref").value.trim(), validade = document.getElementById("pCrefVal").value;
       if (!cref) return toast("Informe o número do CREF.");
       if (!validade) return toast("Informe a validade do CREF.");
-      if (!f && !S.user.cref_foto) return toast("Escolha a foto do CREF.");
+      if (!f && !S.user.cref_foto && S.user.role !== "master") return toast("Escolha a foto do CREF.");
       if (f && f.size > 8 * 1024 * 1024) return toast("A foto passa de 8 MB. Envie uma imagem menor.", 4000);
       const mudou = f || cref !== (S.user.cref || "") || validade !== String(S.user.cref_validade || "").slice(0, 10);
       if (!mudou) return toast("Nada mudou.");
@@ -1424,14 +1831,6 @@ document.addEventListener("click", async ev => {
     if (a === "verificar") { S.user = await db.current(); if (isPers()) { toast("Acesso de personal liberado!"); return entrar(); } toast("Ainda em análise."); return render(); }
     if (a === "esqueci") { S.p.esqueci = true; return render(); }
     if (a === "voltarLogin") { S.p.esqueci = false; return render(); }
-    if (a === "salvarSenha") {
-      const p1 = document.getElementById("ns1").value, p2 = document.getElementById("ns2").value;
-      if (p1.length < 6) return toast("A senha precisa ter pelo menos 6 caracteres.");
-      if (p1 !== p2) return toast("As duas senhas não são iguais.");
-      el.disabled = true; await db.novaSenha(p1); toast("Senha salva.");
-      if (S.view === "novaSenha") { history.replaceState(null, "", location.pathname); return entrar(); }
-      document.getElementById("ns1").value = ""; document.getElementById("ns2").value = ""; el.disabled = false; return;
-    }
     if (a === "toggleCad") { S.p.cad = !S.p.cad; return render(); }
     if (a === "logout") { await db.signOut(); S.user = null; S.view = "login"; S.p = {}; return render(); }
     if (a === "copy") { const i = document.getElementById("shareLink"); try { await navigator.clipboard.writeText(i.value); toast("Link copiado"); } catch { i.select(); toast("Selecionado. Copie com Ctrl+C."); } return; }
@@ -1486,7 +1885,12 @@ document.addEventListener("click", async ev => {
     if (a === "savePrograma") {
       const p = d.draft;
       if (!p.nome.trim()) return toast("Dê um nome ao programa.");
+      if (!Number(p.frequencia)) return toast("Escolha a frequência semanal do aluno.");
+      const nTr = Math.min(LETRAS.length, Number(p.frequencia)), fora = p.treinos.slice(nTr).filter(t => t.itens.length).map(t => t.letra);
+      if (fora.length) return toast(`Treino ${fora.join(", ")} fora da frequência de ${p.frequencia}x. Aumente a frequência ou apague esse treino.`, 4500);
       if (!p.treinos.some(t => t.itens.length)) return toast("Adicione pelo menos um exercício.");
+      const vazio = p.treinos.slice(0, nTr).find(t => !t.itens.length);
+      if (vazio) return toast(`O treino ${vazio.letra} está sem exercícios. Monte todos os ${nTr} treinos da frequência.`, 4500);
       const dup = p.treinos.find(t => new Set(t.itens.map(i => i.exercicio_id)).size !== t.itens.length);
       if (dup) return toast(`O treino ${dup.letra} tem um exercício repetido.`);
       const semTrab = p.treinos.find(t => t.itens.some(it => !serT(it).length));
@@ -1504,8 +1908,26 @@ document.addEventListener("click", async ev => {
     if (a === "noDel") { d.confirm = null; return render(); }
     if (a === "delEx") { await db.deleteExercicio(Number(el.dataset.id)); d.exercicios = await db.listExercicios(); d.confirm = null; toast("Exercício excluído"); return render(); }
     if (a === "openTreino") return go("treino", { letra: el.dataset.l, semana: S.p.semana });
-    if (a === "video") { const i = Number(el.dataset.i); S.p.video = S.p.video === i ? null : i; S.p.legenda = !!document.querySelector("details.legend-card")?.open; keepInputs(render); return; }
+    if (a === "video") { const i = Number(el.dataset.i); S.p.video = S.p.video === i ? null : i; S.p.aberto = i; keepInputs(render); statusTreino(); return; }
     if (a === "saveTreino") return salvarTreino(el);
+    if (a === "comboPick") return escolherCombo(el.closest(".combo"), Number(el.dataset.id));
+    if (a === "limparSobra") {
+      const n = Math.min(LETRAS.length, Number(d.draft.frequencia) || 0);
+      d.draft.treinos.slice(n).forEach(t => { t.itens = []; t.nome = ""; }); d.dirty = true; toast("Treinos fora da frequência apagados."); return render();
+    }
+    if (a === "proxEx") {
+      const i = Number(el.dataset.i), prox = document.querySelector(`details.ex-acc[data-i="${i + 1}"]`);
+      if (prox) prox.open = true; return;
+    }
+    if (a === "fecharEx") { el.closest("details").open = false; S.p.aberto = null; return; }
+    if (a === "salvarNome") {
+      const nome = document.getElementById("cNome").value.trim();
+      if (nome.length < 3) return toast("Informe o seu nome completo.");
+      if (nome === S.user.nome) return toast("Nada mudou.");
+      el.disabled = true; await db.salvarNome(nome); S.user = await db.current() || { ...S.user, nome }; toast("Nome atualizado."); return render();
+    }
+    if (a === "anWhats") return;
+    if (a === "enviarAnamnese") return enviarAnamnese(el);
   } catch (e) { toast(traduzErro(e), 4000); el.disabled = false; }
 });
 
@@ -1516,36 +1938,45 @@ function keepInputs(fn){
   window.scrollTo(0, y);
 }
 
-async function salvarTreino(btn){
-  const { programa, regs } = S.data;
-  const t = programa.treinos.find(x => x.letra === S.p.letra), sem = S.p.semana;
-  const up = [], del = []; let incompletas = 0;
-  for (const [i, it] of t.itens.entries()) {
-    for (const s of serT(it)) {
-      const c = parseN(document.getElementById(`c-${i}-${s}`)?.value), rr = parseReps(document.getElementById(`r-${i}-${s}`)?.value);
-      if (Number.isNaN(c) || Number.isNaN(rr)) return toast(`Valor inválido no exercício ${i + 1}, série ${s}. Use números (repetições com pausa: 6+4).`, 4500);
-      const key = { aluno_id: S.user.id, programa_id: programa.id, semana: sem, letra: t.letra, exercicio_id: it.exercicio_id, serie: s };
-      if (c == null && rr == null) { if (regs.some(x => x.semana === sem && x.letra === t.letra && x.exercicio_id === it.exercicio_id && x.serie === s)) del.push(key); continue; }
-      if (c == null || rr == null) incompletas++;
-      up.push({ ...key, carga: c, reps: rr ? rr.reps : null, reps_txt: rr ? rr.txt : null });
-    }
-  }
-  const obsTxt = (document.getElementById("sessObs")?.value || "").trim();
-  const sessAnt = (S.data.sess || []).find(x => x.semana === sem && x.letra === t.letra);
+async function salvarTreino(btn, o = {}){
+  const D = S.data, { programa } = D;
+  if (!programa || S.view !== "treino") return;
+  clearTimeout(autoTimer); autoTimer = null;
+  if (salvando) { salvarDeNovo = true; return; }
+  const sem = S.p.semana, letra = S.p.letra, v = lerCampos(), ver = rascVer, chave = chaveRasc();
+  const m = montarRegistros(programa, letra, sem, v, D.regs, o.auto);
+  if (m.invalido && !o.auto) return toast(`Valor inválido no exercício ${m.invalido.i + 1}, série de trabalho ${m.invalido.s}. Use números (repetições com pausa: 6+4).`, 4500);
+  const obsTxt = (v.sessObs || "").trim();
+  const sessAnt = (D.sess || []).find(x => x.semana === sem && x.letra === letra);
   const mudouObs = obsTxt !== (sessAnt?.obs || "");
-  if (!up.length && !del.length && !mudouObs) return toast("Preencha pelo menos uma série de trabalho.");
-  btn.disabled = true;
+  if (!m.up.length && !m.del.length && !mudouObs) {
+    if (!m.invalido) LS.set(chave, { v, sync: true, ver, t: Date.now() });
+    if (o.auto) return;
+    const temAlgo = Object.entries(v).some(([k, x]) => k !== "sessObs" && String(x).trim());
+    return toast(temAlgo ? "Tudo já está salvo." : "Preencha pelo menos uma série de trabalho.");
+  }
+  salvando = true; if (btn) btn.disabled = true; autoMsg("Salvando…");
   try {
-    if (up.length || del.length) await db.saveRegistros(up, del);
-    if (mudouObs) { await db.saveSessao({ aluno_id: S.user.id, programa_id: programa.id, semana: sem, letra: t.letra, obs: obsTxt }); S.data.sess = await db.getSessoes(S.user.id, programa.id); }
-    S.data.regs = await db.getRegistros(S.user.id, programa.id);
-    toast(incompletas ? `Treino salvo. Faltou carga ou repetições em ${incompletas} série(s).` : "Treino salvo. Bom trabalho!", 3500);
-  } catch (e) { toast(traduzErro(e), 4000); }
-  btn.disabled = false;
+    if (m.up.length || m.del.length) await db.saveRegistros(m.up, m.del);
+    if (mudouObs) { await db.saveSessao({ aluno_id: S.user.id, programa_id: programa.id, semana: sem, letra, obs: obsTxt }); D.sess = await db.getSessoes(S.user.id, programa.id); }
+    D.regs = await db.getRegistros(S.user.id, programa.id);
+    if (rascVer === ver && !m.invalido) LS.set(chave, { v, sync: true, ver, t: Date.now() });
+    autoMsg(m.invalido ? `Salvo às ${hora()} · confira o valor do exercício ${m.invalido.i + 1}` : `Salvo automaticamente às ${hora()}`);
+    if (!o.auto) toast(m.incompletas ? `Treino salvo. Faltou carga ou repetições em ${m.incompletas} série(s).` : "Treino salvo. Bom trabalho!", 3500);
+  } catch (e) {
+    autoMsg("Sem conexão: os dados ficaram guardados neste aparelho e serão enviados depois.");
+    if (!o.auto) toast(traduzErro(e), 4000);
+  }
+  salvando = false; if (btn) btn.disabled = false;
+  if (salvarDeNovo) { salvarDeNovo = false; salvarTreino(null, { auto: true }); }
 }
 
 document.addEventListener("input", ev => {
   const el = ev.target;
+  if (el.classList.contains("combo-in")) { const combo = el.closest(".combo"); combo.querySelector(".combo-list").hidden = false; el.setAttribute("aria-expanded", "true"); comboOpcoes(combo, el.value); return; }
+  if (S.view === "treino" && (el.id === "sessObs" || el.closest(".set-in"))) { guardarRascunho(); statusTreino(); autoMsg("Alterações guardadas neste aparelho…"); agendarAuto(); return; }
+  if (S.view === "anamnese" && el.dataset.an) { anGuardar(el); return; }
+  if (el.dataset.f === "frequencia" && S.data.draft) { S.data.draft.frequencia = el.value; S.data.dirty = true; const y = window.scrollY; render(); window.scrollTo(0, y); return; }
   if (el.id === "exSearch") { S.data.q = el.value; const pos = el.selectionStart; render(); const n = document.getElementById("exSearch"); n.focus(); n.setSelectionRange(pos, pos); return; }
   if (el.dataset.obs) { S.data.obs = S.data.obs || {}; S.data.obs[el.dataset.obs] = el.value; return; }
   if (el.dataset.sf && S.data.draft) {
@@ -1569,6 +2000,7 @@ document.addEventListener("input", ev => {
 });
 document.addEventListener("change", ev => {
   const el = ev.target;
+  if (el.id === "anConsent") { S.data.consent = el.checked; return; }
   if (el.id === "semSel") { S.p.semana = Number(el.value); return render(); }
   if ((el.id === "repDe" || el.id === "repAte") && S.data.envio) {
     const e = S.data.envio, v = Number(el.value);
@@ -1576,7 +2008,6 @@ document.addEventListener("change", ev => {
     const y = window.scrollY; render(); window.scrollTo(0, y); return;
   }
   if (el.id === "cmpSel") { S.p.cmp = Number(el.value); const y = window.scrollY; render(); window.scrollTo(0, y); return; }
-  if (el.dataset.f === "exercicio_id") render();
   if (el.dataset.pos !== undefined) {
     const arr = S.data.draft.treinos[+el.dataset.t].itens, from = +el.dataset.i, to = Number(el.value);
     const [m] = arr.splice(from, 1); arr.splice(to, 0, m); S.data.dirty = true;
@@ -1598,6 +2029,18 @@ document.addEventListener("submit", async ev => {
     const ex = { ...prev, nome, grupo: document.getElementById("exGrupo").value.trim(), video_url: video || (prev.video_url === "demo" ? "demo" : ""), descricao: document.getElementById("exDesc").value.trim() };
     try { await db.saveExercicio(ex); S.data.exercicios = await db.listExercicios(); S.data.edit = null; toast("Exercício salvo"); render(); }
     catch (e) { toast(traduzErro(e), 4000); }
+  }
+  if (f.id === "senhaForm") {
+    const p1 = document.getElementById("ns1").value, p2 = document.getElementById("ns2").value, btn = f.querySelector("[type=submit]");
+    if (p1.length < 6) return toast("A senha precisa ter pelo menos 6 caracteres.");
+    if (p1 !== p2) return toast("As duas senhas não são iguais.");
+    btn.disabled = true;
+    try {
+      await db.novaSenha(p1); toast("Senha salva.");
+      if (S.view === "novaSenha") { history.replaceState(null, "", location.pathname); return entrar(); }
+      document.getElementById("ns1").value = ""; document.getElementById("ns2").value = "";
+    } catch (e) { toast(traduzErro(e), 4500); }
+    btn.disabled = false; return;
   }
   if (f.id === "resetForm") {
     const msg = document.getElementById("resetMsg"), email = document.getElementById("rEmail").value.trim();
@@ -1636,7 +2079,7 @@ document.addEventListener("submit", async ev => {
 
 /* ---------- Arrastar exercícios (mouse e toque) ---------- */
 let drag = null;
-const NAO_ARRASTA = "input,select,textarea,a,button:not([data-drag])";
+const NAO_ARRASTA = "input,select,textarea,a,.combo,button:not([data-drag])";
 document.addEventListener("pointerdown", ev => {
   const card = ev.target.closest(".ex-edit"); if (!card || drag) return;
   if (ev.pointerType === "mouse" && ev.button !== 0) return;
@@ -1711,8 +2154,9 @@ document.addEventListener("keydown", ev => {
    ===================================================================== */
 const contaPendencias = l => l.filter(u => statusDe(u) === "pendente" || (statusDe(u) === "ativo" && (u.cref_conferido === false || (diasPara(u.cref_validade) ?? -1) < 0))).length;
 async function entrar(){
-  PROF = null; S.pendentes = 0;
+  PROF = null; S.pendentes = 0; S.anamneseOk = true;
   try {
+    if (S.user.role === "aluno") { try { S.anamneseOk = !!(await db.getAnamnese(S.user.id)); } catch { S.anamneseOk = true; } }
     if (S.user.role === "aluno" && S.user.personal_id) PROF = await db.getPerfil(S.user.personal_id);
     else if (isPers()) PROF = S.user;
     if (isMaster()) S.pendentes = contaPendencias(await db.listPersonais());
