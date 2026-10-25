@@ -1129,9 +1129,8 @@ function viewTreino(){
       video = (DEMO || e.video_url === "demo")
         ? `<div class="video-ph">${MARK(36)}<span>Seu vídeo explicando o exercício aparece aqui</span><span class="small muted">No app publicado, o vídeo do YouTube toca nesta área.</span></div>`
         : id ? `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1" title="${esc(e.nome)}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div>`
-        : "";
+        : `<div class="video-ph">${MARK(36)}<span>Vídeo em breve</span><span class="small muted">O vídeo explicativo deste exercício ainda está sendo preparado. Se tiver dúvida na execução, fale com ${esc(primeiroNome((PROF || PROF_PADRAO).nome))}.</span></div>`;
     }
-    const temVideo = DEMO || e.video_url === "demo" || !!ytId(e.video_url);
     const nT = serT(it).length;
     const repsT = [...new Set(it.sets.filter(x => x.tipo === "trabalho").map(x => x.reps).filter(Boolean))].join(" / ");
     let ordT = 0;
@@ -1153,7 +1152,7 @@ function viewTreino(){
       <div class="body">
         ${it.obs ? `<div class="nota"><b>Atenção:</b> ${esc(it.obs)}</div>` : ""}
         ${it.descanso ? `<div class="small"><b>Descanso das séries de trabalho:</b> ${esc(it.descanso)}</div>` : ""}
-        <div class="row">${temVideo ? `<button class="btn sm" data-act="video" data-i="${i}" aria-expanded="${open}">${open ? "Fechar vídeo" : "▶ Ver vídeo"}</button>` : ""}${e.descricao ? `<span class="dicas">${esc(e.descricao)}</span>` : ""}</div>
+        <div class="row"><button class="btn sm" data-act="video" data-i="${i}" aria-expanded="${open}">${open ? "Fechar vídeo" : "▶ Ver vídeo"}</button>${e.descricao ? `<span class="dicas">${esc(e.descricao)}</span>` : ""}</div>
         ${video}
         <div class="sets-list">${sets}</div>
         <div class="fim">${ultimo ? `<button class="btn sm" data-act="fecharEx">Fechar</button>` : `<button class="btn sm" data-act="proxEx" data-i="${i}">Próximo exercício ↓</button>`}</div>
