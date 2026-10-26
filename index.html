@@ -489,7 +489,7 @@ function resumoCardio(c){
   return partes.filter(Boolean).join(" · ");
 }
 const anVisivel = (q, r) => !q.se || r[q.se[0]] === q.se[1];
-const anFalta = r => ANAMNESE.filter(q => !q.opcional && anVisivel(q, r) && !String(r[q.id] ?? "").trim());
+const anFalta = r => modoPres() ? [] : ANAMNESE.filter(q => !q.opcional && anVisivel(q, r) && !String(r[q.id] ?? "").trim());
 const LS = {
   get(k){ try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
   set(k, v){ try { localStorage.setItem(k, JSON.stringify(v)); } catch {} },
@@ -521,6 +521,9 @@ const crefChip = u => {
 };
 const crefAtencao = u => { const d = diasPara(u.cref_validade); return d === null || d <= 30; };
 const primeiroNome = n => String(n || "").trim().split(/\s+/)[0];
+const alvo = () => (S.p && S.p.alunoId && ["home", "treino", "anamnese"].includes(S.view)) ? S.p.alunoId : S.user.id;
+const modoPres = () => !!(S.p && S.p.alunoId && ["home", "treino", "anamnese"].includes(S.view));
+const nomeAlvo = () => (modoPres() && S.data.alvoNome) || S.user.nome;
 const temConteudo = t => !!((t.itens || []).length || (t.cardios || []).length);
 const LETRAS = ["A","B","C","D","E","F","G"];
 
@@ -610,7 +613,7 @@ function makeSupabase(){
       const d = ok(await c.auth.signUp({ email, password, options: { data: { nome, ...extra }, emailRedirectTo: location.origin + location.pathname } }));
       return d.session ? this.current() : null;
     },
-    async getPerfil(id){ return ok(await c.from("profiles").select("id,nome,cref,role,email").eq("id", id).maybeSingle()); },
+    async getPerfil(id){ return ok(await c.from("profiles").select("id,nome,cref,role,email,presencial").eq("id", id).maybeSingle()); },
     async listPersonais(){ return ok(await c.from("profiles").select("*").eq("role", "personal").order("created_at", { ascending: false })); },
     async aprovarPersonal(id, aprovar){ ok(await c.rpc("aprovar_personal", { uid: id, aprovar })); },
     async enviarCref(uid, file, campos = {}){
@@ -635,7 +638,10 @@ function makeSupabase(){
     async salvarNome(nome){ ok(await c.from("profiles").update({ nome }).eq("id", S.user.id)); },
     async getAnamnese(alunoId){ return ok(await c.from("anamneses").select("*").eq("aluno_id", alunoId).maybeSingle()); },
     async listAnamneses(){ return ok(await c.from("anamneses").select("aluno_id,created_at,updated_at")); },
-    async saveAnamnese(respostas){ ok(await c.from("anamneses").upsert({ aluno_id: S.user.id, respostas, consentimento: true, updated_at: new Date().toISOString() }, { onConflict: "aluno_id" })); },
+    async criarPresencial(nome){ return ok(await c.rpc("criar_aluno_presencial", { p_nome: nome })); },
+    async renomearPresencial(uid, nome){ ok(await c.rpc("renomear_aluno_presencial", { uid, p_nome: nome })); },
+    async excluirPresencial(uid){ ok(await c.rpc("excluir_aluno_presencial", { uid })); },
+    async saveAnamnese(respostas, alunoId = S.user.id){ ok(await c.from("anamneses").upsert({ aluno_id: alunoId, respostas, consentimento: true, updated_at: new Date().toISOString() }, { onConflict: "aluno_id" })); },
     async listProgramas(){ return ok(await c.from("programas").select("id,aluno_id,nome,inicio,semanas,treinos,updated_at").eq("ativo", true)); },
     async listFinalizados(){ return ok(await c.from("sessoes").select("programa_id,semana,letra,finalizado_em").not("finalizado_em", "is", null)); },
     async listExercicios(){ return ok(await c.from("exercicios").select("*").order("nome")); },
@@ -679,7 +685,8 @@ function makeDemo(){
     { id: "p3", nome: "Diego Ramos (exemplo)", email: "diego@exemplo.com", role: "personal", status: "ativo", cref: "054321-G/SP", cref_validade: ago(-18), cref_conferido: true, cref_foto: "demo", created_at: new Date(Date.now() - 20 * 86400000).toISOString() },
     { id: "a1", nome: "Lucas Martins (exemplo)", email: "lucas@exemplo.com", role: "aluno", personal_id: "p1" },
     { id: "a2", nome: "Carla Souza (exemplo)", email: "carla@exemplo.com", role: "aluno", personal_id: "p1" },
-    { id: "a3", nome: "Rafael Lima (exemplo)", email: "rafael@exemplo.com", role: "aluno", personal_id: "p1" }
+    { id: "a3", nome: "Rafael Lima (exemplo)", email: "rafael@exemplo.com", role: "aluno", personal_id: "p1" },
+    { id: "a4", nome: "Marcos Pereira (presencial, exemplo)", email: null, role: "aluno", status: "ativo", personal_id: "p1", presencial: true }
   ];
   const anams = {
     a1: { aluno_id: "a1", consentimento: true, created_at: ago(46) + "T12:00:00Z", updated_at: ago(46) + "T12:00:00Z", respostas: {
@@ -776,7 +783,10 @@ function makeDemo(){
     async salvarNome(nome){ if (me) me.nome = nome; },
     async getAnamnese(a){ return anams[a] ? clone(anams[a]) : null; },
     async listAnamneses(){ return Object.values(anams).map(({ respostas, ...x }) => clone(x)); },
-    async saveAnamnese(respostas){ const agora = new Date().toISOString(); anams[me.id] = { aluno_id: me.id, consentimento: true, created_at: anams[me.id]?.created_at || agora, updated_at: agora, respostas: clone(respostas) }; },
+    async saveAnamnese(respostas, a = me.id){ const agora = new Date().toISOString(); anams[a] = { aluno_id: a, consentimento: true, created_at: anams[a]?.created_at || agora, updated_at: agora, respostas: clone(respostas) }; },
+    async criarPresencial(nome){ const id = "x" + (nextId++); users.push({ id, nome, email: null, role: "aluno", status: "ativo", personal_id: me.id, presencial: true }); return id; },
+    async renomearPresencial(id, nome){ const u = users.find(x => x.id === id && x.presencial); if (u) u.nome = nome; },
+    async excluirPresencial(id){ const i = users.findIndex(x => x.id === id && x.presencial); if (i >= 0) users.splice(i, 1); },
     async listAlunos(){ return clone(users.filter(u => u.role === "aluno" && u.personal_id === me.id)); },
     async getPerfil(id){ const u = users.find(x => x.id === id); return u ? clone(u) : null; },
     async listPersonais(){ return clone(users.filter(u => u.role === "personal")); },
@@ -860,9 +870,9 @@ async function go(view, p = {}, opts = {}){
       const [alunos, progs, anams, fins] = await Promise.all([db.listAlunos(), db.listProgramas(), db.listAnamneses().catch(() => null), db.listFinalizados().catch(() => [])]);
       S.data = { alunos, progs, anams: anams ? Object.fromEntries(anams.map(a => [a.aluno_id, a])) : null, fins };
     } else if (view === "anamnese") {
-      const atual = await db.getAnamnese(S.user.id);
-      const rasc = LS.get("anamnese:" + S.user.id);
-      S.data = { atual, resp: { ...(atual?.respostas || {}), ...(rasc || {}) }, consent: !!atual, faltando: [] };
+      const quem = alvo(), [atual, perfil] = await Promise.all([db.getAnamnese(quem), modoPres() ? db.getPerfil(quem) : null]);
+      const rasc = LS.get("anamnese:" + quem);
+      S.data = { alvoNome: perfil?.nome, atual, resp: { ...(atual?.respostas || {}), ...(rasc || {}) }, consent: !!atual, faltando: [] };
     } else if (view === "aluno") {
       const proprio = p.alunoId === S.user.id;
       const [alunos, prog, exercicios, anamnese] = await Promise.all([db.listAlunos(), db.getPrograma(p.alunoId), db.listExercicios(), proprio ? null : db.getAnamnese(p.alunoId).catch(() => null)]);
@@ -877,7 +887,7 @@ async function go(view, p = {}, opts = {}){
           treinos: LETRAS.map(l => ({ letra: l, nome: "", itens: [] })) },
         dirty: false };
       if (programa && !Number(programa.frequencia)) { const u = programa.treinos.reduce((m, tr, i) => temConteudo(tr) ? i + 1 : m, 0); if (u) S.data.draft.frequencia = String(u); }
-      S.p.tab = p.tab || (!proprio && !anamnese && !programa ? "anamnese" : "programa"); S.p.letra = p.letra || "A";
+      S.p.tab = p.tab || (!proprio && !aluno?.presencial && !anamnese && !programa ? "anamnese" : "programa"); S.p.letra = p.letra || "A";
     } else if (view === "orientacoes") {
       const prog = S.user.role === "aluno" ? await db.getPrograma(S.user.id) : null;
       S.data = { programa: prog ? normPrograma(prog) : null };
@@ -890,14 +900,14 @@ async function go(view, p = {}, opts = {}){
     } else if (view === "biblioteca") {
       S.data = { exercicios: await db.listExercicios(), q: "", edit: null, confirm: null };
     } else if (view === "home" || view === "treino") {
-      const [prog, exercicios] = await Promise.all([db.getPrograma(S.user.id), db.listExercicios()]);
+      const quem = alvo(), [prog, exercicios, perfil] = await Promise.all([db.getPrograma(quem), db.listExercicios(), modoPres() ? db.getPerfil(quem) : null]);
       const programa = prog ? normPrograma(prog) : null;
-      const regs = programa ? await db.getRegistros(S.user.id, programa.id) : [];
+      const regs = programa ? await db.getRegistros(quem, programa.id) : [];
       const obs = programa && isPers() ? await db.getObs(programa.id) : {};
       const rels = S.user.role === "aluno" ? await db.listRelatorios(S.user.id) : [];
-      let sess = programa ? await db.getSessoes(S.user.id, programa.id) : [];
-      S.data = { programa, regs, exercicios, obs, rels, sess };
-      if (programa && await sincronizarRascunhos(programa)) { S.data.regs = await db.getRegistros(S.user.id, programa.id); S.data.sess = await db.getSessoes(S.user.id, programa.id); if (!p.semana) S.p.semana = semanaAtual(programa, S.data.sess); }
+      let sess = programa ? await db.getSessoes(quem, programa.id) : [];
+      S.data = { programa, regs, exercicios, obs, rels, sess, alvoNome: perfil?.nome };
+      if (programa && await sincronizarRascunhos(programa)) { S.data.regs = await db.getRegistros(quem, programa.id); S.data.sess = await db.getSessoes(quem, programa.id); if (!p.semana) S.p.semana = semanaAtual(programa, S.data.sess); }
       if (programa) { S.p.semana = p.semana || semanaAtual(programa, sess); }
     }
   } catch (e) { S.data.error = traduzErro(e); }
@@ -924,7 +934,7 @@ function render(loading = false){
 function header(){
   const isP = isPers();
   const nav = !S.user ? "" : (S.user.role === "personal" && !isP) ? `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="pendente" ${S.view === "pendente" ? 'aria-current="page"' : ""}>Cadastro</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>` : isP
-    ? `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="alunos" ${["alunos","aluno"].includes(S.view) ? 'aria-current="page"' : ""}>Alunos</button>${isMaster() ? `<button data-act="nav" data-v="personais" ${S.view === "personais" ? 'aria-current="page"' : ""}>Personais${S.pendentes ? `<span class="badge">${S.pendentes}</span>` : ""}</button>` : ""}<button data-act="nav" data-v="biblioteca" ${S.view === "biblioteca" ? 'aria-current="page"' : ""}>Biblioteca</button><button data-act="nav" data-v="home" ${["home","treino"].includes(S.view) ? 'aria-current="page"' : ""}>Meu treino</button><button data-act="nav" data-v="orientacoes" ${S.view === "orientacoes" ? 'aria-current="page"' : ""}>Orientações</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>`
+    ? `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="alunos" ${["alunos","aluno"].includes(S.view) || modoPres() ? 'aria-current="page"' : ""}>Alunos</button>${isMaster() ? `<button data-act="nav" data-v="personais" ${S.view === "personais" ? 'aria-current="page"' : ""}>Personais${S.pendentes ? `<span class="badge">${S.pendentes}</span>` : ""}</button>` : ""}<button data-act="nav" data-v="biblioteca" ${S.view === "biblioteca" ? 'aria-current="page"' : ""}>Biblioteca</button><button data-act="nav" data-v="home" ${["home","treino"].includes(S.view) && !modoPres() ? 'aria-current="page"' : ""}>Meu treino</button><button data-act="nav" data-v="orientacoes" ${S.view === "orientacoes" ? 'aria-current="page"' : ""}>Orientações</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>`
     : S.anamneseOk === false ? `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="anamnese" ${S.view === "anamnese" ? 'aria-current="page"' : ""}>Anamnese</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>`
     : `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="home" ${["home","treino","relatorio"].includes(S.view) ? 'aria-current="page"' : ""}>Meus treinos</button><button data-act="nav" data-v="orientacoes" ${S.view === "orientacoes" ? 'aria-current="page"' : ""}>Orientações</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>`;
   const demo = DEMO ? `<div class="demo"><div class="wrap">Modo demonstração: dados de exemplo, nada é salvo de verdade.${S.user ? ` Você está como <b>${esc({ master: "login mestre", personal: isPers() ? "personal" : "personal em análise", aluno: "aluno" }[S.user.role])}</b>.` : ""}</div></div>` : "";
@@ -975,10 +985,10 @@ function viewAlunos(){
   const { alunos, progs } = S.data;
   const pm = Object.fromEntries(progs.map(p => [p.aluno_id, p]));
   const cards = alunos.map(a => {
-    const p = pm[a.id], an = S.data.anams ? S.data.anams[a.id] : true;
+    const p = pm[a.id], an = S.data.anams && !a.presencial ? S.data.anams[a.id] : true;
     const st = (p ? `<span class="chip acc">${esc(p.nome)}</span><span class="chip num">Semana ${semanaAtual(p, S.data.fins)} de ${p.semanas}</span>` : an ? `<span class="chip ok">Anamnese respondida</span><span class="chip warn">Montar treino</span>` : "")
       + (an ? "" : `<span class="chip warn">Anamnese pendente</span>`);
-    return `<div class="item"><div class="grow"><h3>${esc(a.nome)}</h3><p class="small muted">${esc(a.email)}</p></div><div class="row">${st}</div><button class="btn sm primary" data-act="openAluno" data-id="${esc(a.id)}">Abrir</button></div>`;
+    return `<div class="item"><div class="grow"><h3>${esc(a.nome)}</h3><p class="small muted">${a.presencial ? "Atendimento presencial · sem acesso ao app" : esc(a.email)}</p></div><div class="row">${a.presencial ? `<span class="chip">Presencial</span>` : ""}${a.presencial && !p ? `<span class="chip warn">Montar treino</span>` : st}</div><button class="btn sm primary" data-act="openAluno" data-id="${esc(a.id)}">Abrir</button></div>`;
   }).join("");
   const link = location.origin + location.pathname + "?p=" + S.user.id;
   const avisoCref = isPers() && crefAtencao(S.user) ? `<div class="callout">${diasPara(S.user.cref_validade) === null ? "Informe a validade do seu CREF" : diasPara(S.user.cref_validade) < 0 ? "O seu CREF está vencido" : `O seu CREF vence em ${diasPara(S.user.cref_validade)} dia(s), em ${fmtData(S.user.cref_validade)}`}. Atualize os dados e a foto em <button class="btn sm" data-act="nav" data-v="conta">Minha conta</button></div>` : "";
@@ -986,7 +996,9 @@ function viewAlunos(){
     ${alunos.length ? `<div class="list">${cards}</div>` : `<div class="empty">Nenhum aluno cadastrado ainda.</div>`}
     <div class="item"><div class="grow"><h3>Meu treino</h3><p class="small muted">Monte e acompanhe o seu próprio programa (análise técnica)</p></div><div class="row">${pm[S.user.id] ? `<span class="chip acc">${esc(pm[S.user.id].nome)}</span><span class="chip num">Semana ${semanaAtual(pm[S.user.id], S.data.fins)} de ${pm[S.user.id].semanas}</span>` : `<span class="chip warn">Sem programa</span>`}</div><button class="btn sm" data-act="openAluno" data-id="${esc(S.user.id)}">Editar programa</button></div>
     <div class="panel"><h3>Adicionar aluno</h3><p class="small muted">Envie este link para o aluno. Ele é o seu convite: o aluno cria a conta com e-mail e senha e aparece só na sua lista.</p>
-    <div class="row"><input id="shareLink" type="text" readonly value="${esc(DEMO ? "https://seu-usuario.github.io/treinos/?p=" + S.user.id : link)}" style="flex:1;min-width:0"><button class="btn sm" data-act="copy">Copiar</button></div></div>`;
+    <div class="row"><input id="shareLink" type="text" readonly value="${esc(DEMO ? "https://seu-usuario.github.io/treinos/?p=" + S.user.id : link)}" style="flex:1;min-width:0"><button class="btn sm" data-act="copy">Copiar</button></div></div>
+    <div class="panel"><h3>Adicionar aluno presencial</h3><p class="small muted">Para quem você atende pessoalmente e não vai usar o app. Não precisa de link nem de e-mail: você monta o treino e, durante a sessão, abre o treino dele no seu celular para anotar as cargas.</p>
+    <div class="row"><input id="presNome" type="text" placeholder="Nome completo do aluno" autocomplete="off" style="flex:1;min-width:0"><button class="btn sm primary" data-act="criarPresencial">Criar aluno</button></div></div>`;
 }
 
 /* ---------- Personal: aluno (programa / evolução) ---------- */
@@ -994,16 +1006,22 @@ function viewAluno(){
   const { aluno, programa } = S.data;
   if (!aluno) return `<div class="callout">Aluno não encontrado.</div>`;
   const tab = S.p.tab, proprio = S.data.proprio, an = S.data.anamnese;
-  const bloqueado = !proprio && !an && !programa?.id;
+  const pres = !!aluno.presencial;
+  const bloqueado = !proprio && !pres && !an && !programa?.id;
   const conteudo = tab === "anamnese" ? painelAnamnese()
     : tab === "programa" ? (bloqueado
       ? `<div class="panel lock"><h3>Montagem bloqueada até o aluno responder a anamnese</h3><p class="small muted">A anamnese é a primeira tela que o aluno vê ao entrar no app. Assim que ele enviar as respostas, elas aparecem na aba Anamnese e a montagem do treino é liberada.</p><button class="btn sm" data-act="tab" data-tab="anamnese">Ver situação da anamnese</button></div>`
-      : (!proprio && !an ? `<div class="callout">Este aluno ainda não respondeu a anamnese. Ela aparece para ele na próxima vez que entrar no app.</div>` : "") + editorPrograma())
+      : (!proprio && !pres && !an ? `<div class="callout">Este aluno ainda não respondeu a anamnese. Ela aparece para ele na próxima vez que entrar no app.</div>` : "") + editorPrograma())
     : null;
   return `<div><button class="btn ghost sm" data-act="nav" data-v="alunos">← Alunos</button></div>
-    <div><h1>${proprio ? "Meu treino" : esc(aluno.nome)}</h1><p class="muted small">${esc(aluno.email)}</p></div>
-    <div class="tabs" role="tablist">${proprio ? "" : `<button role="tab" data-act="tab" data-tab="anamnese" aria-selected="${tab === "anamnese"}">Anamnese${an ? "" : ' <span class="chip warn">pendente</span>'}</button>`}<button role="tab" data-act="tab" data-tab="programa" aria-selected="${tab === "programa"}">Programa</button><button role="tab" data-act="tab" data-tab="evolucao" aria-selected="${tab === "evolucao"}">Evolução</button></div>
-    ${conteudo !== null ? conteudo : (programa?.id ? (aluno.id === S.user.id ? "" : painelEnvio()) + evolucao({ prog: programa, regs: S.data.regs, exercicios: S.data.exercicios, modo: aluno.id === S.user.id ? "proprio" : "personal", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) }) : `<div class="empty">Monte e salve um programa para acompanhar a evolução.</div>`)}`;
+    <div><h1>${proprio ? "Meu treino" : esc(aluno.nome)}</h1><p class="muted small">${pres ? "Atendimento presencial · sem acesso ao app" : esc(aluno.email)}</p></div>
+    ${pres && programa?.id ? `<div class="row"><button class="btn primary" data-act="treinarPres" data-id="${esc(aluno.id)}">▶ Abrir treino para registrar</button><span class="small muted">Use durante a sessão para anotar cargas e finalizar o treino.</span></div>` : ""}
+    <div class="tabs" role="tablist">${proprio ? "" : `<button role="tab" data-act="tab" data-tab="anamnese" aria-selected="${tab === "anamnese"}">Anamnese${an ? "" : pres ? ' <span class="chip">opcional</span>' : ' <span class="chip warn">pendente</span>'}</button>`}<button role="tab" data-act="tab" data-tab="programa" aria-selected="${tab === "programa"}">Programa</button><button role="tab" data-act="tab" data-tab="evolucao" aria-selected="${tab === "evolucao"}">Evolução</button></div>
+    ${conteudo !== null ? conteudo : (programa?.id ? (aluno.id === S.user.id || pres ? "" : painelEnvio()) + evolucao({ prog: programa, regs: S.data.regs, exercicios: S.data.exercicios, modo: aluno.id === S.user.id ? "proprio" : "personal", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) }) : `<div class="empty">Monte e salve um programa para acompanhar a evolução.</div>`)}
+    ${pres ? `<details class="panel dados-pres" ${S.data.confirmarPres ? "open" : ""}><summary style="cursor:pointer;font-weight:700">Dados do aluno presencial</summary>
+      <div class="row" style="align-items:flex-end"><label class="field" style="flex:1;min-width:200px"><span>Nome completo</span><input id="presRenome" type="text" value="${esc(aluno.nome)}"></label><button class="btn" data-act="renomearPres" data-id="${esc(aluno.id)}">Salvar nome</button></div>
+      ${S.data.confirmarPres ? `<div class="row"><span class="small">Excluir ${esc(aluno.nome)} com programa, cargas e anamnese? Não dá para desfazer.</span><button class="btn sm danger" data-act="excluirPres" data-id="${esc(aluno.id)}">Excluir definitivamente</button><button class="btn sm ghost" data-act="cancelarPres">Cancelar</button></div>`
+        : `<div><button class="btn sm ghost danger" data-act="pedirExcluirPres">Excluir aluno presencial</button></div>`}</details>` : ""}`;
 }
 
 function legendaTipos(compacta){
@@ -1200,6 +1218,7 @@ function viewBiblioteca(){
 /* ---------- Aluno: início ---------- */
 function viewHome(){
   const { programa, regs } = S.data;
+  if (!programa && modoPres()) return `<div><button class="btn ghost sm" data-act="voltarAluno">← Voltar</button></div><div class="empty">Este aluno ainda não tem programa. Monte na aba Programa.</div>`;
   if (!programa) return `<div><h1>Olá, ${esc(S.user.nome.split(" ")[0])}</h1></div><div class="empty">${isPers() ? "Você ainda não montou o seu próprio programa. Vá em Alunos → Meu treino → Editar programa." : "Seu programa de treino ainda não foi liberado. Assim que estiver pronto, ele aparece aqui."}</div>${isPers() ? "" : listaRelatorios()}`;
   const sem = S.p.semana, cur = semanaAtual(programa, S.data.sess);
   const treinos = programa.treinos.filter(temConteudo);
@@ -1212,7 +1231,7 @@ function viewHome(){
     return `<div class="item"><div class="letters"><button tabindex="-1" aria-hidden="true" aria-selected="true">${t.letra}</button></div><div class="grow"><h3>${esc(t.nome || "Treino " + t.letra)}</h3><p class="small muted num">${(() => { const nc = (t.cardios || []).length, cd = nc > 1 ? `${nc} cardios` : "cardio"; return t.itens.length ? `${t.itens.length} exercícios${nc ? " + " + cd : ""}` : (nc > 1 ? `Só cardio (${nc})` : "Só cardio"); })()}</p></div>${st}<button class="btn primary" data-act="openTreino" data-l="${t.letra}">Abrir</button></div>`;
   }).join("");
   const semOpts = Array.from({ length: programa.semanas }, (_, i) => i + 1).map(w => `<option value="${w}" ${w === sem ? "selected" : ""} ${w > cur ? "disabled" : ""}>Semana ${w}${w === cur ? " (atual)" : ""}</option>`).join("");
-  return `<div><p class="label">${esc(programa.nome)}</p><h1>Olá, ${esc(S.user.nome.split(" ")[0])}</h1></div>
+  return `${modoPres() ? `<div><button class="btn ghost sm" data-act="voltarAluno">← ${esc(S.data.alvoNome || "Aluno")}</button></div>` : ""}<div><p class="label">${modoPres() ? "Atendimento presencial · " : ""}${esc(programa.nome)}</p><h1>${modoPres() ? esc(S.data.alvoNome || "Aluno") : `Olá, ${esc(S.user.nome.split(" ")[0])}`}</h1></div>
     <div class="panel"><div class="info-grid">
       ${programa.objetivo ? `<div><span class="label">Objetivo</span><b>${esc(programa.objetivo)}</b></div>` : ""}
       <div><span class="label">Início do bloco</span><b class="num">${fmtData(programa.inicio)}</b></div>
@@ -1224,7 +1243,7 @@ function viewHome(){
     <div class="prog-treino" style="margin-top:-8px"><div class="bar"><i style="width:${treinos.length ? Math.round(nFin / treinos.length * 100) : 0}%"></i></div><span class="small muted num">${nFin === treinos.length && treinos.length ? `Semana ${sem} concluída` : finalizado(S.data.sess, sem, "*") ? `Semana ${sem} encerrada · ${nFin} de ${treinos.length} treinos feitos` : `${nFin} de ${treinos.length} treinos finalizados na semana ${sem}`}</span></div>
     ${sem === cur && treinos.length && nFin < treinos.length && !finalizado(S.data.sess, sem, "*") ? `<div class="row" style="margin-top:-8px"><button class="btn sm" data-act="pedirFimSemana">Finalizar semana ${sem}</button><span class="small muted">Use se não for fazer os treinos que faltam e quiser passar para a próxima semana.</span></div>` : ""}
     <div class="list">${cards}</div>
-    ${isPers() ? `<h2 style="margin-top:12px">Registro do meu treino</h2>${evolucao({ prog: programa, regs, exercicios: S.data.exercicios, modo: "proprio", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) })}` : listaRelatorios()}`;
+    ${modoPres() ? "" : isPers() ? `<h2 style="margin-top:12px">Registro do meu treino</h2>${evolucao({ prog: programa, regs, exercicios: S.data.exercicios, modo: "proprio", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) })}` : listaRelatorios()}`;
 }
 
 /* ---------- Aluno: treino ---------- */
@@ -1271,7 +1290,7 @@ function viewTreino(){
         <div class="fim">${ultimo ? `<button class="btn sm" data-act="fecharEx">Fechar</button>` : `<button class="btn sm" data-act="proxEx" data-i="${i}">Próximo exercício ↓</button>`}</div>
       </div></details>`;
   }).join("");
-  return `<div><button class="btn ghost sm" data-act="nav" data-v="home">← Meus treinos</button></div>
+  return `<div><button class="btn ghost sm" data-act="voltarHome">← ${modoPres() ? "Treinos de " + esc(primeiroNome(S.data.alvoNome || "")) : "Meus treinos"}</button></div>
     <div><p class="label num">Treino ${t.letra} · Semana ${sem} de ${programa.semanas}</p><h1>${esc(t.nome || "Treino " + t.letra)}</h1>
       ${t.itens.length ? `<div class="prog-treino"><div class="bar"><i id="progBar" style="width:0%"></i></div><span id="progTxt" class="small muted num"></span></div>` : ""}</div>
     <details class="panel legend-card" ${S.p.legenda ? "open" : ""}><summary>Como ler as séries · sistema de cores</summary>${legendaTipos(false)}
@@ -1312,7 +1331,7 @@ function cardioAluno(t){
 
 /* ---------- Salvamento automático do treino ---------- */
 let autoTimer = null, salvando = false, salvarDeNovo = false, rascVer = 0;
-const chaveRasc = (sem = S.p.semana, letra = S.p.letra, pid = S.data.programa?.id) => `rasc:${S.user.id}:${pid}:${sem}:${letra}`;
+const chaveRasc = (sem = S.p.semana, letra = S.p.letra, pid = S.data.programa?.id) => `rasc:${alvo()}:${pid}:${sem}:${letra}`;
 function lerCampos(){ const v = {}; document.querySelectorAll(".set-in input, #sessObs").forEach(i => v[i.id] = i.value); return v; }
 function autoMsg(txt){ const m = document.getElementById("autoMsg"); if (m) m.textContent = txt; }
 const hora = () => new Date().toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
@@ -1396,10 +1415,11 @@ async function finalizarTreino(btn, forcar){
     const m2 = montarRegistros(programa, letra, sem, v, D.regs, false);
     if (m2.up.length || m2.del.length) await db.saveRegistros(m2.up, m2.del);
     const antes = semanaAtual(programa, D.sess);
-    await db.saveSessao({ aluno_id: S.user.id, programa_id: programa.id, semana: sem, letra, obs: (v.sessObs || "").trim(), finalizado_em: new Date().toISOString() });
+    const quem = alvo();
+    await db.saveSessao({ aluno_id: quem, programa_id: programa.id, semana: sem, letra, obs: (v.sessObs || "").trim(), finalizado_em: new Date().toISOString() });
     LS.set(chaveRasc(), { v, sync: true, ver: rascVer, t: Date.now() });
-    D.regs = await db.getRegistros(S.user.id, programa.id);
-    D.sess = await db.getSessoes(S.user.id, programa.id);
+    D.regs = await db.getRegistros(quem, programa.id);
+    D.sess = await db.getSessoes(quem, programa.id);
     const fin = D.sess.filter(x => x.finalizado_em);
     const { letras } = progressoSemanas(programa, fin);
     const semanaFechada = letras.every(l => finalizado(D.sess, sem, l));
@@ -1421,7 +1441,7 @@ function parabens(o){
       ? `<div class="semana-ok fade">Semana ${o.sem} concluída!${o.proxima ? ` A semana ${o.proxima} já está liberada.` : ""}</div>`
       : o.faltam.length ? `<p class="small muted fade">Falta${o.faltam.length > 1 ? "m" : ""} ${o.faltam.map(l => "o treino " + l).join(" e ")} para fechar a semana ${o.sem}.</p>` : "";
   modal(`<div class="ok-anim" aria-hidden="true"><svg viewBox="0 0 100 100"><circle class="disc" cx="50" cy="50" r="40"/><circle class="ring" cx="50" cy="50" r="44"/><path class="tick" d="M31 51 L45 65 L70 38"/></svg>${pts}</div>
-    <h2 id="modalTit" class="fade">Parabéns, ${esc(primeiroNome(S.user.nome))}!</h2>
+    <h2 id="modalTit" class="fade">Parabéns, ${esc(primeiroNome(nomeAlvo()))}!</h2>
     <p class="small muted fade">Treino ${esc(o.letra)}${o.nome ? " · " + esc(o.nome) : ""} finalizado</p>
     <p class="frase fade">${esc(frase)}</p>
     <div class="stats fade">${o.exercicios ? `<span class="chip num">${o.exercicios} exercícios</span>` : ""}${o.cardio ? `<span class="chip num">${o.cardio > 1 ? o.cardio + " cardios feitos" : "Cardio feito"}</span>` : ""}${o.series ? `<span class="chip num">${o.series} séries de trabalho</span>` : ""}${o.vol ? `<span class="chip acc num">${fmtKg(o.vol)} kg levantados</span>` : ""}</div>
@@ -1440,7 +1460,7 @@ function montarRegistros(programa, letra, sem, v, regs, auto){
       if (!(ck in v) && !(rk in v)) continue;
       const c = parseN(v[ck]), rr = parseReps(v[rk]);
       if (Number.isNaN(c) || Number.isNaN(rr)) { if (!invalido) invalido = { i, s }; continue; }
-      const key = { aluno_id: S.user.id, programa_id: programa.id, semana: sem, letra, exercicio_id: it.exercicio_id, serie: s };
+      const key = { aluno_id: alvo(), programa_id: programa.id, semana: sem, letra, exercicio_id: it.exercicio_id, serie: s };
       const ant = regs.find(x => x.semana === sem && x.letra === letra && x.exercicio_id === it.exercicio_id && x.serie === s);
       if (c == null && rr == null) { if (ant) del.push(key); continue; }
       if (c == null || rr == null) incompletas++;
@@ -1454,7 +1474,8 @@ function montarRegistros(programa, letra, sem, v, regs, auto){
 }
 async function sincronizarRascunhos(programa){
   let mudou = false;
-  for (const k of LS.keys(`rasc:${S.user.id}:`)) {
+  const quem = alvo();
+  for (const k of LS.keys(`rasc:${quem}:`)) {
     const r = LS.get(k), [, , pid, sem, letra] = k.split(":");
     if (!r || r.sync || String(pid) !== String(programa.id)) { if (r?.sync && Date.now() - (r.t || 0) > 864e5) LS.del(k); continue; }
     try {
@@ -1462,7 +1483,7 @@ async function sincronizarRascunhos(programa){
       const m = montarRegistros(programa, letra, Number(sem), r.v || {}, regs, true);
       if (m.up.length || m.del.length) await db.saveRegistros(m.up, m.del);
       const obs = (r.v?.sessObs || "").trim(), ant = (S.data.sess || []).find(x => x.semana === Number(sem) && x.letra === letra);
-      if (obs !== (ant?.obs || "") && "sessObs" in (r.v || {})) await db.saveSessao({ aluno_id: S.user.id, programa_id: programa.id, semana: Number(sem), letra, obs });
+      if (obs !== (ant?.obs || "") && "sessObs" in (r.v || {})) await db.saveSessao({ aluno_id: quem, programa_id: programa.id, semana: Number(sem), letra, obs });
       LS.set(k, { ...r, sync: true, t: Date.now() }); mudou = true;
     } catch {}
   }
@@ -1493,6 +1514,11 @@ function viewAnamnese(){
     html += anCampo(q, r, falta);
   });
   html = html.replace(/^<\/section>/, "") + "</section>";
+  if (modoPres()) return `<div><button class="btn ghost sm" data-act="voltarAluno">← ${esc(S.data.alvoNome || "Aluno")}</button></div>
+    <div><p class="label">Atendimento presencial</p><h1>Anamnese · ${esc(S.data.alvoNome || "")}</h1><p class="muted" style="margin-top:6px">Faça as perguntas ao aluno e registre as respostas. Para aluno presencial a anamnese é opcional e você pode deixar perguntas em branco.</p></div>
+    ${html}
+    <div class="panel"><label class="consent"><input type="checkbox" id="anConsent" ${S.data.consent ? "checked" : ""}><span>O aluno autorizou o registro destas informações para a prescrição e o acompanhamento do treino.</span></label>
+      <div class="row"><button class="btn primary" data-act="enviarAnamnese">Salvar anamnese</button><button class="btn ghost" data-act="voltarAluno">Cancelar</button></div></div>`;
   return `<div><p class="label">${atual ? "Atualizar anamnese" : "Primeiro acesso"}</p><h1>Anamnese</h1>
       <p class="muted" style="margin-top:6px">${atual ? "Revise e atualize o que mudou. O seu personal vê a versão mais recente." : `Antes de montar o seu treino, ${esc(primeiroNome((PROF || PROF_PADRAO).nome))} precisa conhecer você. Responda com calma: leva uns 10 minutos e as respostas ficam guardadas neste aparelho enquanto você preenche.`}</p></div>
     <div class="an-prog"><div class="row"><span class="small muted num" id="anProgTxt">${feitas} de ${obrig.length} respondidas</span></div><div class="bar"><i id="anProgBar" style="width:${obrig.length ? Math.round(feitas / obrig.length * 100) : 0}%"></i></div></div>
@@ -1503,10 +1529,11 @@ function viewAnamnese(){
 }
 function anGuardar(el){
   const r = S.data.resp, id = el.dataset.an;
-  r[id] = el.value; LS.set("anamnese:" + S.user.id, r);
+  r[id] = el.value; LS.set("anamnese:" + alvo(), r);
   if (S.data.faltando?.includes(id) && String(el.value).trim()) { S.data.faltando = S.data.faltando.filter(x => x !== id); (document.getElementById("an-" + id)?.classList.remove("falta")); }
   if (ANAMNESE.some(q => q.se && q.se[0] === id)) { const y = window.scrollY; render(); window.scrollTo(0, y); return; }
   const obrig = ANAMNESE.filter(q => !q.opcional && anVisivel(q, r)), feitas = obrig.filter(q => String(r[q.id] ?? "").trim()).length;
+  if (modoPres()) return;
   const t = document.getElementById("anProgTxt"), b = document.getElementById("anProgBar");
   if (t) t.textContent = `${feitas} de ${obrig.length} respondidas`; if (b) b.style.width = Math.round(feitas / obrig.length * 100) + "%";
 }
@@ -1519,10 +1546,11 @@ async function enviarAnamnese(btn){
     alvo?.scrollIntoView({ block: "start", behavior: "smooth" }); setTimeout(() => alvo?.querySelector("input,textarea")?.focus({ preventScroll: true }), 400);
     return toast(falta.length === 1 ? "Falta responder 1 pergunta." : `Faltam ${falta.length} perguntas.`, 3500);
   }
-  if (!S.data.consent) return toast("Marque a declaração de autorização para enviar.", 3500);
+  if (!S.data.consent) return toast(modoPres() ? "Marque a autorização do aluno para salvar." : "Marque a declaração de autorização para enviar.", 3500);
   const limpo = Object.fromEntries(ANAMNESE.filter(q => anVisivel(q, r)).map(q => [q.id, String(r[q.id] ?? "").trim()]));
   btn.disabled = true;
   try {
+    if (modoPres()) { const quem = alvo(); await db.saveAnamnese(limpo, quem); LS.del("anamnese:" + quem); toast("Anamnese salva."); return go("aluno", { alunoId: quem, tab: "anamnese" }); }
     await db.saveAnamnese(limpo); LS.del("anamnese:" + S.user.id);
     const primeira = S.anamneseOk === false; S.anamneseOk = true;
     toast(primeira ? `Anamnese enviada! ${primeiroNome((PROF || PROF_PADRAO).nome)} já pode montar o seu treino.` : "Respostas atualizadas.", 4500);
@@ -1531,6 +1559,8 @@ async function enviarAnamnese(btn){
 }
 function painelAnamnese(){
   const an = S.data.anamnese;
+  const pres = !!S.data.aluno?.presencial;
+  if (!an && pres) return `<div class="empty">Anamnese opcional para aluno presencial.<br><span class="small">Se quiser, faça as perguntas pessoalmente e registre as respostas aqui.</span><div style="margin-top:12px"><button class="btn primary" data-act="anamnesePres" data-id="${esc(S.data.aluno.id)}">Preencher anamnese</button></div></div>`;
   if (!an) return `<div class="empty">O aluno ainda não respondeu a anamnese.<br><span class="small">Ela é a primeira tela que ele vê ao entrar no app. A montagem do treino é liberada assim que ele enviar.</span></div>`;
   const r = an.respostas || {};
   let html = "";
@@ -1543,7 +1573,7 @@ function painelAnamnese(){
   const atual = an.updated_at && an.created_at && String(an.updated_at).slice(0, 10) !== String(an.created_at).slice(0, 10);
   return `<div class="panel"><div class="row"><h2>Anamnese</h2><span class="spacer"></span><span class="chip ok">Respondida em ${fmtData(an.created_at)}</span>${atual ? `<span class="chip acc">Atualizada em ${fmtData(an.updated_at)}</span>` : ""}</div>
     <div class="an-resp"><div style="display:none"></div>${html.replace("<h3>", '<h3 style="margin-top:0">')}</div>
-    ${S.data.programa?.id ? "" : `<div><button class="btn primary" data-act="tab" data-tab="programa">Montar o treino</button></div>`}</div>`;
+    <div class="row">${S.data.programa?.id ? "" : `<button class="btn primary" data-act="tab" data-tab="programa">Montar o treino</button>`}${pres ? `<button class="btn" data-act="anamnesePres" data-id="${esc(S.data.aluno.id)}">Editar anamnese</button>` : ""}</div></div>`;
 }
 
 /* ---------- Personal aguardando aprovação ---------- */
@@ -2182,7 +2212,7 @@ document.addEventListener("click", async ev => {
       const saved = normPrograma(await db.savePrograma(p));
       d.programa = saved; d.draft = clone(saved); d.dirty = false;
       if (!d.regs.length && saved.id) d.regs = await db.getRegistros(saved.aluno_id, saved.id);
-      toast("Programa salvo. O aluno já pode ver."); return render();
+      toast(d.aluno?.presencial ? "Programa salvo." : "Programa salvo. O aluno já pode ver."); return render();
     }
     if (a === "newEx") { d.edit = { nome: "", grupo: "", video_url: "", descricao: "" }; render(); document.getElementById("exNome")?.focus(); return; }
     if (a === "editEx") { d.edit = clone(d.exercicios.find(e => e.id === Number(el.dataset.id))); render(); window.scrollTo(0, 0); return; }
@@ -2190,14 +2220,27 @@ document.addEventListener("click", async ev => {
     if (a === "askDel") { d.confirm = Number(el.dataset.id); return render(); }
     if (a === "noDel") { d.confirm = null; return render(); }
     if (a === "delEx") { await db.deleteExercicio(Number(el.dataset.id)); d.exercicios = await db.listExercicios(); d.confirm = null; toast("Exercício excluído"); return render(); }
-    if (a === "openTreino") return go("treino", { letra: el.dataset.l, semana: S.p.semana });
+    if (a === "openTreino") return go("treino", { letra: el.dataset.l, semana: S.p.semana, ...(modoPres() ? { alunoId: S.p.alunoId } : {}) });
+    if (a === "voltarHome") return go("home", { semana: S.p.semana, ...(modoPres() ? { alunoId: S.p.alunoId } : {}) });
+    if (a === "voltarAluno") return go("aluno", { alunoId: S.p.alunoId, tab: S.view === "anamnese" ? "anamnese" : "programa" });
+    if (a === "treinarPres") return go("home", { alunoId: el.dataset.id });
+    if (a === "anamnesePres") return go("anamnese", { alunoId: el.dataset.id });
+    if (a === "criarPresencial") {
+      const inp = document.getElementById("presNome"), nome = inp.value.trim();
+      if (nome.length < 3) return toast("Informe o nome completo do aluno."); el.disabled = true;
+      const id = await db.criarPresencial(nome); toast("Aluno presencial criado. Agora monte o treino."); return go("aluno", { alunoId: id, tab: "programa" });
+    }
+    if (a === "renomearPres") { const nome = document.getElementById("presRenome").value.trim(); if (nome.length < 3) return toast("Informe o nome completo."); el.disabled = true; await db.renomearPresencial(el.dataset.id, nome); toast("Nome atualizado."); return go("aluno", { alunoId: el.dataset.id, tab: S.p.tab }); }
+    if (a === "pedirExcluirPres") { d.confirmarPres = true; return render(); }
+    if (a === "cancelarPres") { d.confirmarPres = false; return render(); }
+    if (a === "excluirPres") { el.disabled = true; await db.excluirPresencial(el.dataset.id); toast("Aluno presencial excluído."); return go("alunos"); }
     if (a === "video") { const raw = el.dataset.i, i = /^c/.test(raw) ? raw : Number(raw); S.p.video = S.p.video === i ? null : i; S.p.aberto = Number(el.dataset.ab ?? raw); keepInputs(render); statusTreino(); return; }
     if (a === "verPse") { salvarAgora(); await go("orientacoes"); document.getElementById("ori-pse")?.scrollIntoView({ block: "start" }); return; }
     if (a === "saveTreino") return salvarTreino(el);
     if (a === "finalizarTreino") return finalizarTreino(el, false);
     if (a === "finalizarForcar") return finalizarTreino(el, true);
     if (a === "fecharModal") return fecharModal();
-    if (a === "continuarFim") { fecharModal(); return go("home"); }
+    if (a === "continuarFim") { fecharModal(); return go("home", modoPres() ? { alunoId: S.p.alunoId } : {}); }
     if (a === "pedirFimSemana") {
       const prog = d.programa, sem = S.p.semana, faltam = prog.treinos.filter(temConteudo).filter(t => !finalizado(d.sess, sem, t.letra)).map(t => t.letra);
       const ultima = sem >= prog.semanas;
@@ -2208,11 +2251,12 @@ document.addEventListener("click", async ev => {
     }
     if (a === "fimSemana") {
       const prog = d.programa, sem = S.p.semana; el.disabled = true;
-      await db.saveSessao({ aluno_id: S.user.id, programa_id: prog.id, semana: sem, letra: "*", obs: "", finalizado_em: new Date().toISOString() });
-      d.sess = await db.getSessoes(S.user.id, prog.id); fecharModal();
+      const quem = alvo();
+      await db.saveSessao({ aluno_id: quem, programa_id: prog.id, semana: sem, letra: "*", obs: "", finalizado_em: new Date().toISOString() });
+      d.sess = await db.getSessoes(quem, prog.id); fecharModal();
       const nova = semanaAtual(prog, d.sess);
       toast(nova > sem ? `Semana ${sem} encerrada. Bons treinos na semana ${nova}!` : `Semana ${sem} encerrada. Este era o fim do programa.`, 4000);
-      return go("home", { semana: nova });
+      return go("home", { semana: nova, ...(modoPres() ? { alunoId: S.p.alunoId } : {}) });
     }
     if (a === "addCardio") { const t = d.draft.treinos[+el.dataset.t]; (t.cardios = t.cardios || []).push(novoCardio()); d.dirty = true; const y = window.scrollY; render(); window.scrollTo(0, y); return; }
     if (a === "rmCardio") { d.draft.treinos[+el.dataset.t].cardios.splice(+el.dataset.c, 1); d.dirty = true; const y = window.scrollY; render(); window.scrollTo(0, y); return; }
@@ -2249,7 +2293,7 @@ async function salvarTreino(btn, o = {}){
   if (!programa || S.view !== "treino") return;
   clearTimeout(autoTimer); autoTimer = null;
   if (salvando) { salvarDeNovo = true; return; }
-  const sem = S.p.semana, letra = S.p.letra, v = lerCampos(), ver = rascVer, chave = chaveRasc();
+  const sem = S.p.semana, letra = S.p.letra, v = lerCampos(), ver = rascVer, chave = chaveRasc(), quem = alvo();
   const m = montarRegistros(programa, letra, sem, v, D.regs, o.auto);
   if (m.invalido && !o.auto) return toast(`Valor inválido no exercício ${m.invalido.i + 1}, série de trabalho ${m.invalido.s}. Use números (repetições com pausa: 6+4).`, 4500);
   const obsTxt = (v.sessObs || "").trim();
@@ -2264,8 +2308,8 @@ async function salvarTreino(btn, o = {}){
   salvando = true; if (btn) btn.disabled = true; autoMsg("Salvando…");
   try {
     if (m.up.length || m.del.length) await db.saveRegistros(m.up, m.del);
-    if (mudouObs) { await db.saveSessao({ aluno_id: S.user.id, programa_id: programa.id, semana: sem, letra, obs: obsTxt }); D.sess = await db.getSessoes(S.user.id, programa.id); }
-    D.regs = await db.getRegistros(S.user.id, programa.id);
+    if (mudouObs) { await db.saveSessao({ aluno_id: quem, programa_id: programa.id, semana: sem, letra, obs: obsTxt }); D.sess = await db.getSessoes(quem, programa.id); }
+    D.regs = await db.getRegistros(quem, programa.id);
     if (rascVer === ver && !m.invalido) LS.set(chave, { v, sync: true, ver, t: Date.now() });
     autoMsg(m.invalido ? `Salvo às ${hora()} · confira o valor do exercício ${m.invalido.i + 1}` : `Salvo automaticamente às ${hora()}`);
     if (!o.auto) toast(m.incompletas ? `Treino salvo. Faltou carga ou repetições em ${m.incompletas} série(s).` : "Treino salvo. Bom trabalho!", 3500);
