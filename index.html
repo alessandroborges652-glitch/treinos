@@ -508,6 +508,7 @@ const crefChip = u => {
 };
 const crefAtencao = u => { const d = diasPara(u.cref_validade); return d === null || d <= 30; };
 const primeiroNome = n => String(n || "").trim().split(/\s+/)[0];
+const temConteudo = t => !!((t.itens || []).length || t.cardio);
 const LETRAS = ["A","B","C","D","E","F","G"];
 
 /* ---------- utilitários ---------- */
@@ -530,7 +531,7 @@ function semanaAtual(p, sess){
   return Math.min(p.semanas, Math.max(1, cheia + 1, alguma));
 }
 function progressoSemanas(p, fin){
-  const letras = (p.treinos || []).filter(t => (t.itens || []).length).map(t => t.letra);
+  const letras = (p.treinos || []).filter(temConteudo).map(t => t.letra);
   let cheia = 0, alguma = 0;
   for (let w = 1; w <= p.semanas; w++) {
     const f = fin.filter(x => x.semana === w);
@@ -843,7 +844,7 @@ async function go(view, p = {}){
           objetivo: anR.objetivo || "", frequencia: /^[1-7]$/.test(anR.dias || "") ? anR.dias : "", reavaliacao: "", restricoes: "",
           treinos: LETRAS.map(l => ({ letra: l, nome: "", itens: [] })) },
         dirty: false };
-      if (programa && !Number(programa.frequencia)) { const u = programa.treinos.reduce((m, tr, i) => tr.itens.length ? i + 1 : m, 0); if (u) S.data.draft.frequencia = String(u); }
+      if (programa && !Number(programa.frequencia)) { const u = programa.treinos.reduce((m, tr, i) => temConteudo(tr) ? i + 1 : m, 0); if (u) S.data.draft.frequencia = String(u); }
       S.p.tab = p.tab || (!proprio && !anamnese && !programa ? "anamnese" : "programa"); S.p.letra = p.letra || "A";
     } else if (view === "orientacoes") {
       const prog = S.user.role === "aluno" ? await db.getPrograma(S.user.id) : null;
@@ -978,12 +979,12 @@ function editorPrograma(){
   const d = S.data.draft, exs = S.data.exercicios;
   const exMap = Object.fromEntries(exs.map(e => [e.id, e]));
   const freq = Number(d.frequencia) || 0;
-  const usadas = d.treinos.reduce((m, tr, i) => tr.itens.length ? i + 1 : m, 0);
+  const usadas = d.treinos.reduce((m, tr, i) => temConteudo(tr) ? i + 1 : m, 0);
   const nT = freq ? Math.min(LETRAS.length, freq) : 0;
   let ti = LETRAS.indexOf(S.p.letra); if (ti < 0 || ti >= Math.max(nT, 1)) { ti = 0; S.p.letra = "A"; }
   const t = d.treinos[ti];
-  const letters = d.treinos.slice(0, nT).map((tr, i) => `<button role="tab" data-act="letra" data-l="${tr.letra}" aria-selected="${i === ti}" aria-label="Treino ${tr.letra}">${tr.letra}${tr.itens.length ? '<span class="dot"></span>' : ""}</button>`).join("");
-  const sobra = d.treinos.slice(nT).filter(tr => tr.itens.length).map(tr => tr.letra);
+  const letters = d.treinos.slice(0, nT).map((tr, i) => `<button role="tab" data-act="letra" data-l="${tr.letra}" aria-selected="${i === ti}" aria-label="Treino ${tr.letra}">${tr.letra}${temConteudo(tr) ? '<span class="dot"></span>' : ""}</button>`).join("");
+  const sobra = d.treinos.slice(nT).filter(temConteudo).map(tr => tr.letra);
   const items = t.itens.map((it, ii) => {
     const sets = it.sets.map((st, k) => `<div class="set-row t-${st.tipo}">
         <span class="n num">${k + 1}</span>
@@ -1163,14 +1164,14 @@ function viewHome(){
   const { programa, regs } = S.data;
   if (!programa) return `<div><h1>Olá, ${esc(S.user.nome.split(" ")[0])}</h1></div><div class="empty">${isPers() ? "Você ainda não montou o seu próprio programa. Vá em Alunos → Meu treino → Editar programa." : "Seu programa de treino ainda não foi liberado. Assim que estiver pronto, ele aparece aqui."}</div>${isPers() ? "" : listaRelatorios()}`;
   const sem = S.p.semana, cur = semanaAtual(programa, S.data.sess);
-  const treinos = programa.treinos.filter(t => t.itens.length);
+  const treinos = programa.treinos.filter(temConteudo);
   const nFin = treinos.filter(t => finalizado(S.data.sess, sem, t.letra)).length;
   const cards = treinos.map(t => {
     const done = regs.filter(r => r.semana === sem && r.letra === t.letra);
     const total = t.itens.reduce((s, i) => s + serT(i).length, 0);
     const st = finalizado(S.data.sess, sem, t.letra) ? `<span class="chip ok">✓ Finalizado</span>`
       : done.length ? `<span class="chip warn num">Em andamento · ${done.length}/${total} séries</span>` : `<span class="chip">A fazer</span>`;
-    return `<div class="item"><div class="letters"><button tabindex="-1" aria-hidden="true" aria-selected="true">${t.letra}</button></div><div class="grow"><h3>${esc(t.nome || "Treino " + t.letra)}</h3><p class="small muted num">${t.itens.length} exercícios${t.cardio ? " + cardio" : ""}</p></div>${st}<button class="btn primary" data-act="openTreino" data-l="${t.letra}">Abrir</button></div>`;
+    return `<div class="item"><div class="letters"><button tabindex="-1" aria-hidden="true" aria-selected="true">${t.letra}</button></div><div class="grow"><h3>${esc(t.nome || "Treino " + t.letra)}</h3><p class="small muted num">${t.itens.length ? `${t.itens.length} exercícios${t.cardio ? " + cardio" : ""}` : "Só cardio"}</p></div>${st}<button class="btn primary" data-act="openTreino" data-l="${t.letra}">Abrir</button></div>`;
   }).join("");
   const semOpts = Array.from({ length: programa.semanas }, (_, i) => i + 1).map(w => `<option value="${w}" ${w === sem ? "selected" : ""} ${w > cur ? "disabled" : ""}>Semana ${w}${w === cur ? " (atual)" : ""}</option>`).join("");
   return `<div><p class="label">${esc(programa.nome)}</p><h1>Olá, ${esc(S.user.nome.split(" ")[0])}</h1></div>
@@ -1237,7 +1238,7 @@ function viewTreino(){
   }).join("");
   return `<div><button class="btn ghost sm" data-act="nav" data-v="home">← Meus treinos</button></div>
     <div><p class="label num">Treino ${t.letra} · Semana ${sem} de ${programa.semanas}</p><h1>${esc(t.nome || "Treino " + t.letra)}</h1>
-      <div class="prog-treino"><div class="bar"><i id="progBar" style="width:0%"></i></div><span id="progTxt" class="small muted num"></span></div></div>
+      ${t.itens.length ? `<div class="prog-treino"><div class="bar"><i id="progBar" style="width:0%"></i></div><span id="progTxt" class="small muted num"></span></div>` : ""}</div>
     <details class="panel legend-card" ${S.p.legenda ? "open" : ""}><summary>Como ler as séries · sistema de cores</summary>${legendaTipos(false)}
       <p class="small muted">Siga a ordem dos exercícios. Toque no exercício para ver as séries, o vídeo e registrar. Registre carga e repetições só nas séries de trabalho; o número claro no campo é o da semana anterior. Série com pausa no meio? Anote assim: 6+4. Faça 5 a 8 min de aquecimento geral antes do primeiro exercício.</p>
       <div><button class="btn sm" data-act="nav" data-v="orientacoes">Orientações completas</button></div></details>
@@ -1252,7 +1253,7 @@ function cardioAluno(t){
   const corpo = c.tipo === "hiit"
     ? `<div class="cd-lista">${c.blocos.map((b, k) => `<div class="cd-item"><b>Bloco ${k + 1}</b><strong>${esc(b.tempo)}</strong><span>${esc(b.intensidade)}</span></div>`).join("")}</div>`
     : `<div class="cd-lista"><div class="cd-item"><b>Duração</b><strong>${esc(c.tempo)}</strong></div><div class="cd-item"><b>Intensidade</b><strong>${esc(c.intensidade)}</strong></div></div>`;
-  return `<details class="ex-acc cardio-acc" data-i="${i}" ${S.p.aberto === i ? "open" : ""}>
+  return `<details class="ex-acc cardio-acc" data-i="${i}" ${S.p.aberto === i || (!i && S.p.aberto === undefined) ? "open" : ""}>
     <summary><span class="n" aria-hidden="true">♥</span><span class="nm"><b>Cardio</b><span class="sq-row"><span style="margin-left:0">${esc(resumoCardio(c))}</span></span></span></summary>
     <div class="body">
       <div class="small"><b>Local:</b> ${esc(c.local)}</div>
@@ -1358,7 +1359,7 @@ async function finalizarTreino(btn, forcar){
     const semanaFechada = letras.every(l => finalizado(D.sess, sem, l));
     const depois = semanaAtual(programa, D.sess);
     const rows = D.regs.filter(r => r.semana === sem && r.letra === letra);
-    parabens({ letra, nome: t.nome, sem, exercicios: t.itens.length, series: rows.filter(r => r.carga != null && r.reps != null).length, vol: volume(rows),
+    parabens({ letra, nome: t.nome, sem, cardio: !!t.cardio, exercicios: t.itens.length, series: rows.filter(r => r.carga != null && r.reps != null).length, vol: volume(rows),
       semanaFechada, faltam: letras.filter(l => !finalizado(D.sess, sem, l)), proxima: depois > antes || (semanaFechada && depois > sem) ? depois : null, fimPrograma: semanaFechada && sem >= programa.semanas });
     const y = window.scrollY; keepInputs(render); window.scrollTo(0, y);
   } catch (e) {
@@ -1377,7 +1378,7 @@ function parabens(o){
     <h2 id="modalTit" class="fade">Parabéns, ${esc(primeiroNome(S.user.nome))}!</h2>
     <p class="small muted fade">Treino ${esc(o.letra)}${o.nome ? " · " + esc(o.nome) : ""} finalizado</p>
     <p class="frase fade">${esc(frase)}</p>
-    <div class="stats fade"><span class="chip num">${o.exercicios} exercícios</span>${o.series ? `<span class="chip num">${o.series} séries de trabalho</span>` : ""}${o.vol ? `<span class="chip acc num">${fmtKg(o.vol)} kg levantados</span>` : ""}</div>
+    <div class="stats fade">${o.exercicios ? `<span class="chip num">${o.exercicios} exercícios</span>` : ""}${o.cardio ? `<span class="chip num">Cardio feito</span>` : ""}${o.series ? `<span class="chip num">${o.series} séries de trabalho</span>` : ""}${o.vol ? `<span class="chip acc num">${fmtKg(o.vol)} kg levantados</span>` : ""}</div>
     ${semana}
     <div class="acoes fade"><button class="btn primary" data-act="continuarFim">Continuar</button></div>`, "parabens");
 }
@@ -2114,11 +2115,11 @@ document.addEventListener("click", async ev => {
       const p = d.draft;
       if (!p.nome.trim()) return toast("Dê um nome ao programa.");
       if (!Number(p.frequencia)) return toast("Escolha a frequência semanal do aluno.");
-      const nTr = Math.min(LETRAS.length, Number(p.frequencia)), fora = p.treinos.slice(nTr).filter(t => t.itens.length).map(t => t.letra);
+      const nTr = Math.min(LETRAS.length, Number(p.frequencia)), fora = p.treinos.slice(nTr).filter(temConteudo).map(t => t.letra);
       if (fora.length) return toast(`Treino ${fora.join(", ")} fora da frequência de ${p.frequencia}x. Aumente a frequência ou apague esse treino.`, 4500);
-      if (!p.treinos.some(t => t.itens.length)) return toast("Adicione pelo menos um exercício.");
-      const vazio = p.treinos.slice(0, nTr).find(t => !t.itens.length);
-      if (vazio) return toast(`O treino ${vazio.letra} está sem exercícios. Monte todos os ${nTr} treinos da frequência.`, 4500);
+      if (!p.treinos.some(temConteudo)) return toast("Adicione pelo menos um exercício ou um cardio.");
+      const vazio = p.treinos.slice(0, nTr).find(t => !temConteudo(t));
+      if (vazio) return toast(`O treino ${vazio.letra} está vazio. Monte exercícios ou cardio em todos os ${nTr} treinos da frequência.`, 4500);
       const dup = p.treinos.find(t => new Set(t.itens.map(i => i.exercicio_id)).size !== t.itens.length);
       if (dup) return toast(`O treino ${dup.letra} tem um exercício repetido.`);
       for (const t of p.treinos.slice(0, nTr)) {
