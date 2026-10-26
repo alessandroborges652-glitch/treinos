@@ -831,9 +831,28 @@ function toast(msg, ms = 2600){
   document.body.appendChild(t); setTimeout(() => t.remove(), ms);
 }
 
-async function go(view, p = {}){
+/* ---------- Histórico do navegador: a seta de voltar volta para a tela anterior do app ---------- */
+try { history.scrollRestoration = "manual"; } catch {}
+const URL_APP = () => location.pathname + location.search;
+function estadoHist(view, p){ try { return { app: 1, v: view, p: JSON.parse(JSON.stringify(p || {})) }; } catch { return { app: 1, v: view, p: {} }; } }
+function registrarHist(view, p, modo){
+  try {
+    if (modo === "push") { const st = history.state; if (st?.app) history.replaceState({ ...st, y: window.scrollY }, "", URL_APP()); }
+    history[modo === "push" ? "pushState" : "replaceState"](estadoHist(view, p), "", URL_APP());
+  } catch {}
+}
+window.addEventListener("popstate", ev => {
+  const st = ev.state;
+  if (document.querySelector(".modal-bg")) { fecharModal(); if (st?.app) return; }
+  if (!S.user || !st?.app || st.v === "login") { if (!S.user) render(); return; }
+  if (st.v === S.view && st.v === "aluno" && st.p?.alunoId === S.p.alunoId) { S.p.tab = st.p.tab; render(); window.scrollTo(0, st.y || 0); return; }
+  go(st.v, st.p || {}, { hist: "nenhum", y: st.y || 0 });
+});
+
+async function go(view, p = {}, opts = {}){
   if (S.user?.role === "aluno" && S.anamneseOk === false && !["anamnese", "conta"].includes(view)) view = "anamnese";
   if (S.view === "treino" && view !== "treino") salvarAgora();
+  if (opts.hist !== "nenhum") registrarHist(view, p, opts.hist === "trocar" || S.view === "login" ? "trocar" : "push");
   S.view = view; S.p = p; S.data = {};
   render(true);
   try {
@@ -882,8 +901,10 @@ async function go(view, p = {}){
       if (programa) { S.p.semana = p.semana || semanaAtual(programa, sess); }
     }
   } catch (e) { S.data.error = traduzErro(e); }
+  try { const st = history.state; if (st?.app && st.v === S.view) history.replaceState({ ...estadoHist(S.view, S.p), y: st.y }, "", URL_APP()); } catch {}
   render();
-  if (!p.keepScroll) window.scrollTo(0, 0);
+  if (opts.y != null) requestAnimationFrame(() => window.scrollTo(0, opts.y));
+  else if (!p.keepScroll) window.scrollTo(0, 0);
 }
 
 /* =====================================================================
@@ -2086,10 +2107,10 @@ document.addEventListener("click", async ev => {
     if (a === "esqueci") { S.p.esqueci = true; return render(); }
     if (a === "voltarLogin") { S.p.esqueci = false; return render(); }
     if (a === "toggleCad") { S.p.cad = !S.p.cad; return render(); }
-    if (a === "logout") { await db.signOut(); S.user = null; S.view = "login"; S.p = {}; return render(); }
+    if (a === "logout") { await db.signOut(); S.user = null; S.view = "login"; S.p = {}; registrarHist("login", {}, "trocar"); return render(); }
     if (a === "copy") { const i = document.getElementById("shareLink"); try { await navigator.clipboard.writeText(i.value); toast("Link copiado"); } catch { i.select(); toast("Selecionado. Copie com Ctrl+C."); } return; }
     if (a === "openAluno") return go("aluno", { alunoId: el.dataset.id });
-    if (a === "tab") { S.p.tab = el.dataset.tab; return render(); }
+    if (a === "tab") { if (S.p.tab === el.dataset.tab) return; S.p.tab = el.dataset.tab; registrarHist(S.view, { alunoId: S.p.alunoId, tab: S.p.tab }, "push"); return render(); }
     if (a === "letra") { S.p.letra = el.dataset.l; return render(); }
     if (a === "addItem") {
       const sel = document.getElementById("addEx"); if (!sel?.value) return;
@@ -2447,7 +2468,7 @@ async function entrar(){
     else if (isPers()) PROF = S.user;
     if (isMaster()) S.pendentes = contaPendencias(await db.listPersonais());
   } catch {}
-  go(rotaInicial());
+  go(rotaInicial(), {}, { hist: "trocar" });
 }
 async function start(){
   if (DEMO) { db = makeDemo(); render(); return; }
