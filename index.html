@@ -508,7 +508,7 @@ const crefChip = u => {
 };
 const crefAtencao = u => { const d = diasPara(u.cref_validade); return d === null || d <= 30; };
 const primeiroNome = n => String(n || "").trim().split(/\s+/)[0];
-const LETRAS = ["A","B","C","D","E"];
+const LETRAS = ["A","B","C","D","E","F","G"];
 
 /* ---------- utilitários ---------- */
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
@@ -1006,7 +1006,7 @@ function editorPrograma(){
   const sobraAviso = sobra.length && freq ? `<div class="callout freq-aviso">${sobra.length > 1 ? "Os treinos" : "O treino"} ${sobra.join(", ")} ${sobra.length > 1 ? "têm" : "tem"} exercícios, mas a frequência é ${freq}x. Aumente a frequência ou <button class="btn sm" data-act="limparSobra">apague ${sobra.length > 1 ? "esses treinos" : "esse treino"}</button></div>` : "";
   const blocoTreinos = !nT
     ? `<div class="empty">Escolha a <b>frequência semanal</b> acima para liberar os treinos.<br><span class="small">Ex.: 3x por semana libera os treinos A, B e C.</span></div>`
-    : `<div class="row"><div class="letters" role="tablist" aria-label="Treinos">${letters}</div><span class="spacer"></span><span class="small muted">${freq > LETRAS.length ? `${freq}x por semana: até ${LETRAS.length} treinos (A a E), repetidos na semana.` : `${freq}x por semana · ${nT} ${nT > 1 ? "treinos" : "treino"}`}</span></div>
+    : `<div class="row"><div class="letters" role="tablist" aria-label="Treinos">${letters}</div><span class="spacer"></span><span class="small muted">${freq}x por semana · ${nT} ${nT > 1 ? "treinos" : "treino"}</span></div>
       <label class="field"><span>Foco da sessão (treino ${t.letra})</span><input type="text" data-f="tnome" data-t="${ti}" value="${esc(t.nome)}" placeholder="Ex.: Push, Pull, Membros inferiores"></label>
       ${items ? `<p class="small muted">Para mudar a ordem: arraste o cartão (pela alça ⠿ ou, no celular, segurando o cartão por meio segundo) ou escolha a posição no número ao lado da alça.</p><div class="ex-list" id="exList">${items}</div>` : `<div class="empty">Treino ${t.letra} ainda sem exercícios.</div>`}
       ${exs.length ? `<div class="combo-add"><label class="field"><span>Adicionar exercício ao treino ${t.letra}</span></label>${comboEx("add", ti, null, null)}<span class="small muted">Digite parte do nome ou do grupo muscular e toque no exercício para adicionar.</span></div>`
@@ -1019,7 +1019,7 @@ function editorPrograma(){
         <label class="field"><span>Início do bloco</span><input type="date" data-f="inicio" value="${esc(d.inicio)}"></label>
         <label class="field"><span>Reavaliação</span><input type="date" data-f="reavaliacao" value="${esc(d.reavaliacao)}"></label>
         <label class="field"><span>Duração (semanas)</span><input type="number" min="1" max="52" data-f="semanas" value="${esc(d.semanas)}"></label>
-        <label class="field"><span>Frequência semanal (define os treinos)</span><select data-f="frequencia"><option value="" ${freq ? "" : "selected"}>Escolha…</option>${[1,2,3,4,5,6,7].map(n => `<option value="${n}" ${n === freq ? "selected" : ""}>${n}x por semana · ${LETRAS.slice(0, Math.min(5, n)).join("")}</option>`).join("")}</select></label>
+        <label class="field"><span>Frequência semanal (define os treinos)</span><select data-f="frequencia"><option value="" ${freq ? "" : "selected"}>Escolha…</option>${[1,2,3,4,5,6,7].map(n => `<option value="${n}" ${n === freq ? "selected" : ""}>${n}x por semana · ${LETRAS.slice(0, n).join("")}</option>`).join("")}</select></label>
         ${d.aluno_id === S.user.id ? "" : `<label class="field"><span>Modalidade</span><select data-f="modalidade">${["feedback semanal", "feedback mensal", "sem feedback"].map(m => `<option ${m === d.modalidade ? "selected" : ""}>${m}</option>`).join("")}</select></label>`}
       </div>
       <label class="field"><span>Restrições</span><input type="text" data-f="restricoes" value="${esc(d.restricoes)}" placeholder="Ex.: Sem restrições"></label>
