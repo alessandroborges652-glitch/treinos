@@ -363,6 +363,12 @@ details.cardio-acc>summary .n{font-size:1.1rem}
 .cd-item{display:flex;gap:10px;align-items:baseline;border:1px solid var(--line);border-left:7px solid var(--accent-2);border-radius:10px;padding:8px 10px;background:var(--bg);font-variant-numeric:tabular-nums}
 .cd-item b{min-width:64px}
 .cd-item span{color:var(--muted);font-size:.85rem}
+.cardio-card{border:1px solid var(--line);border-left:5px solid var(--accent-2);border-radius:10px;padding:12px;display:flex;flex-direction:column;gap:12px;background:var(--bg)}
+.cardio-card .cab{display:flex;align-items:center;gap:8px}
+#ori-pse{scroll-margin-top:var(--topo,90px)}
+.pse-tab{display:flex;flex-direction:column;gap:4px;margin-top:6px}
+.pse-tab div{display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px;align-items:baseline;padding:6px 10px;border-radius:8px;background:var(--sunken)}
+.pse-tab b{font-variant-numeric:tabular-nums}
 </style>
 <!--HEAD-END-->
 </head>
@@ -392,6 +398,7 @@ const TIPOS = {
                     intuito: "É onde o treino acontece. Termine a série com 0 a 3 repetições ainda possíveis, sem perder a técnica. Só estas séries são registradas e entram na sua evolução.", curto: "Série que conta", reps: "6-8" }
 };
 const ORDEM_TIPOS = ["aquecimento", "reconhecimento", "trabalho"];
+const PSE_ESCALA = [["0", "Repouso"], ["1-2", "Muito leve"], ["3-4", "Leve · conversa normalmente"], ["5-6", "Moderado · respiração acelerada, fala frases curtas"], ["7-8", "Intenso · fala só poucas palavras"], ["9-10", "Máximo · não consegue falar, dura poucos segundos"]];
 const CONTATO = "Alessandro Borges · Personal trainer · CREF 018010-G/GO · (62) 98630-6701";
 const ORIENTACOES = [
   { titulo: "O que é RIR", itens: [
@@ -411,6 +418,12 @@ const ORIENTACOES = [
     ["Falha técnica, não falha total", "Nas séries de trabalho com RIR 0, pare quando a execução começa a se perder. Insistir depois disso aumenta risco sem aumentar resultado."],
     ["Aquecimento geral", "5 a 8 minutos de aquecimento geral antes do primeiro exercício, além das séries de aquecimento e reconhecimento previstas no treino."],
     ["Ajustes", "Não substitua exercícios por conta própria — qualquer ajuste deve ser combinado antes."] ] },
+  { titulo: "Escala de esforço (PSE) no cardio", pse: true, itens: [
+    ["O que é", "PSE é a Percepção Subjetiva de Esforço: uma nota de 0 a 10 para o quanto o exercício está pesado para você naquele momento. Ela aparece na intensidade do seu cardio (ex.: Moderada, PSE 5-6)."],
+    ["Como usar", "Durante o cardio, ajuste velocidade, carga ou inclinação até a sensação bater com a nota prescrita. A nota é sua: dois alunos na mesma velocidade podem estar em PSE diferentes."],
+    ["Teste da fala", "Um jeito simples de conferir: em PSE 3-4 você conversa normalmente; em 5-6 fala frases curtas; em 7-8 só poucas palavras; em 9-10 não consegue falar."],
+    ["No HIIT", "Os blocos fortes pedem PSE alta (8 a 10) por pouco tempo; os blocos leves (3 a 4) servem para recuperar. Respeite os dois: a recuperação faz parte do método."],
+    ["Atenção", "Se sentir dor no peito, tontura, falta de ar fora do normal ou mal-estar, pare e avise. PSE alta é esforço intenso, não dor."] ] },
   { titulo: "Contato e acompanhamento", itens: [
     ["Dúvidas", "Envie mensagem com o nome do exercício e, se possível, um vídeo da execução."],
     ["Prazo de resposta", "Até 24 horas em dias úteis."],
@@ -455,7 +468,7 @@ const ANAMNESE = [
 const CARDIO_LOCAIS = ["Bicicleta ergométrica vertical", "Bicicleta ergométrica horizontal", "Bike de spinning", "Escada", "Esteira", "Elíptico / Transport"];
 const CARDIO_TIPOS = { hiit: "HIIT", curta: "Curta duração", media: "Média duração", longa: "Longa duração" };
 const CARDIO_INTENS = ["Leve (PSE 3-4)", "Moderada (PSE 5-6)", "Intensa (PSE 7-8)", "Máxima (PSE 9-10)"];
-const novoCardio = () => ({ local: "", tipo: "", blocos: Array.from({ length: 4 }, () => ({ tempo: "", intensidade: "" })), tempo: "", intensidade: "", obs: "" });
+const novoCardio = () => ({ local: "", tipo: "", video_url: "", blocos: Array.from({ length: 4 }, () => ({ tempo: "", intensidade: "" })), tempo: "", intensidade: "", obs: "" });
 function segundos(txt){
   const t = String(txt || "").toLowerCase().replace(",", ".").trim(); if (!t) return null;
   let m = t.match(/^(\d+):(\d{1,2})$/); if (m) return +m[1] * 60 + +m[2];
@@ -508,7 +521,7 @@ const crefChip = u => {
 };
 const crefAtencao = u => { const d = diasPara(u.cref_validade); return d === null || d <= 30; };
 const primeiroNome = n => String(n || "").trim().split(/\s+/)[0];
-const temConteudo = t => !!((t.itens || []).length || t.cardio);
+const temConteudo = t => !!((t.itens || []).length || (t.cardios || []).length);
 const LETRAS = ["A","B","C","D","E","F","G"];
 
 /* ---------- utilitários ---------- */
@@ -562,7 +575,7 @@ function normPrograma(p){
   (p.treinos || []).forEach(t => (t.itens || []).forEach(normItem));
   const map = Object.fromEntries((p.treinos || []).map(t => [t.letra, t]));
   p.modalidade = p.modalidade || "feedback semanal";
-  p.treinos = LETRAS.map(l => ({ letra: l, nome: map[l]?.nome || "", itens: map[l]?.itens || [], cardio: map[l]?.cardio || null }));
+  p.treinos = LETRAS.map(l => ({ letra: l, nome: map[l]?.nome || "", itens: map[l]?.itens || [], cardios: map[l]?.cardios || (map[l]?.cardio ? [map[l].cardio] : []) }));
   return p;
 }
 const volume = rows => rows.reduce((s, r) => (r.carga != null && r.reps != null) ? s + Number(r.carga) * Number(r.reps) : s, 0);
@@ -1033,34 +1046,38 @@ function editorPrograma(){
 
 /* ---------- Cardio no editor ---------- */
 function editorCardio(t, ti){
-  const c = t.cardio;
-  const head = `<label class="sw"><input type="checkbox" data-cardio="on" data-t="${ti}" ${c ? "checked" : ""}> Prescrever cardio no treino ${t.letra}</label>`;
-  if (!c) return `<div class="cardio-ed">${head}<span class="small muted">Opcional. Marque para definir local, tipo, tempo e intensidade do cardio, feito depois dos exercícios.</span></div>`;
-  const ops = (campo, lista, val, rot = x => x) => `<div class="an-ops">${lista.map(o => `<label><input type="radio" name="cd-${campo}-${ti}" data-cardio="${campo}" data-t="${ti}" value="${esc(o)}" ${val === o ? "checked" : ""}><span>${esc(rot(o))}</span></label>`).join("")}</div>`;
-  const intens = (val, attrs) => `<input type="text" list="cdIntens" ${attrs} value="${esc(val)}" placeholder="Intensidade (ex.: Máxima, PSE 9, 12 km/h)">`;
-  const corpo = c.tipo === "hiit"
-    ? `<div class="field"><span>Quantidade de blocos</span><select data-cardio="nblocos" data-t="${ti}" style="max-width:180px">${Array.from({ length: 30 }, (_, k) => k + 1).map(n => `<option value="${n}" ${n === c.blocos.length ? "selected" : ""}>${n} ${n > 1 ? "blocos" : "bloco"}</option>`).join("")}</select></div>
-       <div class="cd-blocos">${c.blocos.map((b, k) => `<div class="cd-bloco"><b class="num">Bloco ${k + 1}</b><input type="text" data-cardio="btempo" data-t="${ti}" data-b="${k}" value="${esc(b.tempo)}" placeholder="Tempo (ex.: 30 s)" aria-label="Tempo do bloco ${k + 1}">${intens(b.intensidade, `data-cardio="bint" data-t="${ti}" data-b="${k}" aria-label="Intensidade do bloco ${k + 1}"`)}</div>`).join("")}</div>
-       <span class="small muted">${resumoCardio(c) ? "Resumo: " + esc(resumoCardio(c)) : "Use tempos como 30 s, 1 min ou 1:30 para o app somar o total."}</span>`
-    : c.tipo ? `<div class="grid2"><label class="field"><span>Tempo de duração</span><input type="text" data-cardio="tempo" data-t="${ti}" value="${esc(c.tempo)}" placeholder="Ex.: 20 min"></label>
-        <label class="field"><span>Intensidade</span>${intens(c.intensidade, `data-cardio="intensidade" data-t="${ti}"`)}</label></div>` : "";
-  return `<div class="cardio-ed on">${head}
-    <div class="field"><span>Onde vai ser o cardio</span>${ops("local", CARDIO_LOCAIS, c.local)}</div>
-    <div class="field"><span>Tipo de cardio</span>${ops("tipo", Object.keys(CARDIO_TIPOS), c.tipo, k => CARDIO_TIPOS[k])}</div>
-    ${corpo}
-    ${c.tipo ? `<label class="field"><span>Observação (opcional)</span><textarea data-cardio="obs" data-t="${ti}" rows="2" placeholder="Ex.: inclinação 5%, cadência, como ajustar se cansar">${esc(c.obs)}</textarea></label>` : ""}
+  const lista = t.cardios || [];
+  const um = (c, ci) => {
+    const n = `data-t="${ti}" data-c="${ci}"`;
+    const ops = (campo, opcoes, val, rot = x => x) => `<div class="an-ops">${opcoes.map(o => `<label><input type="radio" name="cd-${campo}-${ti}-${ci}" data-cardio="${campo}" ${n} value="${esc(o)}" ${val === o ? "checked" : ""}><span>${esc(rot(o))}</span></label>`).join("")}</div>`;
+    const intens = (val, attrs) => `<input type="text" list="cdIntens" ${attrs} value="${esc(val)}" placeholder="Intensidade (ex.: Máxima, PSE 9, 12 km/h)">`;
+    const corpo = c.tipo === "hiit"
+      ? `<div class="field"><span>Quantidade de blocos</span><select data-cardio="nblocos" ${n} style="max-width:180px">${Array.from({ length: 30 }, (_, k) => k + 1).map(q => `<option value="${q}" ${q === c.blocos.length ? "selected" : ""}>${q} ${q > 1 ? "blocos" : "bloco"}</option>`).join("")}</select></div>
+         <div class="cd-blocos">${c.blocos.map((b, k) => `<div class="cd-bloco"><b class="num">Bloco ${k + 1}</b><input type="text" data-cardio="btempo" ${n} data-b="${k}" value="${esc(b.tempo)}" placeholder="Tempo (ex.: 30 s)" aria-label="Tempo do bloco ${k + 1}">${intens(b.intensidade, `data-cardio="bint" ${n} data-b="${k}" aria-label="Intensidade do bloco ${k + 1}"`)}</div>`).join("")}</div>
+         <span class="small muted">${resumoCardio(c) ? "Resumo: " + esc(resumoCardio(c)) : "Use tempos como 30 s, 1 min ou 1:30 para o app somar o total."}</span>`
+      : c.tipo ? `<div class="grid2"><label class="field"><span>Tempo de duração</span><input type="text" data-cardio="tempo" ${n} value="${esc(c.tempo)}" placeholder="Ex.: 20 min"></label>
+          <label class="field"><span>Intensidade</span>${intens(c.intensidade, `data-cardio="intensidade" ${n}`)}</label></div>` : "";
+    return `<div class="cardio-card"><div class="cab"><b>Cardio ${ci + 1}</b><span class="spacer"></span><button type="button" class="btn sm ghost danger" data-act="rmCardio" ${n}>Remover</button></div>
+      <div class="field"><span>Onde vai ser o cardio</span>${ops("local", CARDIO_LOCAIS, c.local)}</div>
+      <div class="field"><span>Tipo de cardio</span>${ops("tipo", Object.keys(CARDIO_TIPOS), c.tipo, k => CARDIO_TIPOS[k])}</div>
+      ${corpo}
+      ${c.tipo ? `<label class="field"><span>Observação (opcional)</span><textarea data-cardio="obs" ${n} rows="2" placeholder="Ex.: inclinação 5%, cadência, como ajustar se cansar">${esc(c.obs)}</textarea></label>
+      <label class="field"><span>Link do vídeo no YouTube (opcional)</span><input type="url" data-cardio="video_url" ${n} value="${esc(c.video_url || "")}" placeholder="https://youtu.be/..."></label>` : ""}</div>`;
+  };
+  return `<div class="cardio-ed ${lista.length ? "on" : ""}"><div class="row"><b>Cardio do treino ${t.letra}</b><span class="spacer"></span><span class="small muted">${lista.length ? `${lista.length} ${lista.length > 1 ? "cardios" : "cardio"}` : "Opcional"}</span></div>
+    ${lista.map(um).join("")}
+    <div><button type="button" class="btn sm" data-act="addCardio" data-t="${ti}">+ ${lista.length ? "Adicionar outro cardio" : "Adicionar cardio"}</button></div>
+    ${lista.length ? "" : `<span class="small muted">Feito depois dos exercícios. Pode ter mais de um no mesmo treino, ou o treino pode ser só de cardio.</span>`}
     <datalist id="cdIntens">${CARDIO_INTENS.map(x => `<option value="${esc(x)}">`).join("")}</datalist></div>`;
 }
 function editarCardio(el){
   const d = S.data.draft, t = d.treinos[+el.dataset.t], f = el.dataset.cardio;
+  const c = (t.cardios || [])[+el.dataset.c]; if (!c) return;
   S.data.dirty = true;
   const marca = () => { const m = document.getElementById("dirtyMsg"); if (m) { m.textContent = "Alterações não salvas"; m.style.color = "var(--warn)"; m.classList.remove("muted"); } };
   const redesenha = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
-  if (f === "on") { t.cardio = el.checked ? novoCardio() : null; return redesenha(); }
-  const c = t.cardio; if (!c) return;
   if (f === "tipo") { c.tipo = el.value; if (c.tipo === "hiit" && !c.blocos.length) c.blocos = novoCardio().blocos; return redesenha(); }
-  if (f === "local") { c.local = el.value; return marca(); }
-  if (f === "nblocos") { const n = Number(el.value); while (c.blocos.length < n) c.blocos.push({ tempo: "", intensidade: "" }); c.blocos.length = n; return redesenha(); }
+  if (f === "nblocos") { const q = Number(el.value); while (c.blocos.length < q) c.blocos.push({ tempo: "", intensidade: "" }); c.blocos.length = q; return redesenha(); }
   if (f === "btempo" || f === "bint") { c.blocos[+el.dataset.b][f === "btempo" ? "tempo" : "intensidade"] = el.value; return marca(); }
   c[f] = el.value; marca();
 }
@@ -1171,7 +1188,7 @@ function viewHome(){
     const total = t.itens.reduce((s, i) => s + serT(i).length, 0);
     const st = finalizado(S.data.sess, sem, t.letra) ? `<span class="chip ok">✓ Finalizado</span>`
       : done.length ? `<span class="chip warn num">Em andamento · ${done.length}/${total} séries</span>` : `<span class="chip">A fazer</span>`;
-    return `<div class="item"><div class="letters"><button tabindex="-1" aria-hidden="true" aria-selected="true">${t.letra}</button></div><div class="grow"><h3>${esc(t.nome || "Treino " + t.letra)}</h3><p class="small muted num">${t.itens.length ? `${t.itens.length} exercícios${t.cardio ? " + cardio" : ""}` : "Só cardio"}</p></div>${st}<button class="btn primary" data-act="openTreino" data-l="${t.letra}">Abrir</button></div>`;
+    return `<div class="item"><div class="letters"><button tabindex="-1" aria-hidden="true" aria-selected="true">${t.letra}</button></div><div class="grow"><h3>${esc(t.nome || "Treino " + t.letra)}</h3><p class="small muted num">${(() => { const nc = (t.cardios || []).length, cd = nc > 1 ? `${nc} cardios` : "cardio"; return t.itens.length ? `${t.itens.length} exercícios${nc ? " + " + cd : ""}` : (nc > 1 ? `Só cardio (${nc})` : "Só cardio"); })()}</p></div>${st}<button class="btn primary" data-act="openTreino" data-l="${t.letra}">Abrir</button></div>`;
   }).join("");
   const semOpts = Array.from({ length: programa.semanas }, (_, i) => i + 1).map(w => `<option value="${w}" ${w === sem ? "selected" : ""} ${w > cur ? "disabled" : ""}>Semana ${w}${w === cur ? " (atual)" : ""}</option>`).join("");
   return `<div><p class="label">${esc(programa.nome)}</p><h1>Olá, ${esc(S.user.nome.split(" ")[0])}</h1></div>
@@ -1203,11 +1220,7 @@ function viewTreino(){
     const open = S.p.video === i, ex = it.exercicio_id;
     let video = "";
     if (open) {
-      const id = ytId(e.video_url);
-      video = (DEMO || e.video_url === "demo")
-        ? `<div class="video-ph">${MARK(36)}<span>Seu vídeo explicando o exercício aparece aqui</span><span class="small muted">No app publicado, o vídeo do YouTube toca nesta área.</span></div>`
-        : id ? `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1" title="${esc(e.nome)}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div>`
-        : `<div class="video-ph">${MARK(36)}<span>Vídeo em breve</span><span class="small muted">O vídeo explicativo deste exercício ainda está sendo preparado. Se tiver dúvida na execução, fale com ${esc(primeiroNome((PROF || PROF_PADRAO).nome))}.</span></div>`;
+      video = videoHtml(e.video_url, e.nome, "exercício");
     }
     const nT = serT(it).length;
     const repsT = [...new Set(it.sets.filter(x => x.tipo === "trabalho").map(x => x.reps).filter(Boolean))].join(" / ");
@@ -1224,7 +1237,7 @@ function viewTreino(){
         <input id="r-${ex}-${s}" type="text" inputmode="tel" value="${esc(r?.reps_txt ?? r?.reps ?? "")}" placeholder="${pv?.reps != null ? esc(pv.reps_txt ?? pv.reps) : "reps"}" aria-label="Repetições, ${esc(e.nome)}, série de trabalho ${s}"><span class="x">reps</span>
         ${pv && (pv.carga != null || pv.reps != null) ? `<span class="prev">sem. ${sem - 1}: ${esc(fmt(pv.carga) || "–")} kg × ${esc(pv.reps_txt ?? pv.reps ?? "–")}</span>` : ""}</div></div>`;
     }).join("");
-    const ultimo = i === t.itens.length - 1 && !t.cardio;
+    const ultimo = i === t.itens.length - 1 && !(t.cardios || []).length;
     return `<details class="ex-acc" data-i="${i}" ${S.p.aberto === i ? "open" : ""}>
       <summary><span class="n num">${i + 1}</span><span class="nm"><b>${esc(e.nome)}</b><span class="sq-row">${it.sets.map(x => `<i class="sq t-${x.tipo}" title="${TIPOS[x.tipo].nome}"></i>`).join("")}<span class="num">${nT} de trabalho${repsT ? " · " + esc(repsT) : ""}</span></span></span><span class="ex-st" data-st="${ex}" data-n="${nT}"></span></summary>
       <div class="body">
@@ -1247,21 +1260,32 @@ function viewTreino(){
       <p class="small muted">${esc(primeiroNome((PROF || PROF_PADRAO).nome))} lê estas observações. Em caso de dor no peito, tontura, falta de ar desproporcional ou dor articular aguda, pare o treino e avise na hora.</p></div>`;
 }
 
+function videoHtml(url, titulo, oque){
+  const id = ytId(url);
+  return (DEMO || url === "demo")
+    ? `<div class="video-ph">${MARK(36)}<span>Seu vídeo explicando o ${oque} aparece aqui</span><span class="small muted">No app publicado, o vídeo do YouTube toca nesta área.</span></div>`
+    : id ? `<div class="video"><iframe src="https://www.youtube-nocookie.com/embed/${id}?rel=0&modestbranding=1&playsinline=1" title="${esc(titulo)}" allow="accelerometer; encrypted-media; gyroscope; picture-in-picture; fullscreen" allowfullscreen loading="lazy"></iframe></div>`
+    : `<div class="video-ph">${MARK(36)}<span>Vídeo em breve</span><span class="small muted">O vídeo explicativo deste ${oque} ainda está sendo preparado. Se tiver dúvida, fale com ${esc(primeiroNome((PROF || PROF_PADRAO).nome))}.</span></div>`;
+}
 function cardioAluno(t){
-  const c = t.cardio; if (!c) return "";
-  const i = t.itens.length;
-  const corpo = c.tipo === "hiit"
-    ? `<div class="cd-lista">${c.blocos.map((b, k) => `<div class="cd-item"><b>Bloco ${k + 1}</b><strong>${esc(b.tempo)}</strong><span>${esc(b.intensidade)}</span></div>`).join("")}</div>`
-    : `<div class="cd-lista"><div class="cd-item"><b>Duração</b><strong>${esc(c.tempo)}</strong></div><div class="cd-item"><b>Intensidade</b><strong>${esc(c.intensidade)}</strong></div></div>`;
-  return `<details class="ex-acc cardio-acc" data-i="${i}" ${S.p.aberto === i || (!i && S.p.aberto === undefined) ? "open" : ""}>
-    <summary><span class="n" aria-hidden="true">♥</span><span class="nm"><b>Cardio</b><span class="sq-row"><span style="margin-left:0">${esc(resumoCardio(c))}</span></span></span></summary>
+  const lista = t.cardios || []; if (!lista.length) return "";
+  return lista.map((c, k) => {
+    const i = t.itens.length + k, vk = "c" + k, aberto = S.p.video === vk, ultimo = k === lista.length - 1;
+    const corpo = c.tipo === "hiit"
+      ? `<div class="cd-lista">${c.blocos.map((b, j) => `<div class="cd-item"><b>Bloco ${j + 1}</b><strong>${esc(b.tempo)}</strong><span>${esc(b.intensidade)}</span></div>`).join("")}</div>`
+      : `<div class="cd-lista"><div class="cd-item"><b>Duração</b><strong>${esc(c.tempo)}</strong></div><div class="cd-item"><b>Intensidade</b><strong>${esc(c.intensidade)}</strong></div></div>`;
+    return `<details class="ex-acc cardio-acc" data-i="${i}" ${S.p.aberto === i || (!t.itens.length && !k && S.p.aberto === undefined) ? "open" : ""}>
+    <summary><span class="n" aria-hidden="true">♥</span><span class="nm"><b>${lista.length > 1 ? `Cardio ${k + 1}` : "Cardio"}</b><span class="sq-row"><span style="margin-left:0">${esc(resumoCardio(c))}</span></span></span></summary>
     <div class="body">
       <div class="small"><b>Local:</b> ${esc(c.local)}</div>
+      <div class="row"><button class="btn sm" data-act="video" data-i="${vk}" data-ab="${i}" aria-expanded="${aberto}">${aberto ? "Fechar vídeo" : "▶ Ver vídeo"}</button><button class="btn sm ghost" data-act="verPse">O que é PSE?</button></div>
+      ${aberto ? videoHtml(c.video_url, "Cardio · " + (c.local || ""), "cardio") : ""}
       ${corpo}
       ${c.obs ? `<div class="nota">${esc(c.obs)}</div>` : ""}
       ${c.tipo === "hiit" ? `<p class="small muted">Siga os blocos na ordem, sem pausa entre eles. A intensidade indicada vale para todo o bloco.</p>` : ""}
-      <div class="fim"><button class="btn sm" data-act="fecharEx">Fechar</button></div>
+      <div class="fim">${ultimo ? `<button class="btn sm" data-act="fecharEx">Fechar</button>` : `<button class="btn sm" data-act="proxEx" data-i="${i}">Próximo cardio ↓</button>`}</div>
     </div></details>`;
+  }).join("");
 }
 
 /* ---------- Salvamento automático do treino ---------- */
@@ -1359,7 +1383,7 @@ async function finalizarTreino(btn, forcar){
     const semanaFechada = letras.every(l => finalizado(D.sess, sem, l));
     const depois = semanaAtual(programa, D.sess);
     const rows = D.regs.filter(r => r.semana === sem && r.letra === letra);
-    parabens({ letra, nome: t.nome, sem, cardio: !!t.cardio, exercicios: t.itens.length, series: rows.filter(r => r.carga != null && r.reps != null).length, vol: volume(rows),
+    parabens({ letra, nome: t.nome, sem, cardio: (t.cardios || []).length, exercicios: t.itens.length, series: rows.filter(r => r.carga != null && r.reps != null).length, vol: volume(rows),
       semanaFechada, faltam: letras.filter(l => !finalizado(D.sess, sem, l)), proxima: depois > antes || (semanaFechada && depois > sem) ? depois : null, fimPrograma: semanaFechada && sem >= programa.semanas });
     const y = window.scrollY; keepInputs(render); window.scrollTo(0, y);
   } catch (e) {
@@ -1378,7 +1402,7 @@ function parabens(o){
     <h2 id="modalTit" class="fade">Parabéns, ${esc(primeiroNome(S.user.nome))}!</h2>
     <p class="small muted fade">Treino ${esc(o.letra)}${o.nome ? " · " + esc(o.nome) : ""} finalizado</p>
     <p class="frase fade">${esc(frase)}</p>
-    <div class="stats fade">${o.exercicios ? `<span class="chip num">${o.exercicios} exercícios</span>` : ""}${o.cardio ? `<span class="chip num">Cardio feito</span>` : ""}${o.series ? `<span class="chip num">${o.series} séries de trabalho</span>` : ""}${o.vol ? `<span class="chip acc num">${fmtKg(o.vol)} kg levantados</span>` : ""}</div>
+    <div class="stats fade">${o.exercicios ? `<span class="chip num">${o.exercicios} exercícios</span>` : ""}${o.cardio ? `<span class="chip num">${o.cardio > 1 ? o.cardio + " cardios feitos" : "Cardio feito"}</span>` : ""}${o.series ? `<span class="chip num">${o.series} séries de trabalho</span>` : ""}${o.vol ? `<span class="chip acc num">${fmtKg(o.vol)} kg levantados</span>` : ""}</div>
     ${semana}
     <div class="acoes fade"><button class="btn primary" data-act="continuarFim">Continuar</button></div>`, "parabens");
 }
@@ -1595,7 +1619,7 @@ function viewPersonais(){
 /* ---------- Orientações ---------- */
 function viewOrientacoes(){
   const p = S.data.programa;
-  const blocos = ORIENTACOES.map(b => `<section class="panel"><h2>${esc(b.titulo)}</h2><div>${b.itens.map(([k, v]) => `<div class="ori"><b>${esc(k)}</b><p>${esc(k === "Reavaliação" && p?.reavaliacao ? `Ao final do bloco, em ${fmtData(p.reavaliacao)}.` : k === "Profissional" && PROF && PROF.role !== "master" ? profLinha(profDe(PROF)) : v)}</p></div>`).join("")}</div></section>`).join("");
+  const blocos = ORIENTACOES.map(b => `<section class="panel"${b.pse ? ' id="ori-pse"' : ""}><h2>${esc(b.titulo)}</h2>${b.pse ? `<div class="pse-tab">${PSE_ESCALA.map(([n, t]) => `<div><b>PSE ${n}</b><span>${esc(t)}</span></div>`).join("")}</div>` : ""}<div>${b.itens.map(([k, v]) => `<div class="ori"><b>${esc(k)}</b><p>${esc(k === "Reavaliação" && p?.reavaliacao ? `Ao final do bloco, em ${fmtData(p.reavaliacao)}.` : k === "Profissional" && PROF && PROF.role !== "master" ? profLinha(profDe(PROF)) : v)}</p></div>`).join("")}</div></section>`).join("");
   return `<div><p class="label">Leia antes de treinar</p><h1>Orientações</h1></div>
     <section class="panel"><h2>O sistema de cores</h2><p>A cor de cada série diz a intensidade dela: quanto mais escura, mais pesada. O descanso depois da série segue a cor; o exercício avisa quando for diferente.</p>${legendaTipos(false)}
       <p class="small muted">Registre carga e repetições apenas nas séries de trabalho. Aquecimento e reconhecimento não entram nos registros.</p></section>
@@ -2122,12 +2146,13 @@ document.addEventListener("click", async ev => {
       if (vazio) return toast(`O treino ${vazio.letra} está vazio. Monte exercícios ou cardio em todos os ${nTr} treinos da frequência.`, 4500);
       const dup = p.treinos.find(t => new Set(t.itens.map(i => i.exercicio_id)).size !== t.itens.length);
       if (dup) return toast(`O treino ${dup.letra} tem um exercício repetido.`);
-      for (const t of p.treinos.slice(0, nTr)) {
-        const c = t.cardio; if (!c) continue;
-        if (!c.local) return toast(`Cardio do treino ${t.letra}: escolha onde vai ser.`, 4000);
-        if (!c.tipo) return toast(`Cardio do treino ${t.letra}: escolha o tipo.`, 4000);
-        if (c.tipo === "hiit") { const k = c.blocos.findIndex(b => !b.tempo.trim() || !b.intensidade.trim()); if (k >= 0) return toast(`Cardio do treino ${t.letra}: preencha tempo e intensidade do bloco ${k + 1}.`, 4500); }
-        else if (!c.tempo.trim() || !c.intensidade.trim()) return toast(`Cardio do treino ${t.letra}: preencha tempo de duração e intensidade.`, 4500);
+      for (const t of p.treinos.slice(0, nTr)) for (const [ci, c] of (t.cardios || []).entries()) {
+        const nome = `Cardio ${ci + 1} do treino ${t.letra}`;
+        if (!c.local) return toast(`${nome}: escolha onde vai ser.`, 4000);
+        if (!c.tipo) return toast(`${nome}: escolha o tipo.`, 4000);
+        if (c.tipo === "hiit") { const k = c.blocos.findIndex(b => !b.tempo.trim() || !b.intensidade.trim()); if (k >= 0) return toast(`${nome}: preencha tempo e intensidade do bloco ${k + 1}.`, 4500); }
+        else if (!c.tempo.trim() || !c.intensidade.trim()) return toast(`${nome}: preencha tempo de duração e intensidade.`, 4500);
+        if (c.video_url && !ytId(c.video_url)) return toast(`${nome}: link do YouTube não reconhecido.`, 4500);
       }
       const semTrab = p.treinos.find(t => t.itens.some(it => !serT(it).length));
       if (semTrab) return toast(`No treino ${semTrab.letra} há exercício sem série de trabalho. Toda ficha precisa de pelo menos uma.`, 4500);
@@ -2144,16 +2169,19 @@ document.addEventListener("click", async ev => {
     if (a === "noDel") { d.confirm = null; return render(); }
     if (a === "delEx") { await db.deleteExercicio(Number(el.dataset.id)); d.exercicios = await db.listExercicios(); d.confirm = null; toast("Exercício excluído"); return render(); }
     if (a === "openTreino") return go("treino", { letra: el.dataset.l, semana: S.p.semana });
-    if (a === "video") { const i = Number(el.dataset.i); S.p.video = S.p.video === i ? null : i; S.p.aberto = i; keepInputs(render); statusTreino(); return; }
+    if (a === "video") { const raw = el.dataset.i, i = /^c/.test(raw) ? raw : Number(raw); S.p.video = S.p.video === i ? null : i; S.p.aberto = Number(el.dataset.ab ?? raw); keepInputs(render); statusTreino(); return; }
+    if (a === "verPse") { salvarAgora(); await go("orientacoes"); document.getElementById("ori-pse")?.scrollIntoView({ block: "start" }); return; }
     if (a === "saveTreino") return salvarTreino(el);
     if (a === "finalizarTreino") return finalizarTreino(el, false);
     if (a === "finalizarForcar") return finalizarTreino(el, true);
     if (a === "fecharModal") return fecharModal();
     if (a === "continuarFim") { fecharModal(); return go("home"); }
+    if (a === "addCardio") { const t = d.draft.treinos[+el.dataset.t]; (t.cardios = t.cardios || []).push(novoCardio()); d.dirty = true; const y = window.scrollY; render(); window.scrollTo(0, y); return; }
+    if (a === "rmCardio") { d.draft.treinos[+el.dataset.t].cardios.splice(+el.dataset.c, 1); d.dirty = true; const y = window.scrollY; render(); window.scrollTo(0, y); return; }
     if (a === "comboPick") return escolherCombo(el.closest(".combo"), Number(el.dataset.id));
     if (a === "limparSobra") {
       const n = Math.min(LETRAS.length, Number(d.draft.frequencia) || 0);
-      d.draft.treinos.slice(n).forEach(t => { t.itens = []; t.nome = ""; t.cardio = null; }); d.dirty = true; toast("Treinos fora da frequência apagados."); return render();
+      d.draft.treinos.slice(n).forEach(t => { t.itens = []; t.nome = ""; t.cardios = []; }); d.dirty = true; toast("Treinos fora da frequência apagados."); return render();
     }
     if (a === "proxEx") {
       const i = Number(el.dataset.i), prox = document.querySelector(`details.ex-acc[data-i="${i + 1}"]`);
