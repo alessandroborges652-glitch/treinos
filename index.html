@@ -348,6 +348,21 @@ details.ex-acc[open]>summary::after{content:"▾"}
   @keyframes burst{0%{opacity:.9;transform:rotate(var(--a)) translateY(0)}100%{opacity:0;transform:rotate(var(--a)) translateY(-70px)}}
   @keyframes fadeUp{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 }
+/* Cardio */
+.cardio-ed{border:1.5px solid var(--line);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:12px}
+.cardio-ed.on{border-color:var(--accent-2)}
+.cardio-ed .sw{display:flex;gap:10px;align-items:center;font-weight:800;cursor:pointer}
+.cardio-ed .sw input{width:20px;height:20px;accent-color:var(--accent)}
+.cardio-ed .an-ops span{min-height:36px;padding:5px 12px;font-size:.88rem}
+.cd-blocos{display:flex;flex-direction:column;gap:6px}
+.cd-bloco{display:grid;grid-template-columns:64px minmax(0,1fr) minmax(0,1.4fr);gap:6px;align-items:center}
+.cd-bloco b{font-size:.82rem;color:var(--muted)}
+@media (max-width:520px){.cd-bloco{grid-template-columns:52px minmax(0,1fr) minmax(0,1.3fr)}}
+details.cardio-acc>summary .n{font-size:1.1rem}
+.cd-lista{display:flex;flex-direction:column;gap:6px}
+.cd-item{display:flex;gap:10px;align-items:baseline;border:1px solid var(--line);border-left:7px solid var(--accent-2);border-radius:10px;padding:8px 10px;background:var(--bg);font-variant-numeric:tabular-nums}
+.cd-item b{min-width:64px}
+.cd-item span{color:var(--muted);font-size:.85rem}
 </style>
 <!--HEAD-END-->
 </head>
@@ -436,6 +451,30 @@ const ANAMNESE = [
   { id: "prazo", q: "Existe alguma data ou prazo para atingir seu objetivo?", tipo: "linha" },
   { id: "outras", q: "Há alguma outra informação sobre sua saúde, rotina ou preferências que seja importante considerar na montagem do treino?", tipo: "texto", opcional: true }
 ];
+/* Cardio: locais, tipos e sugestões de intensidade */
+const CARDIO_LOCAIS = ["Bicicleta ergométrica vertical", "Bicicleta ergométrica horizontal", "Bike de spinning", "Escada", "Esteira", "Elíptico / Transport"];
+const CARDIO_TIPOS = { hiit: "HIIT", curta: "Curta duração", media: "Média duração", longa: "Longa duração" };
+const CARDIO_INTENS = ["Leve (PSE 3-4)", "Moderada (PSE 5-6)", "Intensa (PSE 7-8)", "Máxima (PSE 9-10)"];
+const novoCardio = () => ({ local: "", tipo: "", blocos: Array.from({ length: 4 }, () => ({ tempo: "", intensidade: "" })), tempo: "", intensidade: "", obs: "" });
+function segundos(txt){
+  const t = String(txt || "").toLowerCase().replace(",", ".").trim(); if (!t) return null;
+  let m = t.match(/^(\d+):(\d{1,2})$/); if (m) return +m[1] * 60 + +m[2];
+  m = t.match(/^(\d+(?:\.\d+)?)\s*(s|seg|segundos?|"|)$/); if (m && m[2]) return Math.round(+m[1]);
+  m = t.match(/^(\d+(?:\.\d+)?)\s*(min|minutos?|'|m)?$/); if (m) return Math.round(+m[1] * 60);
+  m = t.match(/^(\d+)\s*min\s*(\d+)\s*(s|seg)?$/); if (m) return +m[1] * 60 + +m[2];
+  return null;
+}
+const fmtDur = sec => sec >= 60 ? `${Math.floor(sec / 60)} min${sec % 60 ? " " + (sec % 60) + " s" : ""}` : `${sec} s`;
+function resumoCardio(c){
+  if (!c) return "";
+  const partes = [c.local, CARDIO_TIPOS[c.tipo]];
+  if (c.tipo === "hiit") {
+    const ts = (c.blocos || []).map(b => segundos(b.tempo));
+    partes.push(`${(c.blocos || []).length} blocos`);
+    if (ts.length && ts.every(x => x != null)) partes.push(fmtDur(ts.reduce((a, b) => a + b, 0)) + " no total");
+  } else if (c.tempo) partes.push(c.tempo);
+  return partes.filter(Boolean).join(" · ");
+}
 const anVisivel = (q, r) => !q.se || r[q.se[0]] === q.se[1];
 const anFalta = r => ANAMNESE.filter(q => !q.opcional && anVisivel(q, r) && !String(r[q.id] ?? "").trim());
 const LS = {
@@ -522,7 +561,7 @@ function normPrograma(p){
   (p.treinos || []).forEach(t => (t.itens || []).forEach(normItem));
   const map = Object.fromEntries((p.treinos || []).map(t => [t.letra, t]));
   p.modalidade = p.modalidade || "feedback semanal";
-  p.treinos = LETRAS.map(l => ({ letra: l, nome: map[l]?.nome || "", itens: map[l]?.itens || [] }));
+  p.treinos = LETRAS.map(l => ({ letra: l, nome: map[l]?.nome || "", itens: map[l]?.itens || [], cardio: map[l]?.cardio || null }));
   return p;
 }
 const volume = rows => rows.reduce((s, r) => (r.carga != null && r.reps != null) ? s + Number(r.carga) * Number(r.reps) : s, 0);
@@ -663,9 +702,12 @@ function makeDemo(){
     sets: [...(prep ? [novaSerie("aquecimento"), novaSerie("reconhecimento")] : []), ...Array.from({ length: series }, () => ({ tipo: "trabalho", reps, rir: "0 a 3" }))] });
   const progs = [
     normPrograma({ id: 1, aluno_id: "a1", nome: "Hipertrofia — Bloco 1", modalidade: "feedback semanal", objetivo: "Hipertrofia", frequencia: 3, restricoes: "Sem restrições", reavaliacao: ago(-12), inicio: ago(44), semanas: 8, treinos: [
-      { letra: "A", nome: "Peito e tríceps", itens: [item(1, 3, "6-8", "Última série até a falha técnica.", true), item(2), item(3, 3, "12-15"), item(4, 3, "10-12")] },
+      { letra: "A", nome: "Peito e tríceps", itens: [item(1, 3, "6-8", "Última série até a falha técnica.", true), item(2), item(3, 3, "12-15"), item(4, 3, "10-12")],
+        cardio: { local: "Bike de spinning", tipo: "hiit", tempo: "", intensidade: "", obs: "Comece com 3 min leves para aquecer (fora dos blocos).",
+          blocos: [1, 2, 3, 4, 5, 6].map(k => k % 2 ? { tempo: "30 s", intensidade: "Máxima (PSE 9-10)" } : { tempo: "90 s", intensidade: "Leve (PSE 3-4)" }) } },
       { letra: "B", nome: "Costas e bíceps", itens: [item(5, 3, "8-12", "", true), item(6), item(7, 3, "10-12"), item(8, 3, "10-12")] },
-      { letra: "C", nome: "Pernas", itens: [item(9, 3, "6-8", "", true), item(10), item(11, 3, "12-15"), item(12, 3, "10-12")] }
+      { letra: "C", nome: "Pernas", itens: [item(9, 3, "6-8", "", true), item(10), item(11, 3, "12-15"), item(12, 3, "10-12")],
+        cardio: { local: "Esteira", tipo: "media", tempo: "25 min", intensidade: "Moderada (PSE 5-6)", obs: "Inclinação 5%, caminhada rápida. Deve conseguir conversar com frases curtas.", blocos: [] } }
     ] }),
     normPrograma({ id: 2, aluno_id: "a2", nome: "Adaptação", modalidade: "feedback mensal", inicio: ago(9), semanas: 6, treinos: [
       { letra: "A", nome: "Superiores", itens: [item(5, 3, "12"), item(2, 3, "12"), item(13, 3, "12"), item(14, 3, "15")] },
@@ -968,7 +1010,8 @@ function editorPrograma(){
       <label class="field"><span>Foco da sessão (treino ${t.letra})</span><input type="text" data-f="tnome" data-t="${ti}" value="${esc(t.nome)}" placeholder="Ex.: Push, Pull, Membros inferiores"></label>
       ${items ? `<p class="small muted">Para mudar a ordem: arraste o cartão (pela alça ⠿ ou, no celular, segurando o cartão por meio segundo) ou escolha a posição no número ao lado da alça.</p><div class="ex-list" id="exList">${items}</div>` : `<div class="empty">Treino ${t.letra} ainda sem exercícios.</div>`}
       ${exs.length ? `<div class="combo-add"><label class="field"><span>Adicionar exercício ao treino ${t.letra}</span></label>${comboEx("add", ti, null, null)}<span class="small muted">Digite parte do nome ou do grupo muscular e toque no exercício para adicionar.</span></div>`
-        : `<div class="callout">Cadastre exercícios na Biblioteca antes de montar o treino.</div>`}`;
+        : `<div class="callout">Cadastre exercícios na Biblioteca antes de montar o treino.</div>`}
+      ${editorCardio(t, ti)}`;
   return `<div class="panel">
       <div class="grid2">
         <label class="field"><span>Nome do programa</span><input type="text" data-f="nome" value="${esc(d.nome)}"></label>
@@ -985,6 +1028,40 @@ function editorPrograma(){
     ${sobraAviso}
     <div class="panel">${blocoTreinos}</div>
     <div class="row"><button class="btn primary" data-act="savePrograma">${d.id ? "Salvar alterações" : "Salvar e enviar ao aluno"}</button><span id="dirtyMsg" class="small ${S.data.dirty ? "" : "muted"}" style="color:${S.data.dirty ? "var(--warn)" : ""}">${S.data.dirty ? "Alterações não salvas" : (d.id ? "Tudo salvo. O aluno já vê esta versão." : "")}</span></div>`;
+}
+
+/* ---------- Cardio no editor ---------- */
+function editorCardio(t, ti){
+  const c = t.cardio;
+  const head = `<label class="sw"><input type="checkbox" data-cardio="on" data-t="${ti}" ${c ? "checked" : ""}> Prescrever cardio no treino ${t.letra}</label>`;
+  if (!c) return `<div class="cardio-ed">${head}<span class="small muted">Opcional. Marque para definir local, tipo, tempo e intensidade do cardio, feito depois dos exercícios.</span></div>`;
+  const ops = (campo, lista, val, rot = x => x) => `<div class="an-ops">${lista.map(o => `<label><input type="radio" name="cd-${campo}-${ti}" data-cardio="${campo}" data-t="${ti}" value="${esc(o)}" ${val === o ? "checked" : ""}><span>${esc(rot(o))}</span></label>`).join("")}</div>`;
+  const intens = (val, attrs) => `<input type="text" list="cdIntens" ${attrs} value="${esc(val)}" placeholder="Intensidade (ex.: Máxima, PSE 9, 12 km/h)">`;
+  const corpo = c.tipo === "hiit"
+    ? `<div class="field"><span>Quantidade de blocos</span><select data-cardio="nblocos" data-t="${ti}" style="max-width:180px">${Array.from({ length: 30 }, (_, k) => k + 1).map(n => `<option value="${n}" ${n === c.blocos.length ? "selected" : ""}>${n} ${n > 1 ? "blocos" : "bloco"}</option>`).join("")}</select></div>
+       <div class="cd-blocos">${c.blocos.map((b, k) => `<div class="cd-bloco"><b class="num">Bloco ${k + 1}</b><input type="text" data-cardio="btempo" data-t="${ti}" data-b="${k}" value="${esc(b.tempo)}" placeholder="Tempo (ex.: 30 s)" aria-label="Tempo do bloco ${k + 1}">${intens(b.intensidade, `data-cardio="bint" data-t="${ti}" data-b="${k}" aria-label="Intensidade do bloco ${k + 1}"`)}</div>`).join("")}</div>
+       <span class="small muted">${resumoCardio(c) ? "Resumo: " + esc(resumoCardio(c)) : "Use tempos como 30 s, 1 min ou 1:30 para o app somar o total."}</span>`
+    : c.tipo ? `<div class="grid2"><label class="field"><span>Tempo de duração</span><input type="text" data-cardio="tempo" data-t="${ti}" value="${esc(c.tempo)}" placeholder="Ex.: 20 min"></label>
+        <label class="field"><span>Intensidade</span>${intens(c.intensidade, `data-cardio="intensidade" data-t="${ti}"`)}</label></div>` : "";
+  return `<div class="cardio-ed on">${head}
+    <div class="field"><span>Onde vai ser o cardio</span>${ops("local", CARDIO_LOCAIS, c.local)}</div>
+    <div class="field"><span>Tipo de cardio</span>${ops("tipo", Object.keys(CARDIO_TIPOS), c.tipo, k => CARDIO_TIPOS[k])}</div>
+    ${corpo}
+    ${c.tipo ? `<label class="field"><span>Observação (opcional)</span><textarea data-cardio="obs" data-t="${ti}" rows="2" placeholder="Ex.: inclinação 5%, cadência, como ajustar se cansar">${esc(c.obs)}</textarea></label>` : ""}
+    <datalist id="cdIntens">${CARDIO_INTENS.map(x => `<option value="${esc(x)}">`).join("")}</datalist></div>`;
+}
+function editarCardio(el){
+  const d = S.data.draft, t = d.treinos[+el.dataset.t], f = el.dataset.cardio;
+  S.data.dirty = true;
+  const marca = () => { const m = document.getElementById("dirtyMsg"); if (m) { m.textContent = "Alterações não salvas"; m.style.color = "var(--warn)"; m.classList.remove("muted"); } };
+  const redesenha = () => { const y = window.scrollY; render(); window.scrollTo(0, y); };
+  if (f === "on") { t.cardio = el.checked ? novoCardio() : null; return redesenha(); }
+  const c = t.cardio; if (!c) return;
+  if (f === "tipo") { c.tipo = el.value; if (c.tipo === "hiit" && !c.blocos.length) c.blocos = novoCardio().blocos; return redesenha(); }
+  if (f === "local") { c.local = el.value; return marca(); }
+  if (f === "nblocos") { const n = Number(el.value); while (c.blocos.length < n) c.blocos.push({ tempo: "", intensidade: "" }); c.blocos.length = n; return redesenha(); }
+  if (f === "btempo" || f === "bint") { c.blocos[+el.dataset.b][f === "btempo" ? "tempo" : "intensidade"] = el.value; return marca(); }
+  c[f] = el.value; marca();
 }
 
 /* ---------- Seletor de exercício com busca (a lista abre embaixo do campo) ---------- */
@@ -1093,7 +1170,7 @@ function viewHome(){
     const total = t.itens.reduce((s, i) => s + serT(i).length, 0);
     const st = finalizado(S.data.sess, sem, t.letra) ? `<span class="chip ok">✓ Finalizado</span>`
       : done.length ? `<span class="chip warn num">Em andamento · ${done.length}/${total} séries</span>` : `<span class="chip">A fazer</span>`;
-    return `<div class="item"><div class="letters"><button tabindex="-1" aria-hidden="true" aria-selected="true">${t.letra}</button></div><div class="grow"><h3>${esc(t.nome || "Treino " + t.letra)}</h3><p class="small muted num">${t.itens.length} exercícios</p></div>${st}<button class="btn primary" data-act="openTreino" data-l="${t.letra}">Abrir</button></div>`;
+    return `<div class="item"><div class="letters"><button tabindex="-1" aria-hidden="true" aria-selected="true">${t.letra}</button></div><div class="grow"><h3>${esc(t.nome || "Treino " + t.letra)}</h3><p class="small muted num">${t.itens.length} exercícios${t.cardio ? " + cardio" : ""}</p></div>${st}<button class="btn primary" data-act="openTreino" data-l="${t.letra}">Abrir</button></div>`;
   }).join("");
   const semOpts = Array.from({ length: programa.semanas }, (_, i) => i + 1).map(w => `<option value="${w}" ${w === sem ? "selected" : ""} ${w > cur ? "disabled" : ""}>Semana ${w}${w === cur ? " (atual)" : ""}</option>`).join("");
   return `<div><p class="label">${esc(programa.nome)}</p><h1>Olá, ${esc(S.user.nome.split(" ")[0])}</h1></div>
@@ -1146,7 +1223,7 @@ function viewTreino(){
         <input id="r-${ex}-${s}" type="text" inputmode="tel" value="${esc(r?.reps_txt ?? r?.reps ?? "")}" placeholder="${pv?.reps != null ? esc(pv.reps_txt ?? pv.reps) : "reps"}" aria-label="Repetições, ${esc(e.nome)}, série de trabalho ${s}"><span class="x">reps</span>
         ${pv && (pv.carga != null || pv.reps != null) ? `<span class="prev">sem. ${sem - 1}: ${esc(fmt(pv.carga) || "–")} kg × ${esc(pv.reps_txt ?? pv.reps ?? "–")}</span>` : ""}</div></div>`;
     }).join("");
-    const ultimo = i === t.itens.length - 1;
+    const ultimo = i === t.itens.length - 1 && !t.cardio;
     return `<details class="ex-acc" data-i="${i}" ${S.p.aberto === i ? "open" : ""}>
       <summary><span class="n num">${i + 1}</span><span class="nm"><b>${esc(e.nome)}</b><span class="sq-row">${it.sets.map(x => `<i class="sq t-${x.tipo}" title="${TIPOS[x.tipo].nome}"></i>`).join("")}<span class="num">${nT} de trabalho${repsT ? " · " + esc(repsT) : ""}</span></span></span><span class="ex-st" data-st="${ex}" data-n="${nT}"></span></summary>
       <div class="body">
@@ -1164,9 +1241,26 @@ function viewTreino(){
     <details class="panel legend-card" ${S.p.legenda ? "open" : ""}><summary>Como ler as séries · sistema de cores</summary>${legendaTipos(false)}
       <p class="small muted">Siga a ordem dos exercícios. Toque no exercício para ver as séries, o vídeo e registrar. Registre carga e repetições só nas séries de trabalho; o número claro no campo é o da semana anterior. Série com pausa no meio? Anote assim: 6+4. Faça 5 a 8 min de aquecimento geral antes do primeiro exercício.</p>
       <div><button class="btn sm" data-act="nav" data-v="orientacoes">Orientações completas</button></div></details>
-    <div class="ex-acc-list" id="treinoCards">${cards}</div>
+    <div class="ex-acc-list" id="treinoCards">${cards}${cardioAluno(t)}</div>
     <div class="panel"><label class="field"><span>Observações da sessão</span><textarea id="sessObs" placeholder="Como foi o treino? Exercício que travou, desconforto, ajuste de máquina...">${esc(sessao?.obs || "")}</textarea></label>
       <p class="small muted">${esc(primeiroNome((PROF || PROF_PADRAO).nome))} lê estas observações. Em caso de dor no peito, tontura, falta de ar desproporcional ou dor articular aguda, pare o treino e avise na hora.</p></div>`;
+}
+
+function cardioAluno(t){
+  const c = t.cardio; if (!c) return "";
+  const i = t.itens.length;
+  const corpo = c.tipo === "hiit"
+    ? `<div class="cd-lista">${c.blocos.map((b, k) => `<div class="cd-item"><b>Bloco ${k + 1}</b><strong>${esc(b.tempo)}</strong><span>${esc(b.intensidade)}</span></div>`).join("")}</div>`
+    : `<div class="cd-lista"><div class="cd-item"><b>Duração</b><strong>${esc(c.tempo)}</strong></div><div class="cd-item"><b>Intensidade</b><strong>${esc(c.intensidade)}</strong></div></div>`;
+  return `<details class="ex-acc cardio-acc" data-i="${i}" ${S.p.aberto === i ? "open" : ""}>
+    <summary><span class="n" aria-hidden="true">♥</span><span class="nm"><b>Cardio</b><span class="sq-row"><span style="margin-left:0">${esc(resumoCardio(c))}</span></span></span></summary>
+    <div class="body">
+      <div class="small"><b>Local:</b> ${esc(c.local)}</div>
+      ${corpo}
+      ${c.obs ? `<div class="nota">${esc(c.obs)}</div>` : ""}
+      ${c.tipo === "hiit" ? `<p class="small muted">Siga os blocos na ordem, sem pausa entre eles. A intensidade indicada vale para todo o bloco.</p>` : ""}
+      <div class="fim"><button class="btn sm" data-act="fecharEx">Fechar</button></div>
+    </div></details>`;
 }
 
 /* ---------- Salvamento automático do treino ---------- */
@@ -2027,6 +2121,13 @@ document.addEventListener("click", async ev => {
       if (vazio) return toast(`O treino ${vazio.letra} está sem exercícios. Monte todos os ${nTr} treinos da frequência.`, 4500);
       const dup = p.treinos.find(t => new Set(t.itens.map(i => i.exercicio_id)).size !== t.itens.length);
       if (dup) return toast(`O treino ${dup.letra} tem um exercício repetido.`);
+      for (const t of p.treinos.slice(0, nTr)) {
+        const c = t.cardio; if (!c) continue;
+        if (!c.local) return toast(`Cardio do treino ${t.letra}: escolha onde vai ser.`, 4000);
+        if (!c.tipo) return toast(`Cardio do treino ${t.letra}: escolha o tipo.`, 4000);
+        if (c.tipo === "hiit") { const k = c.blocos.findIndex(b => !b.tempo.trim() || !b.intensidade.trim()); if (k >= 0) return toast(`Cardio do treino ${t.letra}: preencha tempo e intensidade do bloco ${k + 1}.`, 4500); }
+        else if (!c.tempo.trim() || !c.intensidade.trim()) return toast(`Cardio do treino ${t.letra}: preencha tempo de duração e intensidade.`, 4500);
+      }
       const semTrab = p.treinos.find(t => t.itens.some(it => !serT(it).length));
       if (semTrab) return toast(`No treino ${semTrab.letra} há exercício sem série de trabalho. Toda ficha precisa de pelo menos uma.`, 4500);
       el.disabled = true;
@@ -2051,7 +2152,7 @@ document.addEventListener("click", async ev => {
     if (a === "comboPick") return escolherCombo(el.closest(".combo"), Number(el.dataset.id));
     if (a === "limparSobra") {
       const n = Math.min(LETRAS.length, Number(d.draft.frequencia) || 0);
-      d.draft.treinos.slice(n).forEach(t => { t.itens = []; t.nome = ""; }); d.dirty = true; toast("Treinos fora da frequência apagados."); return render();
+      d.draft.treinos.slice(n).forEach(t => { t.itens = []; t.nome = ""; t.cardio = null; }); d.dirty = true; toast("Treinos fora da frequência apagados."); return render();
     }
     if (a === "proxEx") {
       const i = Number(el.dataset.i), prox = document.querySelector(`details.ex-acc[data-i="${i + 1}"]`);
@@ -2114,6 +2215,7 @@ document.addEventListener("input", ev => {
   if (el.classList.contains("combo-in")) { const combo = el.closest(".combo"); combo.querySelector(".combo-list").hidden = false; el.setAttribute("aria-expanded", "true"); comboOpcoes(combo, el.value); return; }
   if (S.view === "treino" && (el.id === "sessObs" || el.closest(".set-in"))) { guardarRascunho(); statusTreino(); autoMsg("Alterações guardadas neste aparelho…"); agendarAuto(); return; }
   if (S.view === "anamnese" && el.dataset.an) { anGuardar(el); return; }
+  if (el.dataset.cardio && S.data.draft) { editarCardio(el); return; }
   if (el.dataset.f === "frequencia" && S.data.draft) { S.data.draft.frequencia = el.value; S.data.dirty = true; const y = window.scrollY; render(); window.scrollTo(0, y); return; }
   if (el.id === "exSearch") { S.data.q = el.value; const pos = el.selectionStart; render(); const n = document.getElementById("exSearch"); n.focus(); n.setSelectionRange(pos, pos); return; }
   if (el.dataset.obs) { S.data.obs = S.data.obs || {}; S.data.obs[el.dataset.obs] = el.value; return; }
