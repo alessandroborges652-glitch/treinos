@@ -549,7 +549,7 @@ function progressoSemanas(p, fin){
   for (let w = 1; w <= p.semanas; w++) {
     const f = fin.filter(x => x.semana === w);
     if (f.length) alguma = w;
-    if (letras.length && letras.every(l => f.some(x => x.letra === l))) cheia = w;
+    if (f.some(x => x.letra === "*") || (letras.length && letras.every(l => f.some(x => x.letra === l)))) cheia = w;
   }
   return { cheia, alguma, letras };
 }
@@ -1200,7 +1200,8 @@ function viewHome(){
       ${programa.restricoes ? `<div><span class="label">Restrições</span><b>${esc(programa.restricoes)}</b></div>` : ""}
     </div><div class="row"><button class="btn" data-act="nav" data-v="orientacoes">Orientações do treino</button><span class="small muted">Sistema de cores, RIR, como progredir e segurança.</span></div></div>
     <div class="row"><label class="field" style="min-width:200px"><span>Semana do programa</span><select id="semSel">${semOpts}</select></label><span class="small muted num" style="align-self:flex-end;padding-bottom:10px">de ${programa.semanas} semanas</span></div>
-    <div class="prog-treino" style="margin-top:-8px"><div class="bar"><i style="width:${treinos.length ? Math.round(nFin / treinos.length * 100) : 0}%"></i></div><span class="small muted num">${nFin === treinos.length && treinos.length ? `Semana ${sem} concluída` : `${nFin} de ${treinos.length} treinos finalizados na semana ${sem}`}</span></div>
+    <div class="prog-treino" style="margin-top:-8px"><div class="bar"><i style="width:${treinos.length ? Math.round(nFin / treinos.length * 100) : 0}%"></i></div><span class="small muted num">${nFin === treinos.length && treinos.length ? `Semana ${sem} concluída` : finalizado(S.data.sess, sem, "*") ? `Semana ${sem} encerrada · ${nFin} de ${treinos.length} treinos feitos` : `${nFin} de ${treinos.length} treinos finalizados na semana ${sem}`}</span></div>
+    ${sem === cur && treinos.length && nFin < treinos.length && !finalizado(S.data.sess, sem, "*") ? `<div class="row" style="margin-top:-8px"><button class="btn sm" data-act="pedirFimSemana">Finalizar semana ${sem}</button><span class="small muted">Use se não for fazer os treinos que faltam e quiser passar para a próxima semana.</span></div>` : ""}
     <div class="list">${cards}</div>
     ${isPers() ? `<h2 style="margin-top:12px">Registro do meu treino</h2>${evolucao({ prog: programa, regs, exercicios: S.data.exercicios, modo: "proprio", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) })}` : listaRelatorios()}`;
 }
@@ -2176,6 +2177,22 @@ document.addEventListener("click", async ev => {
     if (a === "finalizarForcar") return finalizarTreino(el, true);
     if (a === "fecharModal") return fecharModal();
     if (a === "continuarFim") { fecharModal(); return go("home"); }
+    if (a === "pedirFimSemana") {
+      const prog = d.programa, sem = S.p.semana, faltam = prog.treinos.filter(temConteudo).filter(t => !finalizado(d.sess, sem, t.letra)).map(t => t.letra);
+      const ultima = sem >= prog.semanas;
+      return modal(`<h2 id="modalTit">Finalizar a semana ${sem}?</h2>
+        <p class="muted">${faltam.length === 1 ? "O treino" : "Os treinos"} ${faltam.join(", ").replace(/, ([^,]*)$/, " e $1")} ${faltam.length === 1 ? "não foi finalizado e ficará registrado como não feito" : "não foram finalizados e ficarão registrados como não feitos"} nesta semana. ${ultima ? "Esta é a última semana do programa." : `Você passa para a semana ${sem + 1}.`}</p>
+        <p class="small muted">Se ainda for treinar nesta semana, finalize os treinos normalmente.</p>
+        <div class="acoes"><button class="btn primary" data-act="fimSemana">Finalizar semana ${sem}</button><button class="btn ghost" data-act="fecharModal">Voltar</button></div>`);
+    }
+    if (a === "fimSemana") {
+      const prog = d.programa, sem = S.p.semana; el.disabled = true;
+      await db.saveSessao({ aluno_id: S.user.id, programa_id: prog.id, semana: sem, letra: "*", obs: "", finalizado_em: new Date().toISOString() });
+      d.sess = await db.getSessoes(S.user.id, prog.id); fecharModal();
+      const nova = semanaAtual(prog, d.sess);
+      toast(nova > sem ? `Semana ${sem} encerrada. Bons treinos na semana ${nova}!` : `Semana ${sem} encerrada. Este era o fim do programa.`, 4000);
+      return go("home", { semana: nova });
+    }
     if (a === "addCardio") { const t = d.draft.treinos[+el.dataset.t]; (t.cardios = t.cardios || []).push(novoCardio()); d.dirty = true; const y = window.scrollY; render(); window.scrollTo(0, y); return; }
     if (a === "rmCardio") { d.draft.treinos[+el.dataset.t].cardios.splice(+el.dataset.c, 1); d.dirty = true; const y = window.scrollY; render(); window.scrollTo(0, y); return; }
     if (a === "comboPick") return escolherCombo(el.closest(".combo"), Number(el.dataset.id));
