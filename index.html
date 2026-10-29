@@ -737,6 +737,10 @@ function makeDemo(){
     normPrograma({ id: 3, aluno_id: "p1", nome: "Força", modalidade: "feedback semanal", inicio: ago(12), semanas: 8, treinos: [
       { letra: "A", nome: "Inferiores", itens: [item(9, 4, "4-6"), item(10, 3, "8-10"), item(12, 3, "10-12")] },
       { letra: "B", nome: "Superiores", itens: [item(1, 4, "4-6"), item(6, 3, "6-8"), item(13, 3, "8-10")] }
+    ] }),
+    normPrograma({ id: 4, aluno_id: "a4", nome: "Força geral", modalidade: "sem feedback", frequencia: 2, inicio: ago(5), semanas: 8, treinos: [
+      { letra: "A", nome: "Membros inferiores", itens: [item(9, 3, "8-10", "", true), item(10, 3, "10-12"), item(12, 3, "10-12")] },
+      { letra: "B", nome: "Membros superiores", itens: [item(1, 3, "8-10", "", true), item(5, 3, "8-12"), item(14, 3, "12-15")] }
     ] })
   ];
   const regs = [];
@@ -934,7 +938,7 @@ function render(loading = false){
 function header(){
   const isP = isPers();
   const nav = !S.user ? "" : (S.user.role === "personal" && !isP) ? `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="pendente" ${S.view === "pendente" ? 'aria-current="page"' : ""}>Cadastro</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>` : isP
-    ? `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="alunos" ${["alunos","aluno"].includes(S.view) || modoPres() ? 'aria-current="page"' : ""}>Alunos</button>${isMaster() ? `<button data-act="nav" data-v="personais" ${S.view === "personais" ? 'aria-current="page"' : ""}>Personais${S.pendentes ? `<span class="badge">${S.pendentes}</span>` : ""}</button>` : ""}<button data-act="nav" data-v="biblioteca" ${S.view === "biblioteca" ? 'aria-current="page"' : ""}>Biblioteca</button><button data-act="nav" data-v="home" ${["home","treino"].includes(S.view) && !modoPres() ? 'aria-current="page"' : ""}>Meu treino</button><button data-act="nav" data-v="orientacoes" ${S.view === "orientacoes" ? 'aria-current="page"' : ""}>Orientações</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>`
+    ? `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="alunos" ${["alunos","aluno"].includes(S.view) || modoPres() ? 'aria-current="page"' : ""}>Meus alunos</button>${isMaster() ? `<button data-act="nav" data-v="personais" ${S.view === "personais" ? 'aria-current="page"' : ""}>Personais${S.pendentes ? `<span class="badge">${S.pendentes}</span>` : ""}</button>` : ""}<button data-act="nav" data-v="biblioteca" ${S.view === "biblioteca" ? 'aria-current="page"' : ""}>Biblioteca</button><button data-act="nav" data-v="home" ${["home","treino"].includes(S.view) && !modoPres() ? 'aria-current="page"' : ""}>Meu treino</button><button data-act="nav" data-v="orientacoes" ${S.view === "orientacoes" ? 'aria-current="page"' : ""}>Orientações</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>`
     : S.anamneseOk === false ? `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="anamnese" ${S.view === "anamnese" ? 'aria-current="page"' : ""}>Anamnese</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>`
     : `<nav class="nav" aria-label="Seções"><button data-act="nav" data-v="home" ${["home","treino","relatorio"].includes(S.view) ? 'aria-current="page"' : ""}>Meus treinos</button><button data-act="nav" data-v="orientacoes" ${S.view === "orientacoes" ? 'aria-current="page"' : ""}>Orientações</button><button data-act="nav" data-v="conta" ${S.view === "conta" ? 'aria-current="page"' : ""}>Minha conta</button><button data-act="logout">Sair</button></nav>`;
   const demo = DEMO ? `<div class="demo"><div class="wrap">Modo demonstração: dados de exemplo, nada é salvo de verdade.${S.user ? ` Você está como <b>${esc({ master: "login mestre", personal: isPers() ? "personal" : "personal em análise", aluno: "aluno" }[S.user.role])}</b>.` : ""}</div></div>` : "";
@@ -984,21 +988,35 @@ function viewLogin(){
 function viewAlunos(){
   const { alunos, progs } = S.data;
   const pm = Object.fromEntries(progs.map(p => [p.aluno_id, p]));
-  const cards = alunos.map(a => {
-    const p = pm[a.id], an = S.data.anams && !a.presencial ? S.data.anams[a.id] : true;
-    const st = (p ? `<span class="chip acc">${esc(p.nome)}</span><span class="chip num">Semana ${semanaAtual(p, S.data.fins)} de ${p.semanas}</span>` : an ? `<span class="chip ok">Anamnese respondida</span><span class="chip warn">Montar treino</span>` : "")
-      + (an ? "" : `<span class="chip warn">Anamnese pendente</span>`);
-    return `<div class="item"><div class="grow"><h3>${esc(a.nome)}</h3><p class="small muted">${a.presencial ? "Atendimento presencial · sem acesso ao app" : esc(a.email)}</p></div><div class="row">${a.presencial ? `<span class="chip">Presencial</span>` : ""}${a.presencial && !p ? `<span class="chip warn">Montar treino</span>` : st}</div><button class="btn sm primary" data-act="openAluno" data-id="${esc(a.id)}">Abrir</button></div>`;
-  }).join("");
+  const pres = alunos.filter(a => a.presencial), online = alunos.filter(a => !a.presencial);
+  let grupo = S.p.grupo || LS.get("grupoAlunos"); if (!["presencial", "online"].includes(grupo)) grupo = pres.length ? "presencial" : "online";
+  const progChips = p => `<span class="chip acc">${esc(p.nome)}</span><span class="chip num">Semana ${semanaAtual(p, S.data.fins)} de ${p.semanas}</span>`;
+  const cardOnline = a => {
+    const p = pm[a.id], an = S.data.anams ? S.data.anams[a.id] : true;
+    const st = (p ? progChips(p) : an ? `<span class="chip ok">Anamnese respondida</span><span class="chip warn">Montar treino</span>` : "") + (an ? "" : `<span class="chip warn">Anamnese pendente</span>`);
+    return `<div class="item"><div class="grow"><h3>${esc(a.nome)}</h3><p class="small muted">${esc(a.email)}</p></div><div class="row">${st}</div><button class="btn sm primary" data-act="openAluno" data-id="${esc(a.id)}">Abrir</button></div>`;
+  };
+  const cardPres = a => {
+    const p = pm[a.id];
+    return `<div class="item"><div class="grow"><h3>${esc(a.nome)}</h3><p class="small muted">Atendimento presencial</p></div><div class="row">${p ? progChips(p) : `<span class="chip warn">Montar treino</span>`}</div>
+      <div class="row">${p ? `<button class="btn sm primary" data-act="treinarPres" data-id="${esc(a.id)}">▶ Treino</button>` : ""}<button class="btn sm" data-act="openAluno" data-id="${esc(a.id)}">${p ? "Ficha e evolução" : "Montar treino"}</button></div></div>`;
+  };
   const link = location.origin + location.pathname + "?p=" + S.user.id;
   const avisoCref = isPers() && crefAtencao(S.user) ? `<div class="callout">${diasPara(S.user.cref_validade) === null ? "Informe a validade do seu CREF" : diasPara(S.user.cref_validade) < 0 ? "O seu CREF está vencido" : `O seu CREF vence em ${diasPara(S.user.cref_validade)} dia(s), em ${fmtData(S.user.cref_validade)}`}. Atualize os dados e a foto em <button class="btn sm" data-act="nav" data-v="conta">Minha conta</button></div>` : "";
-  return `${avisoCref}<div class="row"><div><h1>Alunos</h1><p class="muted num">${alunos.length} ${alunos.length === 1 ? "aluno" : "alunos"}</p></div></div>
-    ${alunos.length ? `<div class="list">${cards}</div>` : `<div class="empty">Nenhum aluno cadastrado ainda.</div>`}
-    <div class="item"><div class="grow"><h3>Meu treino</h3><p class="small muted">Monte e acompanhe o seu próprio programa (análise técnica)</p></div><div class="row">${pm[S.user.id] ? `<span class="chip acc">${esc(pm[S.user.id].nome)}</span><span class="chip num">Semana ${semanaAtual(pm[S.user.id], S.data.fins)} de ${pm[S.user.id].semanas}</span>` : `<span class="chip warn">Sem programa</span>`}</div><button class="btn sm" data-act="openAluno" data-id="${esc(S.user.id)}">Editar programa</button></div>
-    <div class="panel"><h3>Adicionar aluno</h3><p class="small muted">Envie este link para o aluno. Ele é o seu convite: o aluno cria a conta com e-mail e senha e aparece só na sua lista.</p>
-    <div class="row"><input id="shareLink" type="text" readonly value="${esc(DEMO ? "https://seu-usuario.github.io/treinos/?p=" + S.user.id : link)}" style="flex:1;min-width:0"><button class="btn sm" data-act="copy">Copiar</button></div></div>
-    <div class="panel"><h3>Adicionar aluno presencial</h3><p class="small muted">Para quem você atende pessoalmente e não vai usar o app. Não precisa de link nem de e-mail: você monta o treino e, durante a sessão, abre o treino dele no seu celular para anotar as cargas.</p>
-    <div class="row"><input id="presNome" type="text" placeholder="Nome completo do aluno" autocomplete="off" style="flex:1;min-width:0"><button class="btn sm primary" data-act="criarPresencial">Criar aluno</button></div></div>`;
+  const abas = `<div class="tabs" role="tablist" aria-label="Tipo de aluno"><button role="tab" data-act="grupoAlunos" data-v="presencial" aria-selected="${grupo === "presencial"}">Presenciais <span class="chip num">${pres.length}</span></button><button role="tab" data-act="grupoAlunos" data-v="online" aria-selected="${grupo === "online"}">Online <span class="chip num">${online.length}</span></button></div>`;
+  const secao = grupo === "presencial"
+    ? `<p class="small muted">Alunos que você atende pessoalmente. Toque em <b>▶ Treino</b> para abrir o treino do dia, anotar as cargas e finalizar.</p>
+      ${pres.length ? `<div class="list">${pres.map(cardPres).join("")}</div>` : `<div class="empty">Nenhum aluno presencial ainda.</div>`}
+      <div class="panel"><h3>Adicionar aluno presencial</h3><p class="small muted">Só o nome. Não precisa de link nem de e-mail: o aluno não acessa o app, você registra tudo.</p>
+      <div class="row"><input id="presNome" type="text" placeholder="Nome completo do aluno" autocomplete="off" style="flex:1;min-width:0"><button class="btn sm primary" data-act="criarPresencial">Criar aluno</button></div></div>`
+    : `<p class="small muted">Alunos que acessam o app pelo celular, registram as próprias cargas e recebem os seus acompanhamentos.</p>
+      ${online.length ? `<div class="list">${online.map(cardOnline).join("")}</div>` : `<div class="empty">Nenhum aluno online ainda.</div>`}
+      <div class="panel"><h3>Adicionar aluno online</h3><p class="small muted">Envie este link para o aluno. Ele é o seu convite: o aluno cria a conta com e-mail e senha e aparece só na sua lista.</p>
+      <div class="row"><input id="shareLink" type="text" readonly value="${esc(DEMO ? "https://seu-usuario.github.io/treinos/?p=" + S.user.id : link)}" style="flex:1;min-width:0"><button class="btn sm" data-act="copy">Copiar</button></div></div>`;
+  return `${avisoCref}<div class="row"><div><h1>Meus alunos</h1><p class="muted num">${pres.length} ${pres.length === 1 ? "presencial" : "presenciais"} · ${online.length} online</p></div></div>
+    ${abas}
+    ${secao}
+    <div class="item"><div class="grow"><h3>Meu treino</h3><p class="small muted">Monte e acompanhe o seu próprio programa (análise técnica)</p></div><div class="row">${pm[S.user.id] ? progChips(pm[S.user.id]) : `<span class="chip warn">Sem programa</span>`}</div><button class="btn sm" data-act="openAluno" data-id="${esc(S.user.id)}">Editar programa</button></div>`;
 }
 
 /* ---------- Personal: aluno (programa / evolução) ---------- */
@@ -1013,7 +1031,7 @@ function viewAluno(){
       ? `<div class="panel lock"><h3>Montagem bloqueada até o aluno responder a anamnese</h3><p class="small muted">A anamnese é a primeira tela que o aluno vê ao entrar no app. Assim que ele enviar as respostas, elas aparecem na aba Anamnese e a montagem do treino é liberada.</p><button class="btn sm" data-act="tab" data-tab="anamnese">Ver situação da anamnese</button></div>`
       : (!proprio && !pres && !an ? `<div class="callout">Este aluno ainda não respondeu a anamnese. Ela aparece para ele na próxima vez que entrar no app.</div>` : "") + editorPrograma())
     : null;
-  return `<div><button class="btn ghost sm" data-act="nav" data-v="alunos">← Alunos</button></div>
+  return `<div><button class="btn ghost sm" data-act="nav" data-v="alunos">← Meus alunos</button></div>
     <div><h1>${proprio ? "Meu treino" : esc(aluno.nome)}</h1><p class="muted small">${pres ? "Atendimento presencial · sem acesso ao app" : esc(aluno.email)}</p></div>
     ${pres && programa?.id ? `<div class="row"><button class="btn primary" data-act="treinarPres" data-id="${esc(aluno.id)}">▶ Abrir treino para registrar</button><span class="small muted">Use durante a sessão para anotar cargas e finalizar o treino.</span></div>` : ""}
     <div class="tabs" role="tablist">${proprio ? "" : `<button role="tab" data-act="tab" data-tab="anamnese" aria-selected="${tab === "anamnese"}">Anamnese${an ? "" : pres ? ' <span class="chip">opcional</span>' : ' <span class="chip warn">pendente</span>'}</button>`}<button role="tab" data-act="tab" data-tab="programa" aria-selected="${tab === "programa"}">Programa</button><button role="tab" data-act="tab" data-tab="evolucao" aria-selected="${tab === "evolucao"}">Evolução</button></div>
@@ -2223,6 +2241,7 @@ document.addEventListener("click", async ev => {
     if (a === "openTreino") return go("treino", { letra: el.dataset.l, semana: S.p.semana, ...(modoPres() ? { alunoId: S.p.alunoId } : {}) });
     if (a === "voltarHome") return go("home", { semana: S.p.semana, ...(modoPres() ? { alunoId: S.p.alunoId } : {}) });
     if (a === "voltarAluno") return go("aluno", { alunoId: S.p.alunoId, tab: S.view === "anamnese" ? "anamnese" : "programa" });
+    if (a === "grupoAlunos") { S.p.grupo = el.dataset.v; LS.set("grupoAlunos", el.dataset.v); return render(); }
     if (a === "treinarPres") return go("home", { alunoId: el.dataset.id });
     if (a === "anamnesePres") return go("anamnese", { alunoId: el.dataset.id });
     if (a === "criarPresencial") {
