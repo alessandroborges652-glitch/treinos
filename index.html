@@ -535,14 +535,11 @@ const parseReps = v => { v = String(v ?? "").replace(/\s/g, ""); if (v === "") r
 const parseN = v => { v = String(v ?? "").trim().replace(",", "."); if (v === "") return null; const n = Number(v); return isFinite(n) && n >= 0 ? n : NaN; };
 const todayISO = () => { const d = new Date(); d.setMinutes(d.getMinutes() - d.getTimezoneOffset()); return d.toISOString().slice(0, 10); };
 const clone = o => JSON.parse(JSON.stringify(o));
-/* Semana atual: avança quando todos os treinos da semana são finalizados.
-   Programas ainda sem nenhum treino finalizado seguem a data de início. */
+/* Semana atual: o programa começa sempre na semana 1 e avança quando todos os treinos
+   da semana são finalizados (ou quando a semana é encerrada em "Finalizar semana"). */
 function semanaAtual(p, sess){
-  const d0 = new Date(p.inicio + "T00:00:00");
-  const dias = Math.floor((Date.now() - d0.getTime()) / 86400000);
-  const porData = Math.min(p.semanas, Math.max(1, Math.floor(dias / 7) + 1));
   const fin = (sess || []).filter(x => x.finalizado_em && (x.programa_id == null || String(x.programa_id) === String(p.id)));
-  if (!fin.length) return porData;
+  if (!fin.length) return 1;
   const { cheia, alguma } = progressoSemanas(p, fin);
   return Math.min(p.semanas, Math.max(1, cheia + 1, alguma));
 }
