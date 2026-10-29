@@ -994,12 +994,12 @@ function viewAlunos(){
   const cardOnline = a => {
     const p = pm[a.id], an = S.data.anams ? S.data.anams[a.id] : true;
     const st = (p ? progChips(p) : an ? `<span class="chip ok">Anamnese respondida</span><span class="chip warn">Montar treino</span>` : "") + (an ? "" : `<span class="chip warn">Anamnese pendente</span>`);
-    return `<div class="item"><div class="grow"><h3>${esc(a.nome)}</h3><p class="small muted">${esc(a.email)}</p></div><div class="row">${st}</div><button class="btn sm primary" data-act="openAluno" data-id="${esc(a.id)}">Abrir</button></div>`;
+    return `<div class="item"><div class="grow"><h3>${esc(a.nome)}</h3><p class="small muted">${esc(a.email)}</p></div><div class="row">${st}</div><div class="row">${p || an ? `<button class="btn sm" data-act="editarPrograma" data-id="${esc(a.id)}">${p ? "Editar programa" : "Montar programa"}</button>` : ""}<button class="btn sm primary" data-act="openAluno" data-id="${esc(a.id)}">Abrir</button></div></div>`;
   };
   const cardPres = a => {
     const p = pm[a.id];
     return `<div class="item"><div class="grow"><h3>${esc(a.nome)}</h3><p class="small muted">Atendimento presencial</p></div><div class="row">${p ? progChips(p) : `<span class="chip warn">Montar treino</span>`}</div>
-      <div class="row">${p ? `<button class="btn sm primary" data-act="treinarPres" data-id="${esc(a.id)}">▶ Treino</button>` : ""}<button class="btn sm" data-act="openAluno" data-id="${esc(a.id)}">${p ? "Ficha e evolução" : "Montar treino"}</button></div></div>`;
+      <div class="row">${p ? `<button class="btn sm primary" data-act="treinarPres" data-id="${esc(a.id)}">▶ Treino</button>` : ""}<button class="btn sm" data-act="editarPrograma" data-id="${esc(a.id)}">${p ? "Editar programa" : "Montar programa"}</button>${p ? `<button class="btn sm" data-act="verEvolucao" data-id="${esc(a.id)}">Evolução</button>` : ""}</div></div>`;
   };
   const link = location.origin + location.pathname + "?p=" + S.user.id;
   const avisoCref = isPers() && crefAtencao(S.user) ? `<div class="callout">${diasPara(S.user.cref_validade) === null ? "Informe a validade do seu CREF" : diasPara(S.user.cref_validade) < 0 ? "O seu CREF está vencido" : `O seu CREF vence em ${diasPara(S.user.cref_validade)} dia(s), em ${fmtData(S.user.cref_validade)}`}. Atualize os dados e a foto em <button class="btn sm" data-act="nav" data-v="conta">Minha conta</button></div>` : "";
@@ -2241,6 +2241,8 @@ document.addEventListener("click", async ev => {
     if (a === "openTreino") return go("treino", { letra: el.dataset.l, semana: S.p.semana, ...(modoPres() ? { alunoId: S.p.alunoId } : {}) });
     if (a === "voltarHome") return go("home", { semana: S.p.semana, ...(modoPres() ? { alunoId: S.p.alunoId } : {}) });
     if (a === "voltarAluno") return go("aluno", { alunoId: S.p.alunoId, tab: S.view === "anamnese" ? "anamnese" : "programa" });
+    if (a === "editarPrograma") return go("aluno", { alunoId: el.dataset.id, tab: "programa" });
+    if (a === "verEvolucao") return go("aluno", { alunoId: el.dataset.id, tab: "evolucao" });
     if (a === "grupoAlunos") { S.p.grupo = el.dataset.v; LS.set("grupoAlunos", el.dataset.v); return render(); }
     if (a === "treinarPres") return go("home", { alunoId: el.dataset.id });
     if (a === "anamnesePres") return go("anamnese", { alunoId: el.dataset.id });
