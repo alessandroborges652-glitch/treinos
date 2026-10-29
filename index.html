@@ -369,6 +369,35 @@ details.cardio-acc>summary .n{font-size:1.1rem}
 .pse-tab{display:flex;flex-direction:column;gap:4px;margin-top:6px}
 .pse-tab div{display:grid;grid-template-columns:62px minmax(0,1fr);gap:10px;align-items:baseline;padding:6px 10px;border-radius:8px;background:var(--sunken)}
 .pse-tab b{font-variant-numeric:tabular-nums}
+/* Volume semanal por músculo (mesma lógica da planilha de montagem) */
+.vol-panel{gap:16px}
+.vol-filtro{display:flex;gap:6px;flex-wrap:wrap}
+.vol-ind{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.vol-ind .tile b{font-size:1.1rem}
+.vol-ind .tile .label{line-height:1.25}
+.vbar{display:grid;grid-template-columns:118px minmax(0,1fr) 44px;gap:8px;align-items:center;font-size:.86rem;padding:2px 0}
+.vbar .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.vbar .trk{height:16px;border-radius:4px;background:var(--sunken);overflow:hidden}
+.vbar .trk i{display:block;height:100%;border-radius:4px;min-width:0;transition:width .3s}
+.vbar .v{text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.vbar.zero .nm,.vbar.zero .v{color:var(--muted);font-weight:500}
+.vcols{display:flex;align-items:flex-end;gap:10px;height:170px;padding-top:18px;border-bottom:1px solid var(--line)}
+.vcols>div{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%;gap:4px;min-width:0}
+.vcols i{display:block;width:100%;max-width:56px;border-radius:6px 6px 0 0;background:var(--accent-2);transition:height .3s}
+.vcols .sel i{background:var(--accent)}
+.vcols b{font-size:.85rem;font-variant-numeric:tabular-nums}
+.vcols-lbl{display:flex;gap:10px}
+.vcols-lbl span{flex:1;text-align:center;font-weight:800;font-size:.85rem}
+.vgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;align-items:start}
+.vdonut{display:flex;gap:14px;align-items:center;flex-wrap:wrap}
+.vdonut svg{width:130px;height:130px;flex:none}
+.vleg{display:flex;flex-direction:column;gap:4px;font-size:.85rem}
+.vleg i{display:inline-block;width:11px;height:11px;border-radius:3px;margin-right:6px;vertical-align:-1px}
+.vreg{font-size:.72rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);margin-top:6px}
+table.data td.z{color:var(--muted)}
+.mus-ed{display:flex;flex-direction:column;gap:6px}
+.mus-row{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:6px}
+.rasc{border-radius:10px;padding:10px 12px;background:var(--accent-soft);color:var(--accent);font-size:.9rem;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 </style>
 <!--HEAD-END-->
 </head>
@@ -524,6 +553,12 @@ const primeiroNome = n => String(n || "").trim().split(/\s+/)[0];
 const alvo = () => (S.p && S.p.alunoId && ["home", "treino", "anamnese"].includes(S.view)) ? S.p.alunoId : S.user.id;
 const modoPres = () => !!(S.p && S.p.alunoId && ["home", "treino", "anamnese"].includes(S.view));
 const nomeAlvo = () => (modoPres() && S.data.alvoNome) || S.user.nome;
+/* Músculos e regiões (mesma ordem da aba VOLUME da planilha) */
+const REGIOES = [["Peito", ["Peito"]], ["Costas", ["Costas", "Trapézio"]], ["Ombros", ["Ombro anterior", "Ombro medial", "Ombro posterior"]], ["Braços", ["Bíceps", "Tríceps", "Antebraço"]], ["Pernas", ["Quadríceps", "Posterior de coxa", "Glúteo máximo", "Glúteo médio", "Adutor", "Panturrilha"]], ["Core", ["Abdominal", "Lombar"]]];
+const MUSCULOS = REGIOES.flatMap(([, ms]) => ms);
+const regiaoDe = m => (REGIOES.find(([, ms]) => ms.includes(m)) || ["Outros"])[0];
+const COR_REGIAO = { Peito: "#0E4C55", Costas: "#1B8A93", Ombros: "#5CC9D2", "Braços": "#C25E22", Pernas: "#D4A23A", Core: "#7C8A8E", Outros: "#9AA5A8" };
+const fmtSer = n => String(Math.round(n * 100) / 100).replace(".", ",");
 const temConteudo = t => !!((t.itens || []).length || (t.cardios || []).length);
 const LETRAS = ["A","B","C","D","E","F","G"];
 
@@ -643,20 +678,31 @@ function makeSupabase(){
     async renomearPresencial(uid, nome){ ok(await c.rpc("renomear_aluno_presencial", { uid, p_nome: nome })); },
     async excluirPresencial(uid){ ok(await c.rpc("excluir_aluno_presencial", { uid })); },
     async saveAnamnese(respostas, alunoId = S.user.id){ ok(await c.from("anamneses").upsert({ aluno_id: alunoId, respostas, consentimento: true, updated_at: new Date().toISOString() }, { onConflict: "aluno_id" })); },
-    async listProgramas(){ return ok(await c.from("programas").select("id,aluno_id,nome,inicio,semanas,treinos,updated_at").eq("ativo", true)); },
+    async listProgramas(){ return ok(await c.from("programas").select("id,aluno_id,nome,inicio,semanas,treinos,updated_at,publicado,rascunho_em").eq("ativo", true)); },
     async listFinalizados(){ return ok(await c.from("sessoes").select("programa_id,semana,letra,finalizado_em").not("finalizado_em", "is", null)); },
     async listExercicios(){ return ok(await c.from("exercicios").select("*").order("nome")); },
     async saveExercicio(ex){
-      const row = { nome: ex.nome, grupo: ex.grupo, video_url: ex.video_url, descricao: ex.descricao };
+      const row = { nome: ex.nome, grupo: ex.grupo, video_url: ex.video_url, descricao: ex.descricao, musculos: ex.musculos || [] };
       return ex.id ? ok(await c.from("exercicios").update(row).eq("id", ex.id).select().single())
                    : ok(await c.from("exercicios").insert(row).select().single());
     },
     async deleteExercicio(id){ ok(await c.from("exercicios").delete().eq("id", id)); },
-    async getPrograma(alunoId){
-      return ok(await c.from("programas").select("*").eq("aluno_id", alunoId).eq("ativo", true).order("updated_at", { ascending: false }).limit(1).maybeSingle());
+    async getPrograma(alunoId, comRascunho = false){
+      let q = c.from("programas").select("*").eq("aluno_id", alunoId).eq("ativo", true);
+      if (!comRascunho) q = q.eq("publicado", true);
+      return ok(await q.order("updated_at", { ascending: false }).limit(1).maybeSingle());
+    },
+    async saveRascunho(p){
+      const { rascunho, rascunho_em, publicado, ...rasc } = JSON.parse(JSON.stringify(p)), agora = new Date().toISOString();
+      if (p.id) return ok(await c.from("programas").update({ rascunho: rasc, rascunho_em: agora }).eq("id", p.id).select().single());
+      return ok(await c.from("programas").insert({ aluno_id: p.aluno_id, nome: p.nome || "Programa", modalidade: p.modalidade, inicio: p.inicio, semanas: p.semanas, treinos: [], ativo: true, publicado: false, rascunho: rasc, rascunho_em: agora }).select().single());
+    },
+    async descartarRascunho(id, publicado){
+      if (publicado) ok(await c.from("programas").update({ rascunho: null, rascunho_em: null }).eq("id", id));
+      else ok(await c.from("programas").delete().eq("id", id));
     },
     async savePrograma(p){
-      const row = { aluno_id: p.aluno_id, nome: p.nome, modalidade: p.modalidade, objetivo: p.objetivo || null, reavaliacao: p.reavaliacao || null, frequencia: p.frequencia ? Number(p.frequencia) : null, restricoes: p.restricoes || null, inicio: p.inicio, semanas: p.semanas, treinos: p.treinos, ativo: true, updated_at: new Date().toISOString() };
+      const row = { aluno_id: p.aluno_id, nome: p.nome, modalidade: p.modalidade, objetivo: p.objetivo || null, reavaliacao: p.reavaliacao || null, frequencia: p.frequencia ? Number(p.frequencia) : null, restricoes: p.restricoes || null, inicio: p.inicio, semanas: p.semanas, treinos: p.treinos, ativo: true, publicado: true, rascunho: null, rascunho_em: null, updated_at: new Date().toISOString() };
       return p.id ? ok(await c.from("programas").update(row).eq("id", p.id).select().single())
                   : ok(await c.from("programas").insert(row).select().single());
     },
@@ -720,6 +766,11 @@ function makeDemo(){
     [13, "Desenvolvimento com halteres", "Deltoide", ""],
     [14, "Elevação lateral com halteres", "Deltoide", "Subir até a linha dos ombros."]
   ].map(([id, nome, grupo, descricao]) => ({ id, nome, grupo, video_url: "demo", descricao }));
+  const MD = { 1: [["Peito", 1], ["Tríceps", .5], ["Ombro anterior", .5]], 2: [["Peito", 1], ["Tríceps", .5], ["Ombro anterior", .5]], 3: [["Peito", 1]], 4: [["Tríceps", 1]],
+    5: [["Costas", 1], ["Bíceps", .5], ["Antebraço", .5]], 6: [["Costas", 1], ["Bíceps", .5], ["Trapézio", .5]], 7: [["Bíceps", 1]], 8: [["Bíceps", 1]],
+    9: [["Quadríceps", 1], ["Glúteo máximo", 1], ["Adutor", .5]], 10: [["Glúteo máximo", 1], ["Quadríceps", 1], ["Adutor", .5]], 11: [["Quadríceps", 1]], 12: [["Posterior de coxa", 1]],
+    13: [["Ombro anterior", 1], ["Ombro medial", 1], ["Tríceps", .5]], 14: [["Ombro medial", 1]] };
+  exs.forEach(e => e.musculos = (MD[e.id] || []).map(([m, f]) => ({ m, f })));
   const item = (id, series = 3, reps = "8-12", obs = "", prep = false) => ({ exercicio_id: id, descanso: "", obs,
     sets: [...(prep ? [novaSerie("aquecimento"), novaSerie("reconhecimento")] : []), ...Array.from({ length: series }, () => ({ tipo: "trabalho", reps, rir: "0 a 3" }))] });
   const progs = [
@@ -812,11 +863,19 @@ function makeDemo(){
       const n = { ...ex, id: nextId++ }; exs.push(n); return clone(n);
     },
     async deleteExercicio(id){ const i = exs.findIndex(e => e.id === id); if (i >= 0) exs.splice(i, 1); },
-    async getPrograma(alunoId){ const p = progs.find(p => p.aluno_id === alunoId); return p ? clone(p) : null; },
+    async getPrograma(alunoId, comRascunho = false){ const p = progs.find(p => p.aluno_id === alunoId && (comRascunho || p.publicado !== false)); return p ? clone(p) : null; },
     async savePrograma(p){
-      if (p.id) { const i = progs.findIndex(x => x.id === p.id); progs[i] = clone(p); return clone(p); }
-      const n = { ...clone(p), id: nextId++ }; progs.push(n); return clone(n);
+      const novo = { ...clone(p), publicado: true, rascunho: null, rascunho_em: null };
+      if (p.id) { const i = progs.findIndex(x => x.id === p.id); progs[i] = { ...novo }; return clone(progs[i]); }
+      const n = { ...novo, id: nextId++ }; progs.push(n); return clone(n);
     },
+    async saveRascunho(p){
+      const { rascunho, rascunho_em, publicado, ...rasc } = clone(p), agora = new Date().toISOString();
+      if (p.id) { const x = progs.find(x => x.id === p.id); x.rascunho = rasc; x.rascunho_em = agora; return clone(x); }
+      const n = { aluno_id: p.aluno_id, nome: p.nome || "Programa", modalidade: p.modalidade, inicio: p.inicio, semanas: p.semanas, treinos: [], id: nextId++, publicado: false, rascunho: rasc, rascunho_em: agora };
+      progs.push(n); return clone(n);
+    },
+    async descartarRascunho(id, publicado){ const i = progs.findIndex(x => x.id === id); if (i < 0) return; if (publicado) { progs[i].rascunho = null; progs[i].rascunho_em = null; } else progs.splice(i, 1); },
     async getObs(pid){ return clone(obsMap[pid] || {}); },
     async getSessoes(a, pid){ return clone(sess.filter(x => x.aluno_id === a && x.programa_id === pid)); },
     async saveSessao(r){ const i = sess.findIndex(x => x.aluno_id === r.aluno_id && x.programa_id === r.programa_id && x.semana === r.semana && x.letra === r.letra); if (i >= 0) sess[i] = { ...sess[i], ...r, updated_at: new Date().toISOString() }; else sess.push({ ...r, updated_at: new Date().toISOString() }); },
@@ -880,18 +939,22 @@ async function go(view, p = {}, opts = {}){
       S.data = { alvoNome: perfil?.nome, atual, resp: { ...(atual?.respostas || {}), ...(rasc || {}) }, consent: !!atual, faltando: [] };
     } else if (view === "aluno") {
       const proprio = p.alunoId === S.user.id;
-      const [alunos, prog, exercicios, anamnese] = await Promise.all([db.listAlunos(), db.getPrograma(p.alunoId), db.listExercicios(), proprio ? null : db.getAnamnese(p.alunoId).catch(() => null)]);
+      const [alunos, prog, exercicios, anamnese] = await Promise.all([db.listAlunos(), db.getPrograma(p.alunoId, true), db.listExercicios(), proprio ? null : db.getAnamnese(p.alunoId).catch(() => null)]);
       const aluno = alunos.find(a => a.id === p.alunoId) || (proprio ? S.user : null);
-      const programa = prog ? normPrograma(prog) : null;
+      const linha = prog ? normPrograma(prog) : null;
+      const programa = linha && linha.publicado !== false ? linha : null;
       const anR = anamnese?.respostas || {};
       const regs = programa?.id ? await db.getRegistros(p.alunoId, programa.id) : [];
       const [obs, rels, sess] = programa?.id ? await Promise.all([db.getObs(programa.id), db.listRelatorios(p.alunoId), db.getSessoes(p.alunoId, programa.id)]) : [{}, [], []];
+      const rascDraft = linha?.rascunho ? normPrograma({ ...clone(linha.rascunho), id: linha.id, aluno_id: p.alunoId }) : null;
       S.data = { aluno, programa, regs, exercicios, obs, rels, sess, anamnese, proprio, envio: p.envio || null,
-        draft: programa ? clone(programa) : { aluno_id: p.alunoId, nome: "Programa 1", modalidade: "feedback semanal", inicio: todayISO(), semanas: 8,
+        rascunhoEm: linha?.rascunho_em || null, linhaPublicada: !!programa,
+        draft: rascDraft || (programa ? clone(programa) : { aluno_id: p.alunoId, nome: "Programa 1", modalidade: "feedback semanal", inicio: todayISO(), semanas: 8,
           objetivo: anR.objetivo || "", frequencia: /^[1-7]$/.test(anR.dias || "") ? anR.dias : "", reavaliacao: "", restricoes: "",
-          treinos: LETRAS.map(l => ({ letra: l, nome: "", itens: [] })) },
+          treinos: LETRAS.map(l => ({ letra: l, nome: "", itens: [] })) }),
         dirty: false };
-      if (programa && !Number(programa.frequencia)) { const u = programa.treinos.reduce((m, tr, i) => temConteudo(tr) ? i + 1 : m, 0); if (u) S.data.draft.frequencia = String(u); }
+      if (S.data.draft) { delete S.data.draft.rascunho; delete S.data.draft.rascunho_em; }
+      if (programa && !rascDraft && !Number(programa.frequencia)) { const u = programa.treinos.reduce((m, tr, i) => temConteudo(tr) ? i + 1 : m, 0); if (u) S.data.draft.frequencia = String(u); }
       S.p.tab = p.tab || (!proprio && !aluno?.presencial && !anamnese && !programa ? "anamnese" : "programa"); S.p.letra = p.letra || "A";
     } else if (view === "orientacoes") {
       const prog = S.user.role === "aluno" ? await db.getPrograma(S.user.id) : null;
@@ -991,7 +1054,7 @@ function viewAlunos(){
   const pm = Object.fromEntries(progs.map(p => [p.aluno_id, p]));
   const pres = alunos.filter(a => a.presencial), online = alunos.filter(a => !a.presencial);
   let grupo = S.p.grupo || LS.get("grupoAlunos"); if (!["presencial", "online"].includes(grupo)) grupo = pres.length ? "presencial" : "online";
-  const progChips = p => `<span class="chip acc">${esc(p.nome)}</span><span class="chip num">Semana ${semanaAtual(p, S.data.fins)} de ${p.semanas}</span>`;
+  const progChips = p => p.publicado === false ? `<span class="chip warn">Programa em rascunho</span>` : `<span class="chip acc">${esc(p.nome)}</span><span class="chip num">Semana ${semanaAtual(p, S.data.fins)} de ${p.semanas}</span>${p.rascunho_em ? `<span class="chip">Rascunho pendente</span>` : ""}`;
   const cardOnline = a => {
     const p = pm[a.id], an = S.data.anams ? S.data.anams[a.id] : true;
     const st = (p ? progChips(p) : an ? `<span class="chip ok">Anamnese respondida</span><span class="chip warn">Montar treino</span>` : "") + (an ? "" : `<span class="chip warn">Anamnese pendente</span>`);
@@ -1000,7 +1063,7 @@ function viewAlunos(){
   const cardPres = a => {
     const p = pm[a.id];
     return `<div class="item"><div class="grow"><h3>${esc(a.nome)}</h3><p class="small muted">Atendimento presencial</p></div><div class="row">${p ? progChips(p) : `<span class="chip warn">Montar treino</span>`}</div>
-      <div class="row">${p ? `<button class="btn sm primary" data-act="treinarPres" data-id="${esc(a.id)}">▶ Treino</button>` : ""}<button class="btn sm" data-act="editarPrograma" data-id="${esc(a.id)}">${p ? "Editar programa" : "Montar programa"}</button>${p ? `<button class="btn sm" data-act="verEvolucao" data-id="${esc(a.id)}">Evolução</button>` : ""}</div></div>`;
+      <div class="row">${p && p.publicado !== false ? `<button class="btn sm primary" data-act="treinarPres" data-id="${esc(a.id)}">▶ Treino</button>` : ""}<button class="btn sm" data-act="editarPrograma" data-id="${esc(a.id)}">${p ? "Editar programa" : "Montar programa"}</button>${p ? `<button class="btn sm" data-act="verEvolucao" data-id="${esc(a.id)}">Evolução</button>` : ""}</div></div>`;
   };
   const link = location.origin + location.pathname + "?p=" + S.user.id;
   const avisoCref = isPers() && crefAtencao(S.user) ? `<div class="callout">${diasPara(S.user.cref_validade) === null ? "Informe a validade do seu CREF" : diasPara(S.user.cref_validade) < 0 ? "O seu CREF está vencido" : `O seu CREF vence em ${diasPara(S.user.cref_validade)} dia(s), em ${fmtData(S.user.cref_validade)}`}. Atualize os dados e a foto em <button class="btn sm" data-act="nav" data-v="conta">Minha conta</button></div>` : "";
@@ -1084,7 +1147,8 @@ function editorPrograma(){
       ${exs.length ? `<div class="combo-add"><label class="field"><span>Adicionar exercício ao treino ${t.letra}</span></label>${comboEx("add", ti, null, null)}<span class="small muted">Digite parte do nome ou do grupo muscular e toque no exercício para adicionar.</span></div>`
         : `<div class="callout">Cadastre exercícios na Biblioteca antes de montar o treino.</div>`}
       ${editorCardio(t, ti)}`;
-  return `<div class="panel">
+  const avisoRasc = S.data.rascunhoEm ? `<div class="rasc"><span>📝 Rascunho salvo em ${new Date(S.data.rascunhoEm).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" })}. ${S.data.proprio ? "" : S.data.linhaPublicada ? "O aluno continua vendo a versão anterior até você enviar." : "O aluno ainda não vê este programa."}</span><span class="spacer"></span><button class="btn sm ghost danger" data-act="pedirDescartarRasc">Descartar rascunho</button></div>` : "";
+  return `${avisoRasc}<div class="panel">
       <div class="grid2">
         <label class="field"><span>Nome do programa</span><input type="text" data-f="nome" value="${esc(d.nome)}"></label>
         <label class="field"><span>Objetivo</span><input type="text" data-f="objetivo" value="${esc(d.objetivo)}" placeholder="Ex.: Hipertrofia"></label>
@@ -1099,7 +1163,80 @@ function editorPrograma(){
     <details class="panel legend-card"><summary>Sistema de cores das séries</summary>${legendaTipos(false)}<p class="small muted">O aluno vê esta legenda no topo de cada treino e as orientações completas no menu Orientações. Só as séries de trabalho são registradas e entram na Evolução.</p></details>
     ${sobraAviso}
     <div class="panel">${blocoTreinos}</div>
-    <div class="row"><button class="btn primary" data-act="savePrograma">${d.id ? "Salvar alterações" : "Salvar e enviar ao aluno"}</button><span id="dirtyMsg" class="small ${S.data.dirty ? "" : "muted"}" style="color:${S.data.dirty ? "var(--warn)" : ""}">${S.data.dirty ? "Alterações não salvas" : (d.id ? "Tudo salvo. O aluno já vê esta versão." : "")}</span></div>`;
+    ${painelVolume(d)}
+    <div class="row"><button class="btn primary" data-act="savePrograma">${S.data.proprio ? "Salvar programa" : S.data.aluno?.presencial ? "Salvar e liberar o treino" : S.data.linhaPublicada ? "Salvar e enviar ao aluno" : "Salvar e enviar ao aluno"}</button><button class="btn" data-act="saveRascunho">Salvar rascunho</button><span id="dirtyMsg" class="small ${S.data.dirty ? "" : "muted"}" style="color:${S.data.dirty ? "var(--warn)" : ""}">${S.data.dirty ? "Alterações não salvas" : S.data.rascunhoEm ? "Rascunho salvo." : (S.data.linhaPublicada ? (S.data.proprio ? "Tudo salvo." : "Tudo salvo. O aluno já vê esta versão.") : "")}</span></div>
+    <p class="small muted">"Salvar rascunho" guarda a montagem como está, mesmo incompleta, para continuar depois. ${S.data.proprio ? "" : "O aluno só vê o programa quando você usar o botão principal."}</p>`;
+}
+
+/* ---------- Volume semanal por músculo (lógica da planilha: séries × fator) ---------- */
+function calcVolume(d){
+  const exMap = Object.fromEntries((S.data.exercicios || []).map(e => [e.id, e]));
+  const nT = Number(d.frequencia) ? Math.min(LETRAS.length, Number(d.frequencia)) : 0;
+  const treinos = d.treinos.slice(0, nT).filter(t => t.itens.length);
+  const mus = {}, series = {}, nEx = {}, semDados = new Set();
+  treinos.forEach(t => {
+    series[t.letra] = 0; nEx[t.letra] = t.itens.length;
+    t.itens.forEach(it => {
+      const n = serT(it).length, e = exMap[it.exercicio_id]; series[t.letra] += n;
+      const ms = (e?.musculos || []).filter(x => x && x.m);
+      if (!ms.length || !ms.some(x => Number(x.f) > 0)) { if (e) semDados.add(e.nome); return; }
+      ms.forEach(({ m, f }) => { const k = MUSCULOS.includes(m) ? m : m; mus[k] = mus[k] || {}; mus[k][t.letra] = (mus[k][t.letra] || 0) + n * (Number(f) || 0); });
+    });
+  });
+  return { letras: treinos.map(t => t.letra), nomes: Object.fromEntries(treinos.map(t => [t.letra, t.nome])), mus, series, nEx, semDados: [...semDados] };
+}
+function painelVolume(d){
+  const v = calcVolume(d);
+  if (!v.letras.length) return "";
+  const F = v.letras.includes(S.p.volF) ? S.p.volF : "todas";
+  const lista = [...MUSCULOS, ...Object.keys(v.mus).filter(m => !MUSCULOS.includes(m))];
+  const val = (m, l) => (v.mus[m] || {})[l] || 0;
+  const tot = m => F === "todas" ? v.letras.reduce((s, l) => s + val(m, l), 0) : val(m, F);
+  const vals = lista.map(m => [m, tot(m)]);
+  const soma = vals.reduce((s, [, x]) => s + x, 0);
+  const pos = vals.filter(([, x]) => x > 0);
+  const maior = pos.length ? pos.reduce((a, b) => b[1] > a[1] ? b : a) : null, menor = pos.length ? pos.reduce((a, b) => b[1] < a[1] ? b : a) : null;
+  const serFiltro = F === "todas" ? v.letras.reduce((s, l) => s + v.series[l], 0) : v.series[F];
+  const exFiltro = F === "todas" ? v.letras.reduce((s, l) => s + v.nEx[l], 0) : v.nEx[F];
+  const serSemana = v.letras.reduce((s, l) => s + v.series[l], 0);
+  const topTreino = v.letras.reduce((a, b) => v.series[b] > v.series[a] ? b : a);
+  const pct = x => soma ? fmt(Math.round(x / soma * 1000) / 10) + "%" : "–";
+  const max = Math.max(1, ...vals.map(([, x]) => x));
+  const nomeT = l => `Treino ${l}${v.nomes[l] ? " · " + v.nomes[l] : ""}`;
+  const filtro = `<div class="vol-filtro tabs sub">${[["todas", "Todos os treinos"], ...v.letras.map(l => [l, "Treino " + l])].map(([k, t]) => `<button data-act="volF" data-v="${k}" aria-selected="${F === k}">${t}</button>`).join("")}</div>`;
+  const tiles = `<div class="vol-ind">
+    ${tile("Séries de trabalho no filtro", fmtSer(serFiltro))}${tile(`Séries na semana (${v.letras.length} ${v.letras.length > 1 ? "treinos" : "treino"})`, fmtSer(serSemana))}
+    ${tile("Exercícios no filtro", exFiltro)}${tile("Músculos estimulados", pos.length)}
+    ${tile("Séries acumuladas por músculo", fmtSer(soma))}${tile("Músculo com maior volume", maior ? esc(maior[0]) : "–", maior ? fmtSer(maior[1]) + " séries" : "")}
+    ${tile("Músculo com menor volume (>0)", menor ? esc(menor[0]) : "–", menor ? fmtSer(menor[1]) + " séries" : "")}${tile("Treino com mais séries", "Treino " + topTreino, fmtSer(v.series[topTreino]) + " séries")}</div>`;
+  let barras = "";
+  REGIOES.forEach(([r, ms]) => {
+    barras += `<div class="vreg">${r}</div>` + ms.map(m => { const x = tot(m); return `<div class="vbar ${x ? "" : "zero"}"><span class="nm">${esc(m)}</span><span class="trk"><i style="width:${x / max * 100}%;background:${COR_REGIAO[r]}"></i></span><span class="v num">${fmtSer(x)}</span></div>`; }).join("");
+  });
+  const extras = lista.filter(m => !MUSCULOS.includes(m) && tot(m));
+  if (extras.length) barras += `<div class="vreg">Outros</div>` + extras.map(m => `<div class="vbar"><span class="nm">${esc(m)}</span><span class="trk"><i style="width:${tot(m) / max * 100}%;background:${COR_REGIAO.Outros}"></i></span><span class="v num">${fmtSer(tot(m))}</span></div>`).join("");
+  const maxS = Math.max(1, ...v.letras.map(l => v.series[l]));
+  const colunas = `<div class="vcols">${v.letras.map(l => `<div class="${F === l ? "sel" : ""}"><b>${fmtSer(v.series[l])}</b><i style="height:${v.series[l] / maxS * 100}%"></i></div>`).join("")}</div><div class="vcols-lbl">${v.letras.map(l => `<span>${l}</span>`).join("")}</div>`;
+  const regs = REGIOES.map(([r, ms]) => [r, ms.reduce((s, m) => s + tot(m), 0)]).concat(extras.length ? [["Outros", extras.reduce((s, m) => s + tot(m), 0)]] : []);
+  let ang = -Math.PI / 2; const arcos = regs.filter(([, x]) => x > 0).map(([r, x]) => {
+    const a0 = ang, a1 = ang + x / (soma || 1) * Math.PI * 2; ang = a1;
+    if (x >= soma - 1e-9) return `<circle cx="60" cy="60" r="44" fill="none" stroke="${COR_REGIAO[r]}" stroke-width="22"/>`;
+    const p = a => [60 + 44 * Math.cos(a), 60 + 44 * Math.sin(a)], [x0, y0] = p(a0), [x1, y1] = p(a1);
+    return `<path d="M${x0.toFixed(2)} ${y0.toFixed(2)} A44 44 0 ${a1 - a0 > Math.PI ? 1 : 0} 1 ${x1.toFixed(2)} ${y1.toFixed(2)}" fill="none" stroke="${COR_REGIAO[r]}" stroke-width="22"/>`;
+  }).join("");
+  const donut = `<div class="vdonut"><svg viewBox="0 0 120 120" role="img" aria-label="Distribuição por região"><circle cx="60" cy="60" r="44" fill="none" stroke="var(--sunken)" stroke-width="22"/>${arcos}<text x="60" y="58" text-anchor="middle" font-size="15" font-weight="800" fill="currentColor">${fmtSer(soma)}</text><text x="60" y="73" text-anchor="middle" font-size="8" fill="currentColor" opacity=".6">séries</text></svg>
+    <div class="vleg">${regs.map(([r, x]) => `<span><i style="background:${COR_REGIAO[r]}"></i>${r} <b class="num">${fmtSer(x)}</b> <span class="muted num">${pct(x)}</span></span>`).join("")}</div></div>`;
+  const tabela = `<div class="tbl-wrap"><table class="data"><thead><tr><th>Região</th><th>Músculo</th>${v.letras.map(l => `<th class="c">${l}</th>`).join("")}<th class="c">Total semanal</th><th class="c">% do total</th></tr></thead><tbody>
+    ${REGIOES.flatMap(([r, ms]) => ms.map(m => { const t = v.letras.reduce((s, l) => s + val(m, l), 0); return `<tr><td>${r}</td><td>${esc(m)}</td>${v.letras.map(l => `<td class="c num ${val(m, l) ? "" : "z"}">${fmtSer(val(m, l))}</td>`).join("")}<td class="c num"><b>${fmtSer(t)}</b></td><td class="c num">${pct(t)}</td></tr>`; })).join("")}
+    <tr><td colspan="2"><b>Total</b></td>${v.letras.map(l => `<td class="c num"><b>${fmtSer(lista.reduce((s, m) => s + val(m, l), 0))}</b></td>`).join("")}<td class="c num"><b>${fmtSer(lista.reduce((s, m) => s + v.letras.reduce((a, l) => a + val(m, l), 0), 0))}</b></td><td></td></tr></tbody></table></div>`;
+  const aviso = v.semDados.length ? `<div class="callout">Sem músculos cadastrados, não entram no volume: ${v.semDados.map(esc).join(", ")}. Cadastre os músculos na Biblioteca → Editar.</div>` : "";
+  return `<details class="panel vol-panel" ${S.p.volFechado ? "" : "open"} id="volPanel"><summary style="cursor:pointer;font-weight:800;font-size:1.05rem">Volume semanal por músculo</summary>
+    <p class="small muted">Séries de trabalho × fator de cada músculo, como na planilha de montagem. Atualiza enquanto você monta. Aquecimento, reconhecimento e cardio não entram.</p>
+    ${aviso}${filtro}${tiles}
+    <div class="vgrid"><div><h3>Séries por músculo${F === "todas" ? "" : " · treino " + F}</h3><div style="margin-top:8px">${barras}</div></div>
+      <div style="display:flex;flex-direction:column;gap:18px"><div><h3>Séries de trabalho por treino</h3>${colunas}</div><div><h3>Distribuição por região${F === "todas" ? "" : " · treino " + F}</h3>${donut}</div></div></div>
+    <details><summary style="cursor:pointer;font-weight:700">Tabela: volume por músculo em cada treino</summary><div style="margin-top:10px">${tabela}</div></details>
+  </details>`;
 }
 
 /* ---------- Cardio no editor ---------- */
@@ -1209,7 +1346,7 @@ document.addEventListener("keydown", ev => {
 /* ---------- Biblioteca ---------- */
 function viewBiblioteca(){
   const { exercicios, q, edit, confirm } = S.data;
-  const f = q ? exercicios.filter(e => (e.nome + " " + (e.grupo || "")).toLowerCase().includes(q.toLowerCase())) : exercicios;
+  const f = q ? exercicios.filter(e => semAcento(e.nome + " " + (e.grupo || "") + " " + (e.musculos || []).map(x => x.m).join(" ")).includes(semAcento(q))) : exercicios;
   const form = edit ? `<form class="panel" id="exForm">
       <h2>${edit.id ? "Editar exercício" : "Novo exercício"}</h2>
       <div class="grid2">
@@ -1219,6 +1356,7 @@ function viewBiblioteca(){
       <datalist id="grupos">${[...new Set(exercicios.map(e => e.grupo).filter(Boolean))].map(g => `<option value="${esc(g)}">`).join("")}</datalist>
       <label class="field"><span>Link do vídeo no YouTube (não listado)</span><input id="exVideo" type="url" value="${esc(edit.video_url === "demo" ? "" : edit.video_url)}" placeholder="https://youtu.be/..."></label>
       <label class="field"><span>Dicas de execução</span><textarea id="exDesc">${esc(edit.descricao)}</textarea></label>
+      <div class="field"><span>Músculos para o volume semanal (até 4) · fator: 1 = série inteira, 0,5 = meia série</span><div class="mus-ed">${[0, 1, 2, 3].map(k => { const x = (edit.musculos || [])[k] || {}; return `<div class="mus-row"><select id="exM${k}" aria-label="Músculo ${k + 1}"><option value="">${k ? "—" : "Escolha o músculo"}</option>${MUSCULOS.map(m => `<option ${m === x.m ? "selected" : ""}>${m}</option>`).join("")}${x.m && !MUSCULOS.includes(x.m) ? `<option selected>${esc(x.m)}</option>` : ""}</select><input id="exF${k}" type="text" inputmode="decimal" value="${x.m ? esc(fmtSer(Number(x.f) || 0)) : ""}" placeholder="fator" aria-label="Fator do músculo ${k + 1}"></div>`; }).join("")}</div></div>
       <div class="row"><button class="btn primary" type="submit">Salvar exercício</button><button class="btn ghost" type="button" data-act="cancelEx">Cancelar</button></div>
     </form>` : "";
   const list = f.map(e => {
@@ -1226,7 +1364,8 @@ function viewBiblioteca(){
     const act = confirm === e.id
       ? `<span class="small">Excluir?</span><button class="btn sm danger" data-act="delEx" data-id="${e.id}">Excluir</button><button class="btn sm ghost" data-act="noDel">Não</button>`
       : `<button class="btn sm" data-act="editEx" data-id="${e.id}">Editar</button><button class="btn sm ghost danger" data-act="askDel" data-id="${e.id}">Excluir</button>`;
-    return `<div class="item"><div class="grow"><h3>${esc(e.nome)}</h3><p class="small muted">${esc(e.grupo || "Sem grupo")}${e.descricao ? " · " + esc(e.descricao) : ""}</p></div>${v}<div class="row">${act}</div></div>`;
+    const ms = (e.musculos || []).filter(x => x && x.m);
+    return `<div class="item"><div class="grow"><h3>${esc(e.nome)}</h3><p class="small muted">${ms.length ? ms.map(x => `${esc(x.m)} ${fmtSer(Number(x.f) || 0)}`).join(" · ") : esc(e.grupo || "Sem grupo")}</p></div>${ms.length ? "" : `<span class="chip warn">Sem músculos</span>`}${v}<div class="row">${act}</div></div>`;
   }).join("");
   return `<div class="row"><div><h1>Biblioteca</h1><p class="muted num">${exercicios.length} exercícios</p></div><span class="spacer"></span><button class="btn primary" data-act="newEx">Novo exercício</button></div>
     ${form}
@@ -1381,6 +1520,7 @@ window.addEventListener("pagehide", salvarAgora);
 document.addEventListener("toggle", ev => {
   const d = ev.target; if (!(d instanceof HTMLDetailsElement)) return;
   if (d.classList.contains("legend-card") && S.view === "treino") { S.p.legenda = d.open; return; }
+  if (d.id === "volPanel") { S.p.volFechado = !d.open; return; }
   if (!d.classList.contains("ex-acc")) return;
   const i = +d.dataset.i;
   if (d.open) {
@@ -2229,11 +2369,11 @@ document.addEventListener("click", async ev => {
       if (semTrab) return toast(`No treino ${semTrab.letra} há exercício sem série de trabalho. Toda ficha precisa de pelo menos uma.`, 4500);
       el.disabled = true;
       const saved = normPrograma(await db.savePrograma(p));
-      d.programa = saved; d.draft = clone(saved); d.dirty = false;
+      d.programa = saved; d.draft = clone(saved); delete d.draft.rascunho; delete d.draft.rascunho_em; d.dirty = false; d.rascunhoEm = null; d.linhaPublicada = true;
       if (!d.regs.length && saved.id) d.regs = await db.getRegistros(saved.aluno_id, saved.id);
       toast(d.aluno?.presencial ? "Programa salvo." : "Programa salvo. O aluno já pode ver."); return render();
     }
-    if (a === "newEx") { d.edit = { nome: "", grupo: "", video_url: "", descricao: "" }; render(); document.getElementById("exNome")?.focus(); return; }
+    if (a === "newEx") { d.edit = { nome: "", grupo: "", video_url: "", descricao: "", musculos: [] }; render(); document.getElementById("exNome")?.focus(); return; }
     if (a === "editEx") { d.edit = clone(d.exercicios.find(e => e.id === Number(el.dataset.id))); render(); window.scrollTo(0, 0); return; }
     if (a === "cancelEx") { d.edit = null; return render(); }
     if (a === "askDel") { d.confirm = Number(el.dataset.id); return render(); }
@@ -2282,6 +2422,16 @@ document.addEventListener("click", async ev => {
     }
     if (a === "addCardio") { const t = d.draft.treinos[+el.dataset.t]; (t.cardios = t.cardios || []).push(novoCardio()); d.dirty = true; const y = window.scrollY; render(); window.scrollTo(0, y); return; }
     if (a === "rmCardio") { d.draft.treinos[+el.dataset.t].cardios.splice(+el.dataset.c, 1); d.dirty = true; const y = window.scrollY; render(); window.scrollTo(0, y); return; }
+    if (a === "saveRascunho") {
+      el.disabled = true;
+      const linha = await db.saveRascunho(d.draft);
+      d.draft.id = linha.id; d.rascunhoEm = linha.rascunho_em; d.dirty = false;
+      toast(d.proprio ? "Rascunho salvo." : "Rascunho salvo. Continue depois de onde parou; o aluno ainda não vê estas alterações.", 4000);
+      const y = window.scrollY; render(); window.scrollTo(0, y); return;
+    }
+    if (a === "pedirDescartarRasc") return modal(`<h2 id="modalTit">Descartar o rascunho?</h2><p class="muted">${d.linhaPublicada ? "A montagem volta para a última versão enviada ao aluno." : "A montagem em andamento será apagada."} Não dá para desfazer.</p><div class="acoes"><button class="btn danger" data-act="descartarRasc">Descartar rascunho</button><button class="btn ghost" data-act="fecharModal">Voltar</button></div>`);
+    if (a === "descartarRasc") { fecharModal(); await db.descartarRascunho(d.draft.id, d.linhaPublicada); toast("Rascunho descartado."); return go("aluno", { alunoId: S.p.alunoId, tab: "programa" }, { hist: "trocar" }); }
+    if (a === "volF") { S.p.volF = el.dataset.v; const y = window.scrollY; render(); window.scrollTo(0, y); return; }
     if (a === "comboPick") return escolherCombo(el.closest(".combo"), Number(el.dataset.id));
     if (a === "limparSobra") {
       const n = Math.min(LETRAS.length, Number(d.draft.frequencia) || 0);
@@ -2399,7 +2549,16 @@ document.addEventListener("submit", async ev => {
     const video = document.getElementById("exVideo").value.trim();
     if (video && !ytId(video)) return toast("Link do YouTube não reconhecido. Cole o link do vídeo.", 4000);
     const prev = S.data.edit;
-    const ex = { ...prev, nome, grupo: document.getElementById("exGrupo").value.trim(), video_url: video || (prev.video_url === "demo" ? "demo" : ""), descricao: document.getElementById("exDesc").value.trim() };
+    const musculos = [];
+    for (let k = 0; k < 4; k++) {
+      const m = document.getElementById("exM" + k).value, fs = document.getElementById("exF" + k).value.trim();
+      if (!m) continue;
+      const f = fs === "" ? 1 : parseN(fs);
+      if (f == null || Number.isNaN(f)) return toast(`Fator inválido para ${m}. Use 1 ou 0,5.`, 4000);
+      musculos.push({ m, f });
+    }
+    const grupoIn = document.getElementById("exGrupo").value.trim();
+    const ex = { ...prev, nome, grupo: grupoIn || musculos[0]?.m || "", musculos, video_url: video || (prev.video_url === "demo" ? "demo" : ""), descricao: document.getElementById("exDesc").value.trim() };
     try { await db.saveExercicio(ex); S.data.exercicios = await db.listExercicios(); S.data.edit = null; toast("Exercício salvo"); render(); }
     catch (e) { toast(traduzErro(e), 4000); }
   }
