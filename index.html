@@ -597,7 +597,7 @@ function calcReferencia(regs, manter){
 }
 /* Cardio concluído: campos por equipamento */
 const CAMPOS_CD = { tempo: ["Tempo feito", "Ex.: 25 min"], distancia: ["Distância", "Ex.: 3,2 km"], inclinacao: ["Inclinação", "Ex.: 5%"], carga: ["Peso / carga", "Ex.: nível 8"], passos: ["Passos / degraus", "Ex.: 600"] };
-const camposCardio = local => ["tempo", ...(local === "Esteira" ? ["distancia", "inclinacao"] : local === "Escada" ? ["passos"] : ["distancia", "carga"])];
+const camposCardio = local => ["tempo", ...(local === "Esteira" ? ["distancia", "inclinacao"] : local === "Escada" ? ["passos"] : local === "Bike de spinning" ? [] : ["distancia", "carga"])];
 const resumoRegCardio = r => [r.tempo, r.distancia, r.inclinacao && "incl. " + r.inclinacao, r.carga && "carga " + r.carga, r.passos && r.passos + " passos", r.pse != null && "PSE " + r.pse, r.foto && "📷"].filter(Boolean).join(" · ");
 async function comprimirFoto(file){
   try {
@@ -734,6 +734,7 @@ function makeSupabase(){
     async getProgramaPorId(id){ return ok(await c.from("programas").select("*").eq("id", id).single()); },
     async arquivarPrograma(id, fim, semanas){ ok(await c.from("programas").update({ ativo: false, arquivado_em: new Date().toISOString(), fim, semanas }).eq("id", id)); },
     async criarCiclo(row){ return ok(await c.from("programas").insert(row).select().single()); },
+    async estenderCiclo(id, fim, semanas){ ok(await c.from("programas").update({ fim, semanas }).eq("id", id)); },
     async limparCiclo(pid, alunoId){
       ok(await c.from("registros").delete().eq("programa_id", pid).eq("aluno_id", alunoId));
       ok(await c.from("sessoes").delete().eq("programa_id", pid).eq("aluno_id", alunoId));
@@ -929,6 +930,7 @@ function makeDemo(){
     async getProgramaPorId(id){ return clone(progs.find(p => p.id === id)); },
     async arquivarPrograma(id, fim, semanas){ const p = progs.find(x => x.id === id); Object.assign(p, { ativo: false, arquivado_em: new Date().toISOString(), fim, semanas }); },
     async criarCiclo(row){ const n = normPrograma({ ...clone(row), id: nextId++ }); progs.push(n); return clone(n); },
+    async estenderCiclo(id, fim, semanas){ Object.assign(progs.find(p => p.id === id), { fim, semanas }); },
     async limparCiclo(pid, a){ for (const arr of [regs, sess, cardRegs]) for (let i = arr.length - 1; i >= 0; i--) if (arr[i].programa_id === pid && arr[i].aluno_id === a) arr.splice(i, 1); },
     async getCardios(a, pid){ return clone(cardRegs.filter(x => x.aluno_id === a && x.programa_id === pid)); },
     async saveCardio(r){ const i = cardRegs.findIndex(x => x.aluno_id === r.aluno_id && x.programa_id === r.programa_id && x.semana === r.semana && x.letra === r.letra && x.idx === r.idx); if (i >= 0) cardRegs[i] = clone(r); else cardRegs.push(clone(r)); },
@@ -1171,7 +1173,7 @@ function viewAluno(){
   const pres = !!aluno.presencial;
   const bloqueado = !proprio && !pres && !an && !programa?.id;
   const enc = cicloEncerrado(programa, S.data.sess);
-  const barraCiclo = programa?.id ? `<div class="row ciclo-bar"><span class="small"><b>${nomeCiclo(programa)}</b> · ${enc ? "terminado" : `semana ${semanaAtual(programa, S.data.sess)} de ${programa.semanas}`}</span><span class="spacer"></span><button class="btn sm" data-act="pedirNovoCiclo">${enc ? "Arquivar e iniciar novo ciclo" : "Encerrar ciclo e iniciar outro"}</button></div>` : "";
+  const barraCiclo = programa?.id ? `<div class="row ciclo-bar"><span class="small"><b>${nomeCiclo(programa)}</b> · ${enc ? "terminado" : `semana ${semanaAtual(programa, S.data.sess)} de ${programa.semanas}`}</span><span class="spacer"></span>${enc ? `<button class="btn sm" data-act="pedirEstender">Estender ciclo</button>` : ""}<button class="btn sm" data-act="pedirNovoCiclo">${enc ? "Arquivar e iniciar novo ciclo" : "Encerrar ciclo e iniciar outro"}</button></div>` : "";
   const conteudo = tab === "anamnese" ? painelAnamnese()
     : tab === "ciclos" ? painelCiclos()
     : tab === "programa" ? (bloqueado
@@ -1180,7 +1182,7 @@ function viewAluno(){
     : null;
   return `<div><button class="btn ghost sm" data-act="nav" data-v="alunos">← Meus alunos</button></div>
     <div><h1>${proprio ? "Meu treino" : esc(aluno.nome)}</h1><p class="muted small">${pres ? "Atendimento presencial · sem acesso ao app" : esc(aluno.email)}</p></div>
-    ${enc ? `<div class="panel ciclo-fim"><b>O ${esc(nomeCiclo(programa))} terminou.</b><span class="small">Arquive este ciclo no perfil do aluno e inicie o próximo. Você escolhe se mantém o mesmo treino e as cargas.</span><div><button class="btn primary" data-act="pedirNovoCiclo">Arquivar e iniciar novo ciclo</button></div></div>` : ""}
+    ${enc ? `<div class="panel ciclo-fim"><b>O ${esc(nomeCiclo(programa))} terminou.</b><span class="small">Arquive este ciclo no perfil do aluno e inicie o próximo. Você escolhe se mantém o mesmo treino e as cargas.</span><div class="row"><button class="btn primary" data-act="pedirNovoCiclo">Arquivar e iniciar novo ciclo</button><button class="btn" data-act="pedirEstender">Estender ciclo</button></div></div>` : ""}
     ${pres && programa?.id ? `<div class="row"><button class="btn primary" data-act="treinarPres" data-id="${esc(aluno.id)}">▶ Abrir treino para registrar</button><span class="small muted">Use durante a sessão para anotar cargas e finalizar o treino.</span></div>` : ""}
     <div class="tabs" role="tablist">${proprio ? "" : `<button role="tab" data-act="tab" data-tab="anamnese" aria-selected="${tab === "anamnese"}">Anamnese${an ? "" : pres ? ' <span class="chip">opcional</span>' : ' <span class="chip warn">pendente</span>'}</button>`}<button role="tab" data-act="tab" data-tab="programa" aria-selected="${tab === "programa"}">Programa</button><button role="tab" data-act="tab" data-tab="evolucao" aria-selected="${tab === "evolucao"}">Evolução</button><button role="tab" data-act="tab" data-tab="ciclos" aria-selected="${tab === "ciclos"}">Ciclos${S.data.ciclos?.length ? ` <span class="chip num">${S.data.ciclos.length}</span>` : ""}</button></div>
     ${conteudo !== null ? conteudo : (programa?.id ? (aluno.id === S.user.id || pres ? "" : painelEnvio()) + evolucao({ prog: programa, regs: S.data.regs, exercicios: S.data.exercicios, modo: aluno.id === S.user.id ? "proprio" : "personal", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) }) + painelCardioPersonal() : `<div class="empty">Monte e salve um programa para acompanhar a evolução.</div>`)}
@@ -1549,7 +1551,7 @@ function formCardioFeito(c, reg, k, i){
   return `<div class="cd-form">
     <b>Registrar o cardio feito</b>
     <div class="grid2">${camposCardio(c.local).map(f => `<label class="field"><span>${CAMPOS_CD[f][0]}${f === "tempo" ? "" : " (opcional)"}</span><input type="text" id="cd-${f}" value="${esc(reg?.[f] || "")}" placeholder="${CAMPOS_CD[f][1]}"></label>`).join("")}</div>
-    <div class="field"><span>Percepção de esforço · PSE de 0 a 10 (opcional)</span><div class="an-ops pse-ops">${Array.from({ length: 11 }, (_, n) => `<label><input type="radio" name="cd-pse" value="${n}" ${reg?.pse === n ? "checked" : ""}><span>${n}</span></label>`).join("")}</div></div>
+    <div class="field"><span>Percepção de esforço · PSE de 0 a 10</span><div class="an-ops pse-ops">${Array.from({ length: 11 }, (_, n) => `<label><input type="radio" name="cd-pse" value="${n}" ${reg?.pse === n ? "checked" : ""}><span>${n}</span></label>`).join("")}</div></div>
     <label class="field"><span>Foto (opcional) · ex.: o painel do equipamento no fim</span><input type="file" id="cd-foto" accept="image/*"></label>
     ${reg?.foto ? `<span class="small muted">Já há uma foto salva. Envie outra só se quiser trocar.</span>` : ""}
     <div class="row"><button class="btn primary" data-act="salvarCardioFeito" data-k="${k}" data-ab="${i}">Salvar cardio</button><button class="btn ghost" data-act="cancelarCardioFeito" data-ab="${i}">Cancelar</button></div>
@@ -1754,7 +1756,7 @@ function painelCiclos(){
   const todos = [...(programa?.id ? [{ ...programa, atual: true }] : []), ...ciclos];
   if (!todos.length) return `<div class="empty">Nenhum ciclo ainda. Monte e salve o programa para começar o primeiro ciclo.</div>`;
   const enc = cicloEncerrado(programa, S.data.sess);
-  const atual = programa?.id ? `<div class="item"><div class="grow"><h3>${esc(nomeCiclo(programa))} <span class="chip acc">atual</span></h3><p class="small muted">${enc ? "Terminado · aguardando novo ciclo" : `Semana ${semanaAtual(programa, S.data.sess)} de ${programa.semanas}`}</p></div><button class="btn sm" data-act="pedirNovoCiclo">${enc ? "Arquivar e iniciar novo" : "Encerrar e iniciar outro"}</button></div>` : "";
+  const atual = programa?.id ? `<div class="item"><div class="grow"><h3>${esc(nomeCiclo(programa))} <span class="chip acc">atual</span></h3><p class="small muted">${enc ? "Terminado · aguardando novo ciclo" : `Semana ${semanaAtual(programa, S.data.sess)} de ${programa.semanas}`}</p></div><div class="row">${enc ? `<button class="btn sm" data-act="pedirEstender">Estender</button>` : ""}<button class="btn sm" data-act="pedirNovoCiclo">${enc ? "Arquivar e iniciar novo" : "Encerrar e iniciar outro"}</button></div></div>` : "";
   const arq = ciclos.map(c => {
     const aberto = String(S.p.cicloVer) === String(c.id), cc = cache[c.id];
     return `<div class="item"><div class="grow"><h3>${esc(nomeCiclo(c))}</h3><p class="small muted num">${c.semanas} ${c.semanas > 1 ? "semanas" : "semana"} · arquivado em ${fmtData(c.arquivado_em)}</p></div><button class="btn sm" data-act="verCiclo" data-id="${c.id}">${aberto ? "Fechar" : "Ver evolução"}</button></div>
@@ -2620,6 +2622,23 @@ document.addEventListener("click", async ev => {
         <label class="consent"><input type="checkbox" id="ncCargas" checked><span><b>Manter cargas e repetições</b> do último registro como ponto de partida (aparecem como referência na semana 1).</span></label>
         <div class="acoes"><button class="btn primary" data-act="novoCiclo">Arquivar e iniciar novo ciclo</button><button class="btn ghost" data-act="fecharModal">Cancelar</button></div>`);
     }
+    if (a === "pedirEstender") {
+      const pr = d.programa, base = fimDe(pr) > todayISO() ? fimDe(pr) : todayISO(), sug = addDias(base, 7);
+      return modal(`<h2 id="modalTit">Estender o ciclo</h2>
+        <p class="muted">O ${esc(nomeCiclo(pr))} continua com o mesmo treino e todos os registros; só o fim muda. A semana atual segue a contagem normal.</p>
+        <label class="field"><span>Novo fim do ciclo</span><input type="date" id="exFim" value="${sug}" min="${addDias(fimDe(pr), 1)}"></label>
+        <div class="row">${[1, 2, 4].map(n => `<button class="btn sm" data-act="exSemanas" data-n="${n}">+${n} ${n > 1 ? "semanas" : "semana"}</button>`).join("")}</div>
+        <div class="acoes"><button class="btn primary" data-act="estenderCiclo">Estender ciclo</button><button class="btn ghost" data-act="fecharModal">Cancelar</button></div>`);
+    }
+    if (a === "exSemanas") { const pr = d.programa, base = fimDe(pr) > todayISO() ? fimDe(pr) : todayISO(); document.getElementById("exFim").value = addDias(base, 7 * Number(el.dataset.n)); return; }
+    if (a === "estenderCiclo") {
+      const pr = d.programa, fim = document.getElementById("exFim").value;
+      if (!fim || fim <= fimDe(pr)) return toast("Escolha um fim depois do fim atual do ciclo.", 4000);
+      const sem = Math.max(semanasEntre(pr.inicio, fim), Number(pr.semanas) || 1);
+      el.disabled = true; await db.estenderCiclo(pr.id, fim, sem); fecharModal();
+      toast(`Ciclo estendido até ${fmtData(fim)} (${sem} semanas).`, 4000);
+      return go("aluno", { alunoId: S.p.alunoId, tab: S.p.tab || "programa" }, { hist: "trocar" });
+    }
     if (a === "novoCiclo") {
       const pr = d.programa, ini = document.getElementById("ncIni").value, fim = document.getElementById("ncFim").value;
       if (!ini || !fim || fim < ini) return toast("Confira as datas do novo ciclo: o fim precisa ser depois do início.", 4000);
@@ -2654,6 +2673,7 @@ document.addEventListener("click", async ev => {
       const v = f => (document.getElementById("cd-" + f)?.value || "").trim();
       if (!v("tempo")) return toast("Informe o tempo feito.");
       const pseEl = document.querySelector('input[name="cd-pse"]:checked'), file = document.getElementById("cd-foto")?.files?.[0];
+      if (!pseEl) return toast("Marque a percepção de esforço (PSE de 0 a 10).", 4000);
       if (file && file.size > 20 * 1024 * 1024) return toast("Foto muito grande. Escolha outra.", 4000);
       el.disabled = true;
       const quem = alvo(), ant = (d.cardios || []).find(x => x.semana === S.p.semana && x.letra === S.p.letra && x.idx === k);
