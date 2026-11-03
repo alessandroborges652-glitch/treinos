@@ -435,6 +435,8 @@ table.data td.z{color:var(--muted)}
   main .wrap{padding:0}
   .panel{break-inside:avoid-page;border-color:#ccc}
 }
+.pdf-sub{margin-top:8px;padding-top:10px;border-top:2px solid var(--accent-2);color:var(--accent)}
+.pdf-opts{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 </style>
 <!--HEAD-END-->
 </head>
@@ -1209,7 +1211,7 @@ function viewAluno(){
     ${enc ? `<div class="panel ciclo-fim"><b>O ${esc(nomeCiclo(programa))} terminou.</b><span class="small">Arquive este ciclo no perfil do aluno e inicie o próximo. Você escolhe se mantém o mesmo treino e as cargas.</span><div class="row"><button class="btn primary" data-act="pedirNovoCiclo">Arquivar e iniciar novo ciclo</button><button class="btn" data-act="pedirEstender">Estender ciclo</button></div></div>` : ""}
     ${pres && programa?.id ? `<div class="row"><button class="btn primary" data-act="treinarPres" data-id="${esc(aluno.id)}">▶ Abrir treino para registrar</button><span class="small muted">Use durante a sessão para anotar cargas e finalizar o treino.</span></div>` : ""}
     <div class="tabs" role="tablist">${proprio ? "" : `<button role="tab" data-act="tab" data-tab="anamnese" aria-selected="${tab === "anamnese"}">Anamnese${an ? "" : pres ? ' <span class="chip">opcional</span>' : ' <span class="chip warn">pendente</span>'}</button>`}<button role="tab" data-act="tab" data-tab="programa" aria-selected="${tab === "programa"}">Programa</button><button role="tab" data-act="tab" data-tab="evolucao" aria-selected="${tab === "evolucao"}">Evolução</button><button role="tab" data-act="tab" data-tab="ciclos" aria-selected="${tab === "ciclos"}">Ciclos${S.data.ciclos?.length ? ` <span class="chip num">${S.data.ciclos.length}</span>` : ""}</button></div>
-    ${conteudo !== null ? conteudo : (programa?.id ? `<div class="row no-pdf"><button class="btn" data-act="exportarPDF" data-nome="${esc(proprio ? "Meu treino" : aluno.nome)}">⬇ Exportar evolução em PDF</button><span class="small muted">Gera o PDF com o que está na tela (abas selecionadas). A Conferência não entra.</span></div>` + (aluno.id === S.user.id || pres ? "" : painelEnvio()) + `<div id="evoPdf">` + evolucao({ prog: programa, regs: S.data.regs, exercicios: S.data.exercicios, modo: aluno.id === S.user.id ? "proprio" : "personal", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) }) + painelCardioPersonal() + "</div>" : `<div class="empty">Monte e salve um programa para acompanhar a evolução.</div>`)}
+    ${conteudo !== null ? conteudo : (programa?.id ? `<div class="pdf-opts no-pdf"><button class="btn" data-act="exportarPDF" data-modo="completa" data-nome="${esc(proprio ? "Meu treino" : aluno.nome)}">⬇ PDF completo</button><button class="btn" data-act="exportarPDF" data-modo="resumida" data-nome="${esc(proprio ? "Meu treino" : aluno.nome)}">⬇ PDF resumido</button><span class="small muted">Completo: todas as semanas, treinos e seções. Resumido: o principal em poucas páginas (volume, ganho de força e pontos). A Conferência não entra.</span></div>` + (aluno.id === S.user.id || pres ? "" : painelEnvio()) + `<div id="evoPdf">` + evoMain({ prog: programa, regs: S.data.regs, exercicios: S.data.exercicios, modo: aluno.id === S.user.id ? "proprio" : "personal", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) }) + painelCardioPersonal() + "</div>" : `<div class="empty">Monte e salve um programa para acompanhar a evolução.</div>`)}
     ${pres ? `<details class="panel dados-pres" ${S.data.confirmarPres ? "open" : ""}><summary style="cursor:pointer;font-weight:700">Dados do aluno presencial</summary>
       <div class="row" style="align-items:flex-end"><label class="field" style="flex:1;min-width:200px"><span>Nome completo</span><input id="presRenome" type="text" value="${esc(aluno.nome)}"></label><button class="btn" data-act="renomearPres" data-id="${esc(aluno.id)}">Salvar nome</button></div>
       ${S.data.confirmarPres ? `<div class="row"><span class="small">Excluir ${esc(aluno.nome)} com programa, cargas e anamnese? Não dá para desfazer.</span><button class="btn sm danger" data-act="excluirPres" data-id="${esc(aluno.id)}">Excluir definitivamente</button><button class="btn sm ghost" data-act="cancelarPres">Cancelar</button></div>`
@@ -1830,7 +1832,7 @@ function painelCardioPersonal(){
   if (!pr || !pr.treinos.some(t => (t.cardios || []).length)) return "";
   const nome = r => { const c = pr.treinos.find(t => t.letra === r.letra)?.cardios?.[r.idx]; return c ? `${c.local || r.local || ""} · ${CARDIO_TIPOS[c.tipo] || ""}` : (r.local || "Cardio"); };
   const fotos = S.data.cdFotos || {};
-  return `<div class="panel"><h3>Cardio realizado</h3>${regs.length ? `<div class="tbl-wrap"><table class="data"><thead><tr><th>Sem.</th><th>Treino</th><th>Cardio</th><th>Tempo</th><th>Distância</th><th>Inclinação</th><th>Carga</th><th>Passos</th><th class="c">PSE</th><th>Foto</th></tr></thead><tbody>
+  return `<div class="panel cardio-pdf"><h3>Cardio realizado</h3>${regs.length ? `<div class="tbl-wrap"><table class="data"><thead><tr><th>Sem.</th><th>Treino</th><th>Cardio</th><th>Tempo</th><th>Distância</th><th>Inclinação</th><th>Carga</th><th>Passos</th><th class="c">PSE</th><th>Foto</th></tr></thead><tbody>
     ${regs.map(r => `<tr><td class="c num">${r.semana}</td><td class="c">${esc(r.letra)}</td><td>${esc(nome(r))}</td><td>${esc(r.tempo || "–")}</td><td>${esc(r.distancia || "–")}</td><td>${esc(r.inclinacao || "–")}</td><td>${esc(r.carga || "–")}</td><td>${esc(r.passos || "–")}</td><td class="c num">${r.pse ?? "–"}</td><td>${r.foto ? `<button class="btn sm" data-act="verFotoCd" data-path="${esc(r.foto)}">Ver</button>` : "–"}</td></tr>`).join("")}</tbody></table></div>`
     : `<p class="small muted">Nenhum cardio concluído ainda neste ciclo.</p>`}</div>`;
 }
@@ -2051,8 +2053,11 @@ function pontoSerie(a, b){
   if (Number(b.reps) < Number(a.reps)) return { p: -1, s: "▼ reps", c: "bad" };
   return { p: 0, s: "= igual", c: "" };
 }
+let PDF_TABS = {}, EVO_CTX = null;
+function evoMain(ctx){ EVO_CTX = ctx; return evolucao(ctx); }
 function subTabs(key, opts, def){
-  const v = opts.some(o => o.v === S.p[key]) ? S.p[key] : def;
+  const pedido = PDF_TABS[key] ?? S.p[key];
+  const v = opts.some(o => o.v === pedido) ? pedido : def;
   return { v, html: `<div class="tabs sub" role="tablist">${opts.map(o => `<button role="tab" data-act="sub" data-k="${key}" data-v="${esc(o.v)}" aria-selected="${o.v === v}">${esc(o.l)}</button>`).join("")}</div>` };
 }
 const tile = (lbl, val, sub, cls = "") => `<div class="tile ${cls}"><span class="label">${lbl}</span><b class="num">${val}</b>${sub ? `<span class="small muted num">${sub}</span>` : ""}</div>`;
@@ -2322,7 +2327,7 @@ function evolucao(ctx){
       <p class="small muted">${T("Comparamos a sua melhor série de cada exercício no início e no fim do período. A conta considera carga e repetições juntas (força estimada para 1 repetição máxima, pela fórmula de Epley): subir a carga ou fazer mais repetições com a mesma carga contam como ganho.", "Força estimada (1RM, Epley: carga × (1 + reps ÷ 30)) da melhor série de trabalho no primeiro e no último registro do período, por exercício e treino. Exercício com peso corporal (carga 0) usa as repetições.")}</p>
       ${tiles}
       <div><h3>${T("Onde você mais ganhou", "Maiores ganhos")}</h3>${destaques}</div>
-      <div class="vgrid"><div><h3>Por exercício</h3><div style="margin-top:6px">${top.map(x => barra(x.nome, x.pct, "· " + x.t.letra)).join("")}</div></div>
+      <div class="vgrid"><div class="fz-ex"><h3>Por exercício</h3><div style="margin-top:6px">${top.map(x => barra(x.nome, x.pct, "· " + x.t.letra)).join("")}</div></div>
         <div style="display:flex;flex-direction:column;gap:16px"><div><h3>Por treino</h3><div style="margin-top:6px">${porTreino.map(x => barra(`Treino ${x.t.letra}${x.t.nome ? " · " + x.t.nome : ""}`, x.m)).join("")}</div></div>
         ${grupos.length ? `<div><h3>Por grupo muscular</h3><div style="margin-top:6px">${grupos.map(x => barra(x.g, x.m)).join("")}</div></div>` : ""}</div></div>
       <details ${paraAluno ? "open" : ""}><summary style="cursor:pointer;font-weight:700">Tabela completa por exercício</summary><div style="margin-top:10px">${tabela}</div></details>`);
@@ -2336,16 +2341,55 @@ function evolucao(ctx){
 
 /* ---------- Exportar em PDF ---------- */
 const carregarScript = src => new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = src; sc.onload = res; sc.onerror = () => rej(new Error("Failed to fetch")); document.head.appendChild(sc); });
-async function exportarPDF(nome, btn){
+function montarPdf(modo){
+  const ctx = EVO_CTX; if (!ctx) return null;
+  const desenhar = () => { const d = document.createElement("div"); d.innerHTML = evolucao(ctx); return d; };
+  const antes = PDF_TABS;
+  try {
+    PDF_TABS = {};
+    const base = desenhar();
+    const cardio = document.querySelector("#evoPdf .cardio-pdf")?.cloneNode(true);
+    if (modo === "resumida") {
+      PDF_TABS = { pan: "geral" };
+      const g = desenhar(), out = document.createElement("div");
+      const pega = (root, sel) => root.querySelector(sel)?.cloneNode(true);
+      const partes = [pega(base, ".rep-head"), pega(g, "#sec-panorama"), pega(base, "#sec-forca"), pega(base, "#sec-fechamento"), pega(base, ".rep-foot")].filter(Boolean);
+      partes.forEach(p => { p.querySelectorAll(".tabs.sub, .fz-ex, details").forEach(e => e.remove()); if (p.id === "sec-panorama") p.querySelectorAll(".tbl-wrap, p.small.muted").forEach(e => e.remove()); out.appendChild(p); });
+      let n = 0; out.querySelectorAll(".sec-n").forEach(e => { n++; e.textContent = e.textContent.replace(/^\d+/, String(n).padStart(2, "0")); });
+      return out;
+    }
+    const mapa = { pan: "panorama", det: "detalhe", cic: "ciclo", pts: "pontuacao" };
+    for (const [k, id] of Object.entries(mapa)) {
+      const alvo = base.querySelector("#sec-" + id); if (!alvo) continue;
+      const ops = [...base.querySelectorAll(`[data-act="sub"][data-k="${k}"]`)].map(b => [b.dataset.v, b.textContent]);
+      ops.sort((a, b) => (["geral", "todos"].includes(b[0]) ? 1 : 0) - (["geral", "todos"].includes(a[0]) ? 1 : 0));
+      if (!ops.length) continue;
+      const novo = document.createElement("section"); novo.className = alvo.className; novo.id = alvo.id;
+      ops.forEach(([v, rot], i) => {
+        PDF_TABS = { [k]: v };
+        const sec = desenhar().querySelector("#sec-" + id); if (!sec) return;
+        sec.querySelectorAll(".tabs.sub").forEach(e => e.remove());
+        if (i < ops.length - 1) sec.querySelectorAll(".obsf, .obs-pt").forEach(e => e.remove());
+        const cab = sec.firstElementChild, h = document.createElement("h3"); h.className = "pdf-sub"; h.textContent = rot;
+        if (i === 0) cab.after(h); else { cab.remove(); sec.prepend(h); }
+        [...sec.children].forEach(c => novo.appendChild(c));
+      });
+      alvo.replaceWith(novo);
+    }
+    if (cardio) base.appendChild(cardio);
+    return base;
+  } finally { PDF_TABS = antes; }
+}
+async function exportarPDF(nome, btn, modo){
   const fonte = document.getElementById("evoPdf"); if (!fonte) return;
   const txt = btn?.textContent; if (btn) { btn.disabled = true; btn.textContent = "Gerando PDF…"; }
   const tema = document.documentElement.getAttribute("data-theme");
   const box = document.createElement("div"); box.className = "pdf-box";
   try {
     if (!window.html2pdf) await carregarScript("https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js");
-    const clone = fonte.cloneNode(true);
+    const clone = (modo ? montarPdf(modo) : null) || fonte.cloneNode(true);
     clone.querySelectorAll("textarea").forEach(t => {
-      const v = (fonte.querySelector("#" + CSS.escape(t.id))?.value || "").trim(), alvo = t.closest(".obsf") || t;
+      const v = ((t.id && document.getElementById(t.id)?.value) ?? t.value ?? "").trim(), alvo = t.closest(".obsf") || t;
       if (!v) return alvo.remove();
       const div = document.createElement("div"); div.className = "obs-pt"; div.innerHTML = `<span class="label">Observações de ${esc(primeiroNome((PROF || PROF_PADRAO).nome))}</span><p>${esc(v).replace(/\n/g, "<br>")}</p>`; alvo.replaceWith(div);
     });
@@ -2358,7 +2402,7 @@ async function exportarPDF(nome, btn){
     });
     box.appendChild(clone);
     document.documentElement.setAttribute("data-theme", "light");
-    const arquivo = `Evolucao - ${String(nome || "aluno").replace(/[\\/:*?"<>|]/g, "")} - ${todayISO().split("-").reverse().join("-")}.pdf`;
+    const arquivo = `Evolucao ${modo === "resumida" ? "resumida" : "completa"} - ${String(nome || "aluno").replace(/[\\/:*?"<>|]/g, "")} - ${todayISO().split("-").reverse().join("-")}.pdf`;
     await window.html2pdf().set({ margin: [10, 8, 12, 8], filename: arquivo, image: { type: "jpeg", quality: .95 },
       html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
       jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
@@ -2513,8 +2557,8 @@ function viewRelatorio(){
   return `<div>${isP ? `<button class="btn ghost sm" data-act="backAluno">← Voltar ao aluno</button>` : `<button class="btn ghost sm" data-act="nav" data-v="home">← Início</button>`}</div>
     ${S.p.snapshot ? `<div class="callout">Prévia: é assim que o aluno vai receber. Nada foi enviado ainda.</div>` : ""}
     <div><p class="label">${S.p.snapshot ? "Prévia" : "Enviado em " + new Date(r.created_at).toLocaleDateString("pt-BR")}</p><h1>${esc(r.titulo)}</h1></div>
-    <div class="row no-pdf"><button class="btn" data-act="exportarPDF" data-nome="${esc(r.titulo)}">⬇ Baixar em PDF</button></div>
-    <div id="evoPdf">${evolucao({ prog: normPrograma(clone(d.programa)), regs: d.regs, exercicios: d.exercicios, modo: "aluno", obs: d.obs, cur: d.cur, data: d.data, de: d.de, ate: d.ate, prof: d.prof || PROF_PADRAO })}</div>`;
+    <div class="pdf-opts no-pdf"><button class="btn" data-act="exportarPDF" data-modo="completa" data-nome="${esc(r.titulo)}">⬇ PDF completo</button><button class="btn" data-act="exportarPDF" data-modo="resumida" data-nome="${esc(r.titulo)}">⬇ PDF resumido</button></div>
+    <div id="evoPdf">${evoMain({ prog: normPrograma(clone(d.programa)), regs: d.regs, exercicios: d.exercicios, modo: "aluno", obs: d.obs, cur: d.cur, data: d.data, de: d.de, ate: d.ate, prof: d.prof || PROF_PADRAO })}</div>`;
 }
 
 /* =====================================================================
@@ -2794,7 +2838,7 @@ document.addEventListener("click", async ev => {
       d.cardios = await db.getCardios(quem, d.programa.id);
       S.p.cdForm = null; S.p.aberto = Number(el.dataset.ab); toast("Cardio concluído. Boa!"); keepInputs(render); statusTreino(); return;
     }
-    if (a === "exportarPDF") return exportarPDF(el.dataset.nome, el);
+    if (a === "exportarPDF") return exportarPDF(el.dataset.nome, el, el.dataset.modo);
     if (a === "comboPick") return escolherCombo(el.closest(".combo"), Number(el.dataset.id));
     if (a === "limparSobra") {
       const n = Math.min(LETRAS.length, Number(d.draft.frequencia) || 0);
