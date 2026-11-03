@@ -398,6 +398,19 @@ table.data td.z{color:var(--muted)}
 .mus-ed{display:flex;flex-direction:column;gap:6px}
 .mus-row{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:6px}
 .rasc{border-radius:10px;padding:10px 12px;background:var(--accent-soft);color:var(--accent);font-size:.9rem;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+/* Ciclos */
+.ciclo-fim{border-color:var(--warn);background:var(--warn-soft)}
+.ciclo-fim b{color:var(--warn)}
+.ciclo-bar{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+.cmp td,.cmp th{white-space:nowrap}
+.cmp .up{color:var(--up);font-weight:700}.cmp .down{color:var(--down);font-weight:700}
+/* Cardio concluído */
+.cd-feito{display:flex;gap:10px;align-items:center;flex-wrap:wrap;border-radius:10px;padding:10px 12px;background:var(--up-soft);color:var(--up)}
+.cd-feito span{color:var(--fg);font-size:.88rem}
+.cd-form{display:flex;flex-direction:column;gap:12px;border:1.5px solid var(--accent-2);border-radius:12px;padding:12px;background:var(--bg)}
+.pse-ops span{min-width:42px;justify-content:center}
+.cd-st{flex:none;font-size:.78rem;font-weight:800;padding:3px 8px;border-radius:99px;background:var(--up-soft);color:var(--up)}
+.cd-foto{max-width:100%;border-radius:10px}
 </style>
 <!--HEAD-END-->
 </head>
@@ -559,6 +572,42 @@ const MUSCULOS = REGIOES.flatMap(([, ms]) => ms);
 const regiaoDe = m => (REGIOES.find(([, ms]) => ms.includes(m)) || ["Outros"])[0];
 const COR_REGIAO = { Peito: "#0E4C55", Costas: "#1B8A93", Ombros: "#5CC9D2", "Braços": "#C25E22", Pernas: "#D4A23A", Core: "#7C8A8E", Outros: "#9AA5A8" };
 const fmtSer = n => String(Math.round(n * 100) / 100).replace(".", ",");
+/* Sessão: sai da conta depois de muito tempo sem uso */
+const INATIVIDADE_HORAS = 24;
+/* Ciclos */
+const addDias = (iso, n) => { const d = new Date(String(iso).slice(0, 10) + "T12:00:00"); d.setDate(d.getDate() + n); return d.toISOString().slice(0, 10); };
+const fimDe = p => p?.fim ? String(p.fim).slice(0, 10) : addDias(p.inicio, (Number(p.semanas) || 8) * 7 - 1);
+const semanasEntre = (ini, fim) => Math.max(1, Math.ceil(((new Date(fim + "T12:00:00") - new Date(ini + "T12:00:00")) / 86400000 + 1) / 7));
+const nomeCiclo = p => `Ciclo ${fmtData(p.inicio)} a ${fmtData(fimDe(p))}`;
+function cicloEncerrado(p, sess){
+  if (!p?.id || p.publicado === false) return false;
+  if (todayISO() > fimDe(p)) return true;
+  const fin = (sess || []).filter(x => x.finalizado_em && (x.programa_id == null || String(x.programa_id) === String(p.id)));
+  return fin.length > 0 && progressoSemanas(p, fin).cheia >= p.semanas;
+}
+function calcReferencia(regs, manter){
+  const ref = {};
+  (regs || []).forEach(r => {
+    if (manter && !manter.has(r.exercicio_id)) return;
+    if (r.carga == null && r.reps == null) return;
+    const k = r.exercicio_id + ":" + r.serie;
+    if (!ref[k] || r.semana >= ref[k].semana) ref[k] = { carga: r.carga, reps: r.reps, reps_txt: r.reps_txt, semana: r.semana };
+  });
+  return ref;
+}
+/* Cardio concluído: campos por equipamento */
+const CAMPOS_CD = { tempo: ["Tempo feito", "Ex.: 25 min"], distancia: ["Distância", "Ex.: 3,2 km"], inclinacao: ["Inclinação", "Ex.: 5%"], carga: ["Peso / carga", "Ex.: nível 8"], passos: ["Passos / degraus", "Ex.: 600"] };
+const camposCardio = local => ["tempo", ...(local === "Esteira" ? ["distancia", "inclinacao"] : local === "Escada" ? ["passos"] : ["distancia", "carga"])];
+const resumoRegCardio = r => [r.tempo, r.distancia, r.inclinacao && "incl. " + r.inclinacao, r.carga && "carga " + r.carga, r.passos && r.passos + " passos", r.pse != null && "PSE " + r.pse, r.foto && "📷"].filter(Boolean).join(" · ");
+async function comprimirFoto(file){
+  try {
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, 1280 / Math.max(bmp.width, bmp.height));
+    const cv = document.createElement("canvas"); cv.width = Math.round(bmp.width * k); cv.height = Math.round(bmp.height * k);
+    cv.getContext("2d").drawImage(bmp, 0, 0, cv.width, cv.height);
+    return await new Promise(r => cv.toBlob(b => r(b || file), "image/jpeg", .8));
+  } catch { return file; }
+}
 const temConteudo = t => !!((t.itens || []).length || (t.cardios || []).length);
 const LETRAS = ["A","B","C","D","E","F","G"];
 
@@ -614,6 +663,8 @@ function normPrograma(p){
   (p.treinos || []).forEach(t => (t.itens || []).forEach(normItem));
   const map = Object.fromEntries((p.treinos || []).map(t => [t.letra, t]));
   p.modalidade = p.modalidade || "feedback semanal";
+  if (p.inicio && !p.fim) p.fim = fimDe(p);
+  if (p.fim) p.fim = String(p.fim).slice(0, 10);
   p.treinos = LETRAS.map(l => ({ letra: l, nome: map[l]?.nome || "", itens: map[l]?.itens || [], cardios: map[l]?.cardios || (map[l]?.cardio ? [map[l].cardio] : []) }));
   return p;
 }
@@ -678,7 +729,20 @@ function makeSupabase(){
     async renomearPresencial(uid, nome){ ok(await c.rpc("renomear_aluno_presencial", { uid, p_nome: nome })); },
     async excluirPresencial(uid){ ok(await c.rpc("excluir_aluno_presencial", { uid })); },
     async saveAnamnese(respostas, alunoId = S.user.id){ ok(await c.from("anamneses").upsert({ aluno_id: alunoId, respostas, consentimento: true, updated_at: new Date().toISOString() }, { onConflict: "aluno_id" })); },
-    async listProgramas(){ return ok(await c.from("programas").select("id,aluno_id,nome,inicio,semanas,treinos,updated_at,publicado,rascunho_em").eq("ativo", true)); },
+    async listProgramas(){ return ok(await c.from("programas").select("id,aluno_id,nome,inicio,fim,semanas,treinos,updated_at,publicado,rascunho_em").eq("ativo", true)); },
+    async listCiclos(alunoId){ return ok(await c.from("programas").select("id,aluno_id,nome,inicio,fim,semanas,treinos,frequencia,arquivado_em").eq("aluno_id", alunoId).not("arquivado_em", "is", null).order("inicio", { ascending: false })); },
+    async getProgramaPorId(id){ return ok(await c.from("programas").select("*").eq("id", id).single()); },
+    async arquivarPrograma(id, fim, semanas){ ok(await c.from("programas").update({ ativo: false, arquivado_em: new Date().toISOString(), fim, semanas }).eq("id", id)); },
+    async criarCiclo(row){ return ok(await c.from("programas").insert(row).select().single()); },
+    async limparCiclo(pid, alunoId){
+      ok(await c.from("registros").delete().eq("programa_id", pid).eq("aluno_id", alunoId));
+      ok(await c.from("sessoes").delete().eq("programa_id", pid).eq("aluno_id", alunoId));
+      try { ok(await c.from("cardio_registros").delete().eq("programa_id", pid).eq("aluno_id", alunoId)); } catch {}
+    },
+    async getCardios(alunoId, pid){ try { return ok(await c.from("cardio_registros").select("*").eq("aluno_id", alunoId).eq("programa_id", pid)); } catch { return []; } },
+    async saveCardio(r){ ok(await c.from("cardio_registros").upsert({ ...r, updated_at: new Date().toISOString() }, { onConflict: "aluno_id,programa_id,semana,letra,idx" })); },
+    async uploadFotoCardio(alunoId, blob){ const path = `${alunoId}/${Date.now()}.jpg`; ok(await c.storage.from("cardio").upload(path, blob, { contentType: "image/jpeg", upsert: true })); return path; },
+    async fotoCardioUrl(path){ const d = ok(await c.storage.from("cardio").createSignedUrl(path, 600)); return d.signedUrl; },
     async listFinalizados(){ return ok(await c.from("sessoes").select("programa_id,semana,letra,finalizado_em").not("finalizado_em", "is", null)); },
     async listExercicios(){ return ok(await c.from("exercicios").select("*").order("nome")); },
     async saveExercicio(ex){
@@ -695,14 +759,14 @@ function makeSupabase(){
     async saveRascunho(p){
       const { rascunho, rascunho_em, publicado, ...rasc } = JSON.parse(JSON.stringify(p)), agora = new Date().toISOString();
       if (p.id) return ok(await c.from("programas").update({ rascunho: rasc, rascunho_em: agora }).eq("id", p.id).select().single());
-      return ok(await c.from("programas").insert({ aluno_id: p.aluno_id, nome: p.nome || "Programa", modalidade: p.modalidade, inicio: p.inicio, semanas: p.semanas, treinos: [], ativo: true, publicado: false, rascunho: rasc, rascunho_em: agora }).select().single());
+      return ok(await c.from("programas").insert({ aluno_id: p.aluno_id, nome: p.nome || "Programa", modalidade: p.modalidade, inicio: p.inicio, fim: p.fim || null, semanas: p.semanas, treinos: [], ativo: true, publicado: false, rascunho: rasc, rascunho_em: agora }).select().single());
     },
     async descartarRascunho(id, publicado){
       if (publicado) ok(await c.from("programas").update({ rascunho: null, rascunho_em: null }).eq("id", id));
       else ok(await c.from("programas").delete().eq("id", id));
     },
     async savePrograma(p){
-      const row = { aluno_id: p.aluno_id, nome: p.nome, modalidade: p.modalidade, objetivo: p.objetivo || null, reavaliacao: p.reavaliacao || null, frequencia: p.frequencia ? Number(p.frequencia) : null, restricoes: p.restricoes || null, inicio: p.inicio, semanas: p.semanas, treinos: p.treinos, ativo: true, publicado: true, rascunho: null, rascunho_em: null, updated_at: new Date().toISOString() };
+      const row = { aluno_id: p.aluno_id, nome: p.nome, modalidade: p.modalidade, objetivo: p.objetivo || null, reavaliacao: p.reavaliacao || null, frequencia: p.frequencia ? Number(p.frequencia) : null, restricoes: p.restricoes || null, inicio: p.inicio, fim: p.fim || null, referencia: p.referencia ?? null, semanas: p.semanas, treinos: p.treinos, ativo: true, publicado: true, rascunho: null, rascunho_em: null, updated_at: new Date().toISOString() };
       return p.id ? ok(await c.from("programas").update(row).eq("id", p.id).select().single())
                   : ok(await c.from("programas").insert(row).select().single());
     },
@@ -819,8 +883,13 @@ function makeDemo(){
   const lp = R(1, 3, "C", 10, 3); if (lp) lp.reps -= 2;
   add(progs[1], 1, "A"); add(progs[1], 1, "B"); add(progs[1], 2, "A");
   add(progs[2], 1, "A"); add(progs[2], 1, "B"); add(progs[2], 2, "A"); add(progs[2], 2, "B");
+  /* ciclo anterior arquivado do Lucas (para comparar ciclos) */
+  progs.push(normPrograma({ ...clone(progs[0]), id: 9, inicio: ago(100), semanas: 8, fim: ago(45), ativo: false, arquivado_em: ago(44) + "T12:00:00Z" }));
+  for (let w = 1; w <= 8; w++) ["A","B","C"].forEach(l => add(progs[progs.length - 1], w, l));
+  regs.forEach(r => { if (r.programa_id === 9) r.carga = Math.round(r.carga * .85 / 2.5) * 2.5; });
 
   let me = null, nextId = 100;
+  const cardRegs = [], fotosDemo = {};
   const sess = [{ aluno_id: "a1", programa_id: 1, semana: 3, letra: "C", obs: "Exemplo: no leg press senti o joelho direito na última série e parei antes. Sem dor depois do treino.", finalizado_em: ago(25) + "T20:00:00Z" }];
   [[1, "ABC"], [2, "ABC"], [3, "A"], [4, "ABC"], [5, "ABC"], [6, "AB"]].forEach(([w, ls]) => [...ls].forEach(l => sess.push({ aluno_id: "a1", programa_id: 1, semana: w, letra: l, obs: "", finalizado_em: ago(44 - w * 7) + "T20:00:00Z" })));
   const obsMap = { 1: { panorama: "Semana 3 com ausência no treino B (exemplo de observação). Vamos ajustar a rotina para encaixar os três treinos." } };
@@ -855,7 +924,16 @@ function makeDemo(){
       users.splice(users.indexOf(u), 1); if (me?.id === uid) me = null;
     },
     async crefUrl(){ return null; },
-    async listProgramas(){ return clone(progs); },
+    async listProgramas(){ return clone(progs.filter(p => p.ativo !== false)); },
+    async listCiclos(a){ return clone(progs.filter(p => p.aluno_id === a && p.arquivado_em)).sort((x, y) => y.inicio.localeCompare(x.inicio)); },
+    async getProgramaPorId(id){ return clone(progs.find(p => p.id === id)); },
+    async arquivarPrograma(id, fim, semanas){ const p = progs.find(x => x.id === id); Object.assign(p, { ativo: false, arquivado_em: new Date().toISOString(), fim, semanas }); },
+    async criarCiclo(row){ const n = normPrograma({ ...clone(row), id: nextId++ }); progs.push(n); return clone(n); },
+    async limparCiclo(pid, a){ for (const arr of [regs, sess, cardRegs]) for (let i = arr.length - 1; i >= 0; i--) if (arr[i].programa_id === pid && arr[i].aluno_id === a) arr.splice(i, 1); },
+    async getCardios(a, pid){ return clone(cardRegs.filter(x => x.aluno_id === a && x.programa_id === pid)); },
+    async saveCardio(r){ const i = cardRegs.findIndex(x => x.aluno_id === r.aluno_id && x.programa_id === r.programa_id && x.semana === r.semana && x.letra === r.letra && x.idx === r.idx); if (i >= 0) cardRegs[i] = clone(r); else cardRegs.push(clone(r)); },
+    async uploadFotoCardio(a, blob){ const path = a + "/" + Date.now() + ".jpg"; fotosDemo[path] = await new Promise(res => { const fr = new FileReader(); fr.onload = () => res(fr.result); fr.readAsDataURL(blob); }); return path; },
+    async fotoCardioUrl(path){ return fotosDemo[path]; },
     async listFinalizados(){ return clone(sess.filter(x => x.finalizado_em)); },
     async listExercicios(){ return clone(exs).sort((a, b) => a.nome.localeCompare(b.nome, "pt-BR")); },
     async saveExercicio(ex){
@@ -863,7 +941,7 @@ function makeDemo(){
       const n = { ...ex, id: nextId++ }; exs.push(n); return clone(n);
     },
     async deleteExercicio(id){ const i = exs.findIndex(e => e.id === id); if (i >= 0) exs.splice(i, 1); },
-    async getPrograma(alunoId, comRascunho = false){ const p = progs.find(p => p.aluno_id === alunoId && (comRascunho || p.publicado !== false)); return p ? clone(p) : null; },
+    async getPrograma(alunoId, comRascunho = false){ const p = progs.find(p => p.aluno_id === alunoId && p.ativo !== false && (comRascunho || p.publicado !== false)); return p ? clone(p) : null; },
     async savePrograma(p){
       const novo = { ...clone(p), publicado: true, rascunho: null, rascunho_em: null };
       if (p.id) { const i = progs.findIndex(x => x.id === p.id); progs[i] = { ...novo }; return clone(progs[i]); }
@@ -953,7 +1031,9 @@ async function go(view, p = {}, opts = {}){
           objetivo: anR.objetivo || "", frequencia: /^[1-7]$/.test(anR.dias || "") ? anR.dias : "", reavaliacao: "", restricoes: "",
           treinos: LETRAS.map(l => ({ letra: l, nome: "", itens: [] })) }),
         dirty: false };
-      if (S.data.draft) { delete S.data.draft.rascunho; delete S.data.draft.rascunho_em; }
+      if (S.data.draft) { delete S.data.draft.rascunho; delete S.data.draft.rascunho_em; if (!S.data.draft.fim) S.data.draft.fim = fimDe(S.data.draft); }
+      const [ciclos, cardios] = await Promise.all([db.listCiclos(p.alunoId).catch(() => []), programa?.id ? db.getCardios(p.alunoId, programa.id) : []]);
+      Object.assign(S.data, { ciclos, cardios, cacheCiclos: {}, cdFotos: {} });
       if (programa && !rascDraft && !Number(programa.frequencia)) { const u = programa.treinos.reduce((m, tr, i) => temConteudo(tr) ? i + 1 : m, 0); if (u) S.data.draft.frequencia = String(u); }
       S.p.tab = p.tab || (!proprio && !aluno?.presencial && !anamnese && !programa ? "anamnese" : "programa"); S.p.letra = p.letra || "A";
     } else if (view === "orientacoes") {
@@ -974,7 +1054,7 @@ async function go(view, p = {}, opts = {}){
       const obs = programa && isPers() ? await db.getObs(programa.id) : {};
       const rels = S.user.role === "aluno" ? await db.listRelatorios(S.user.id) : [];
       let sess = programa ? await db.getSessoes(quem, programa.id) : [];
-      S.data = { programa, regs, exercicios, obs, rels, sess, alvoNome: perfil?.nome };
+      S.data = { programa, regs, exercicios, obs, rels, sess, alvoNome: perfil?.nome, cardios: programa ? await db.getCardios(quem, programa.id) : [] };
       if (programa && await sincronizarRascunhos(programa)) { S.data.regs = await db.getRegistros(quem, programa.id); S.data.sess = await db.getSessoes(quem, programa.id); if (!p.semana) S.p.semana = semanaAtual(programa, S.data.sess); }
       if (programa) { S.p.semana = p.semana || semanaAtual(programa, sess); }
     }
@@ -1054,7 +1134,7 @@ function viewAlunos(){
   const pm = Object.fromEntries(progs.map(p => [p.aluno_id, p]));
   const pres = alunos.filter(a => a.presencial), online = alunos.filter(a => !a.presencial);
   let grupo = S.p.grupo || LS.get("grupoAlunos"); if (!["presencial", "online"].includes(grupo)) grupo = pres.length ? "presencial" : "online";
-  const progChips = p => p.publicado === false ? `<span class="chip warn">Programa em rascunho</span>` : `<span class="chip acc">${esc(p.nome)}</span><span class="chip num">Semana ${semanaAtual(p, S.data.fins)} de ${p.semanas}</span>${p.rascunho_em ? `<span class="chip">Rascunho pendente</span>` : ""}`;
+  const progChips = p => p.publicado === false ? `<span class="chip warn">Programa em rascunho</span>` : `<span class="chip acc">${esc(p.nome)}</span>${cicloEncerrado(p, S.data.fins) ? `<span class="chip warn">Ciclo encerrado</span>` : `<span class="chip num">Semana ${semanaAtual(p, S.data.fins)} de ${p.semanas}</span>`}${p.rascunho_em ? `<span class="chip">Rascunho pendente</span>` : ""}`;
   const cardOnline = a => {
     const p = pm[a.id], an = S.data.anams ? S.data.anams[a.id] : true;
     const st = (p ? progChips(p) : an ? `<span class="chip ok">Anamnese respondida</span><span class="chip warn">Montar treino</span>` : "") + (an ? "" : `<span class="chip warn">Anamnese pendente</span>`);
@@ -1090,16 +1170,20 @@ function viewAluno(){
   const tab = S.p.tab, proprio = S.data.proprio, an = S.data.anamnese;
   const pres = !!aluno.presencial;
   const bloqueado = !proprio && !pres && !an && !programa?.id;
+  const enc = cicloEncerrado(programa, S.data.sess);
+  const barraCiclo = programa?.id ? `<div class="row ciclo-bar"><span class="small"><b>${nomeCiclo(programa)}</b> · ${enc ? "terminado" : `semana ${semanaAtual(programa, S.data.sess)} de ${programa.semanas}`}</span><span class="spacer"></span><button class="btn sm" data-act="pedirNovoCiclo">${enc ? "Arquivar e iniciar novo ciclo" : "Encerrar ciclo e iniciar outro"}</button></div>` : "";
   const conteudo = tab === "anamnese" ? painelAnamnese()
+    : tab === "ciclos" ? painelCiclos()
     : tab === "programa" ? (bloqueado
       ? `<div class="panel lock"><h3>Montagem bloqueada até o aluno responder a anamnese</h3><p class="small muted">A anamnese é a primeira tela que o aluno vê ao entrar no app. Assim que ele enviar as respostas, elas aparecem na aba Anamnese e a montagem do treino é liberada.</p><button class="btn sm" data-act="tab" data-tab="anamnese">Ver situação da anamnese</button></div>`
-      : (!proprio && !pres && !an ? `<div class="callout">Este aluno ainda não respondeu a anamnese. Ela aparece para ele na próxima vez que entrar no app.</div>` : "") + editorPrograma())
+      : (!proprio && !pres && !an ? `<div class="callout">Este aluno ainda não respondeu a anamnese. Ela aparece para ele na próxima vez que entrar no app.</div>` : "") + barraCiclo + editorPrograma())
     : null;
   return `<div><button class="btn ghost sm" data-act="nav" data-v="alunos">← Meus alunos</button></div>
     <div><h1>${proprio ? "Meu treino" : esc(aluno.nome)}</h1><p class="muted small">${pres ? "Atendimento presencial · sem acesso ao app" : esc(aluno.email)}</p></div>
+    ${enc ? `<div class="panel ciclo-fim"><b>O ${esc(nomeCiclo(programa))} terminou.</b><span class="small">Arquive este ciclo no perfil do aluno e inicie o próximo. Você escolhe se mantém o mesmo treino e as cargas.</span><div><button class="btn primary" data-act="pedirNovoCiclo">Arquivar e iniciar novo ciclo</button></div></div>` : ""}
     ${pres && programa?.id ? `<div class="row"><button class="btn primary" data-act="treinarPres" data-id="${esc(aluno.id)}">▶ Abrir treino para registrar</button><span class="small muted">Use durante a sessão para anotar cargas e finalizar o treino.</span></div>` : ""}
-    <div class="tabs" role="tablist">${proprio ? "" : `<button role="tab" data-act="tab" data-tab="anamnese" aria-selected="${tab === "anamnese"}">Anamnese${an ? "" : pres ? ' <span class="chip">opcional</span>' : ' <span class="chip warn">pendente</span>'}</button>`}<button role="tab" data-act="tab" data-tab="programa" aria-selected="${tab === "programa"}">Programa</button><button role="tab" data-act="tab" data-tab="evolucao" aria-selected="${tab === "evolucao"}">Evolução</button></div>
-    ${conteudo !== null ? conteudo : (programa?.id ? (aluno.id === S.user.id || pres ? "" : painelEnvio()) + evolucao({ prog: programa, regs: S.data.regs, exercicios: S.data.exercicios, modo: aluno.id === S.user.id ? "proprio" : "personal", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) }) : `<div class="empty">Monte e salve um programa para acompanhar a evolução.</div>`)}
+    <div class="tabs" role="tablist">${proprio ? "" : `<button role="tab" data-act="tab" data-tab="anamnese" aria-selected="${tab === "anamnese"}">Anamnese${an ? "" : pres ? ' <span class="chip">opcional</span>' : ' <span class="chip warn">pendente</span>'}</button>`}<button role="tab" data-act="tab" data-tab="programa" aria-selected="${tab === "programa"}">Programa</button><button role="tab" data-act="tab" data-tab="evolucao" aria-selected="${tab === "evolucao"}">Evolução</button><button role="tab" data-act="tab" data-tab="ciclos" aria-selected="${tab === "ciclos"}">Ciclos${S.data.ciclos?.length ? ` <span class="chip num">${S.data.ciclos.length}</span>` : ""}</button></div>
+    ${conteudo !== null ? conteudo : (programa?.id ? (aluno.id === S.user.id || pres ? "" : painelEnvio()) + evolucao({ prog: programa, regs: S.data.regs, exercicios: S.data.exercicios, modo: aluno.id === S.user.id ? "proprio" : "personal", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) }) + painelCardioPersonal() : `<div class="empty">Monte e salve um programa para acompanhar a evolução.</div>`)}
     ${pres ? `<details class="panel dados-pres" ${S.data.confirmarPres ? "open" : ""}><summary style="cursor:pointer;font-weight:700">Dados do aluno presencial</summary>
       <div class="row" style="align-items:flex-end"><label class="field" style="flex:1;min-width:200px"><span>Nome completo</span><input id="presRenome" type="text" value="${esc(aluno.nome)}"></label><button class="btn" data-act="renomearPres" data-id="${esc(aluno.id)}">Salvar nome</button></div>
       ${S.data.confirmarPres ? `<div class="row"><span class="small">Excluir ${esc(aluno.nome)} com programa, cargas e anamnese? Não dá para desfazer.</span><button class="btn sm danger" data-act="excluirPres" data-id="${esc(aluno.id)}">Excluir definitivamente</button><button class="btn sm ghost" data-act="cancelarPres">Cancelar</button></div>`
@@ -1152,9 +1236,10 @@ function editorPrograma(){
       <div class="grid2">
         <label class="field"><span>Nome do programa</span><input type="text" data-f="nome" value="${esc(d.nome)}"></label>
         <label class="field"><span>Objetivo</span><input type="text" data-f="objetivo" value="${esc(d.objetivo)}" placeholder="Ex.: Hipertrofia"></label>
-        <label class="field"><span>Início do bloco</span><input type="date" data-f="inicio" value="${esc(d.inicio)}"></label>
+        <label class="field"><span>Início do ciclo</span><input type="date" data-f="inicio" value="${esc(d.inicio)}"></label>
+        <label class="field"><span>Fim do ciclo</span><input type="date" data-f="fim" value="${esc(d.fim || fimDe(d))}"></label>
+        <div class="field"><span>Duração</span><b id="durTxt" class="num" style="padding:9px 0">${d.semanas} ${Number(d.semanas) > 1 ? "semanas" : "semana"}</b></div>
         <label class="field"><span>Reavaliação</span><input type="date" data-f="reavaliacao" value="${esc(d.reavaliacao)}"></label>
-        <label class="field"><span>Duração (semanas)</span><input type="number" min="1" max="52" data-f="semanas" value="${esc(d.semanas)}"></label>
         <label class="field"><span>Frequência semanal (define os treinos)</span><select data-f="frequencia"><option value="" ${freq ? "" : "selected"}>Escolha…</option>${[1,2,3,4,5,6,7].map(n => `<option value="${n}" ${n === freq ? "selected" : ""}>${n}x por semana · ${LETRAS.slice(0, n).join("")}</option>`).join("")}</select></label>
         ${d.aluno_id === S.user.id ? "" : `<label class="field"><span>Modalidade</span><select data-f="modalidade">${["feedback semanal", "feedback mensal", "sem feedback"].map(m => `<option ${m === d.modalidade ? "selected" : ""}>${m}</option>`).join("")}</select></label>`}
       </div>
@@ -1390,9 +1475,10 @@ function viewHome(){
   }).join("");
   const semOpts = Array.from({ length: programa.semanas }, (_, i) => i + 1).map(w => `<option value="${w}" ${w === sem ? "selected" : ""} ${w > cur ? "disabled" : ""}>Semana ${w}${w === cur ? " (atual)" : ""}</option>`).join("");
   return `${modoPres() ? `<div><button class="btn ghost sm" data-act="voltarAluno">← ${esc(S.data.alvoNome || "Aluno")}</button></div>` : ""}<div><p class="label">${modoPres() ? "Atendimento presencial · " : ""}${esc(programa.nome)}</p><h1>${modoPres() ? esc(S.data.alvoNome || "Aluno") : `Olá, ${esc(S.user.nome.split(" ")[0])}`}</h1></div>
+    ${cicloEncerrado(programa, S.data.sess) ? `<div class="callout">${S.user.role === "aluno" ? `Este ciclo terminou. ${esc(primeiroNome((PROF || PROF_PADRAO).nome))} vai liberar o próximo em breve; enquanto isso você ainda pode registrar os treinos da última semana.` : "Este ciclo terminou. Para arquivar e iniciar o próximo, abra o aluno → aba Ciclos."}</div>` : ""}
     <div class="panel"><div class="info-grid">
       ${programa.objetivo ? `<div><span class="label">Objetivo</span><b>${esc(programa.objetivo)}</b></div>` : ""}
-      <div><span class="label">Início do bloco</span><b class="num">${fmtData(programa.inicio)}</b></div>
+      <div><span class="label">Ciclo</span><b class="num">${fmtData(programa.inicio)} a ${fmtData(fimDe(programa))}</b></div>
       ${programa.reavaliacao ? `<div><span class="label">Reavaliação</span><b class="num">${fmtData(programa.reavaliacao)}</b></div>` : ""}
       ${programa.frequencia ? `<div><span class="label">Frequência</span><b class="num">${esc(programa.frequencia)}x por semana</b></div>` : ""}
       ${programa.restricoes ? `<div><span class="label">Restrições</span><b>${esc(programa.restricoes)}</b></div>` : ""}
@@ -1430,11 +1516,11 @@ function viewTreino(){
       const meta = [repsTxt(st.reps), st.rir && `RIR ${st.rir}`, `descanso ${desc}`].filter(Boolean).join(" · ");
       if (st.tipo !== "trabalho") return `<div class="set leve t-${st.tipo}"><div class="set-l"><span class="t-pill">${tp.nome}</span><span class="meta">${esc(meta)}</span></div></div>`;
       const s = ++ordT;
-      const r = find(sem, ex, s), pv = find(sem - 1, ex, s);
+      const r = find(sem, ex, s), pv0 = find(sem - 1, ex, s), rf = !pv0 && sem === 1 && programa.referencia ? programa.referencia[ex + ":" + s] : null, pv = pv0 || rf;
       return `<div class="set t-trabalho"><div class="set-l"><span class="t-pill">Trabalho ${s}</span><span class="meta">${esc(meta)}</span></div><div class="set-in">
         <input id="c-${ex}-${s}" type="text" inputmode="decimal" value="${esc(fmt(r?.carga))}" placeholder="${pv?.carga != null ? esc(fmt(pv.carga)) : "kg"}" aria-label="Carga em kg, ${esc(e.nome)}, série de trabalho ${s}"><span class="x">kg ×</span>
         <input id="r-${ex}-${s}" type="text" inputmode="tel" value="${esc(r?.reps_txt ?? r?.reps ?? "")}" placeholder="${pv?.reps != null ? esc(pv.reps_txt ?? pv.reps) : "reps"}" aria-label="Repetições, ${esc(e.nome)}, série de trabalho ${s}"><span class="x">reps</span>
-        ${pv && (pv.carga != null || pv.reps != null) ? `<span class="prev">sem. ${sem - 1}: ${esc(fmt(pv.carga) || "–")} kg × ${esc(pv.reps_txt ?? pv.reps ?? "–")}</span>` : ""}</div></div>`;
+        ${pv && (pv.carga != null || pv.reps != null) ? `<span class="prev">${pv0 ? "sem. " + (sem - 1) : "ciclo anterior"}: ${esc(fmt(pv.carga) || "–")} kg × ${esc(pv.reps_txt ?? pv.reps ?? "–")}</span>` : ""}</div></div>`;
     }).join("");
     const ultimo = i === t.itens.length - 1 && !(t.cardios || []).length;
     return `<details class="ex-acc" data-i="${i}" ${S.p.aberto === i ? "open" : ""}>
@@ -1459,6 +1545,16 @@ function viewTreino(){
       <p class="small muted">${esc(primeiroNome((PROF || PROF_PADRAO).nome))} lê estas observações. Em caso de dor no peito, tontura, falta de ar desproporcional ou dor articular aguda, pare o treino e avise na hora.</p></div>`;
 }
 
+function formCardioFeito(c, reg, k, i){
+  return `<div class="cd-form">
+    <b>Registrar o cardio feito</b>
+    <div class="grid2">${camposCardio(c.local).map(f => `<label class="field"><span>${CAMPOS_CD[f][0]}${f === "tempo" ? "" : " (opcional)"}</span><input type="text" id="cd-${f}" value="${esc(reg?.[f] || "")}" placeholder="${CAMPOS_CD[f][1]}"></label>`).join("")}</div>
+    <div class="field"><span>Percepção de esforço · PSE de 0 a 10 (opcional)</span><div class="an-ops pse-ops">${Array.from({ length: 11 }, (_, n) => `<label><input type="radio" name="cd-pse" value="${n}" ${reg?.pse === n ? "checked" : ""}><span>${n}</span></label>`).join("")}</div></div>
+    <label class="field"><span>Foto (opcional) · ex.: o painel do equipamento no fim</span><input type="file" id="cd-foto" accept="image/*"></label>
+    ${reg?.foto ? `<span class="small muted">Já há uma foto salva. Envie outra só se quiser trocar.</span>` : ""}
+    <div class="row"><button class="btn primary" data-act="salvarCardioFeito" data-k="${k}" data-ab="${i}">Salvar cardio</button><button class="btn ghost" data-act="cancelarCardioFeito" data-ab="${i}">Cancelar</button></div>
+  </div>`;
+}
 function videoHtml(url, titulo, oque){
   const id = ytId(url);
   return (DEMO || url === "demo")
@@ -1470,11 +1566,12 @@ function cardioAluno(t){
   const lista = t.cardios || []; if (!lista.length) return "";
   return lista.map((c, k) => {
     const i = t.itens.length + k, vk = "c" + k, aberto = S.p.video === vk, ultimo = k === lista.length - 1;
+    const reg = (S.data.cardios || []).find(x => x.semana === S.p.semana && x.letra === t.letra && x.idx === k), editando = S.p.cdForm === k;
     const corpo = c.tipo === "hiit"
       ? `<div class="cd-lista">${c.blocos.map((b, j) => `<div class="cd-item"><b>Bloco ${j + 1}</b><strong>${esc(b.tempo)}</strong><span>${esc(b.intensidade)}</span></div>`).join("")}</div>`
       : `<div class="cd-lista"><div class="cd-item"><b>Duração</b><strong>${esc(c.tempo)}</strong></div><div class="cd-item"><b>Intensidade</b><strong>${esc(c.intensidade)}</strong></div></div>`;
     return `<details class="ex-acc cardio-acc" data-i="${i}" ${S.p.aberto === i || (!t.itens.length && !k && S.p.aberto === undefined) ? "open" : ""}>
-    <summary><span class="n" aria-hidden="true">♥</span><span class="nm"><b>${lista.length > 1 ? `Cardio ${k + 1}` : "Cardio"}</b><span class="sq-row"><span style="margin-left:0">${esc(resumoCardio(c))}</span></span></span></summary>
+    <summary><span class="n" aria-hidden="true">♥</span><span class="nm"><b>${lista.length > 1 ? `Cardio ${k + 1}` : "Cardio"}</b><span class="sq-row"><span style="margin-left:0">${esc(resumoCardio(c))}</span></span></span>${reg ? `<span class="cd-st">✓ feito</span>` : ""}</summary>
     <div class="body">
       <div class="small"><b>Local:</b> ${esc(c.local)}</div>
       <div class="row"><button class="btn sm" data-act="video" data-i="${vk}" data-ab="${i}" aria-expanded="${aberto}">${aberto ? "Fechar vídeo" : "▶ Ver vídeo"}</button><button class="btn sm ghost" data-act="verPse">O que é PSE?</button></div>
@@ -1482,6 +1579,8 @@ function cardioAluno(t){
       ${corpo}
       ${c.obs ? `<div class="nota">${esc(c.obs)}</div>` : ""}
       ${c.tipo === "hiit" ? `<p class="small muted">Siga os blocos na ordem, sem pausa entre eles. A intensidade indicada vale para todo o bloco.</p>` : ""}
+      ${reg && !editando ? `<div class="cd-feito"><b>✓ Cardio concluído</b><span>${esc(resumoRegCardio(reg))}</span><span class="spacer"></span><button class="btn sm ghost" data-act="editarCardioFeito" data-k="${k}" data-ab="${i}">Editar</button></div>` : ""}
+      ${editando ? formCardioFeito(c, reg, k, i) : reg ? "" : `<div><button class="btn primary sm" data-act="editarCardioFeito" data-k="${k}" data-ab="${i}">Concluir cardio</button></div>`}
       <div class="fim">${ultimo ? `<button class="btn sm" data-act="fecharEx">Fechar</button>` : `<button class="btn sm" data-act="proxEx" data-i="${i}">Próximo cardio ↓</button>`}</div>
     </div></details>`;
   }).join("");
@@ -1647,6 +1746,67 @@ async function sincronizarRascunhos(programa){
     } catch {}
   }
   return mudou;
+}
+
+/* ---------- Ciclos arquivados e comparação ---------- */
+function painelCiclos(){
+  const { programa, ciclos = [] } = S.data, cache = S.data.cacheCiclos || {};
+  const todos = [...(programa?.id ? [{ ...programa, atual: true }] : []), ...ciclos];
+  if (!todos.length) return `<div class="empty">Nenhum ciclo ainda. Monte e salve o programa para começar o primeiro ciclo.</div>`;
+  const enc = cicloEncerrado(programa, S.data.sess);
+  const atual = programa?.id ? `<div class="item"><div class="grow"><h3>${esc(nomeCiclo(programa))} <span class="chip acc">atual</span></h3><p class="small muted">${enc ? "Terminado · aguardando novo ciclo" : `Semana ${semanaAtual(programa, S.data.sess)} de ${programa.semanas}`}</p></div><button class="btn sm" data-act="pedirNovoCiclo">${enc ? "Arquivar e iniciar novo" : "Encerrar e iniciar outro"}</button></div>` : "";
+  const arq = ciclos.map(c => {
+    const aberto = String(S.p.cicloVer) === String(c.id), cc = cache[c.id];
+    return `<div class="item"><div class="grow"><h3>${esc(nomeCiclo(c))}</h3><p class="small muted num">${c.semanas} ${c.semanas > 1 ? "semanas" : "semana"} · arquivado em ${fmtData(c.arquivado_em)}</p></div><button class="btn sm" data-act="verCiclo" data-id="${c.id}">${aberto ? "Fechar" : "Ver evolução"}</button></div>
+      ${aberto ? (cc ? `<div class="panel">${evolucao({ prog: cc.prog, regs: cc.regs, exercicios: S.data.exercicios, modo: "personal", obs: cc.obs, sess: cc.sess, editavel: false, cur: cc.prog.semanas, prof: profDe(S.user) })}</div>` : `<p class="muted">Carregando…</p>`) : ""}`;
+  }).join("");
+  const A = S.p.cmpA ?? (todos[1] || todos[0]).id, B = S.p.cmpB ?? todos[0].id;
+  const opts = sel => todos.map(c => `<option value="${c.id}" ${String(c.id) === String(sel) ? "selected" : ""}>${c.atual ? "Atual · " : ""}${esc(nomeCiclo(c))}</option>`).join("");
+  const cmp = todos.length > 1 ? `<div class="panel"><h3>Comparar ciclos</h3>
+      <div class="grid2"><label class="field"><span>Ciclo A</span><select id="cmpA">${opts(A)}</select></label><label class="field"><span>Ciclo B</span><select id="cmpB">${opts(B)}</select></label></div>
+      <div><button class="btn primary" data-act="compararCiclos">Comparar</button></div>
+      ${S.p.comparando && cache[S.p.cmpA] && cache[S.p.cmpB] ? comparacaoCiclos(cache[S.p.cmpA], cache[S.p.cmpB]) : ""}</div>`
+    : `<p class="small muted">Quando houver mais de um ciclo, você poderá comparar dois deles aqui.</p>`;
+  return `<p class="small muted">Cada ciclo fica guardado no perfil do aluno com o nome das datas, com todas as cargas e repetições.</p>
+    <div class="list">${atual}${arq}</div>${cmp}`;
+}
+async function carregarCiclo(id){
+  const cache = S.data.cacheCiclos = S.data.cacheCiclos || {};
+  if (cache[id]) return cache[id];
+  const pr = S.data.programa;
+  if (pr?.id && String(pr.id) === String(id)) return cache[id] = { prog: pr, regs: S.data.regs, sess: S.data.sess, obs: S.data.obs };
+  const prog = normPrograma(await db.getProgramaPorId(Number(id)));
+  const [regs, sess, obs] = await Promise.all([db.getRegistros(prog.aluno_id, prog.id), db.getSessoes(prog.aluno_id, prog.id), db.getObs(prog.id)]);
+  return cache[id] = { prog, regs, sess, obs };
+}
+function comparacaoCiclos(a, b){
+  const exMap = Object.fromEntries(S.data.exercicios.map(e => [e.id, e.nome]));
+  const res = c => { const rs = c.regs.filter(r => r.carga != null && r.reps != null); const sw = new Set(rs.map(r => r.semana)).size;
+    return { semanas: c.prog.semanas, sw, fin: c.sess.filter(x => x.finalizado_em && x.letra !== "*").length, series: rs.length, vl: volume(rs), vlw: sw ? volume(rs) / sw : 0 }; };
+  const ra = res(a), rb = res(b);
+  const dif = (x, y, kg) => { if (!x && !y) return "–"; const d = y - x, p = x ? Math.round(d / x * 1000) / 10 : null; return `<span class="${d > 0 ? "up" : d < 0 ? "down" : ""}">${d > 0 ? "+" : ""}${kg ? fmtKg(d) : fmtSer(d)}${p != null ? ` (${p > 0 ? "+" : ""}${fmt(p)}%)` : ""}</span>`; };
+  const linha = (rot, x, y, kg) => `<tr><td>${rot}</td><td class="c num">${kg ? fmtKg(x) : fmtSer(x)}</td><td class="c num">${kg ? fmtKg(y) : fmtSer(y)}</td><td class="c num">${dif(x, y, kg)}</td></tr>`;
+  const melhor = (regs, ex) => { const rs = regs.filter(r => r.exercicio_id === ex && r.carga != null && r.reps != null); return rs.length ? rs.reduce((m, r) => (Number(r.carga) > Number(m.carga) || (Number(r.carga) === Number(m.carga) && r.reps > m.reps)) ? r : m) : null; };
+  const vlEx = (regs, ex) => volume(regs.filter(r => r.exercicio_id === ex));
+  const exs = [...new Set([...a.regs, ...b.regs].map(r => r.exercicio_id))].sort((x, y) => (exMap[x] || "").localeCompare(exMap[y] || "", "pt-BR"));
+  const comuns = exs.filter(e => a.regs.some(r => r.exercicio_id === e) && b.regs.some(r => r.exercicio_id === e));
+  const so = exs.filter(e => !comuns.includes(e));
+  const txt = m => m ? `${fmt(m.carga)} kg × ${esc(m.reps_txt ?? m.reps)}` : "–";
+  return `<div class="tbl-wrap"><table class="data cmp"><thead><tr><th>Resumo</th><th class="c">A · ${esc(nomeCiclo(a.prog))}</th><th class="c">B · ${esc(nomeCiclo(b.prog))}</th><th class="c">Diferença (B − A)</th></tr></thead><tbody>
+      ${linha("Semanas do ciclo", ra.semanas, rb.semanas)}${linha("Semanas com registro", ra.sw, rb.sw)}${linha("Treinos finalizados", ra.fin, rb.fin)}${linha("Séries registradas", ra.series, rb.series)}
+      ${linha("Volume load total (kg)", ra.vl, rb.vl, true)}${linha("Volume load médio por semana (kg)", ra.vlw, rb.vlw, true)}</tbody></table></div>
+    ${comuns.length ? `<h4>Exercícios presentes nos dois ciclos</h4><div class="tbl-wrap"><table class="data cmp"><thead><tr><th>Exercício</th><th class="c">Maior carga · A</th><th class="c">Maior carga · B</th><th class="c">Diferença de carga</th><th class="c">Volume load A</th><th class="c">Volume load B</th></tr></thead><tbody>
+      ${comuns.map(e => { const ma = melhor(a.regs, e), mb = melhor(b.regs, e); return `<tr><td>${esc(exMap[e] || "Exercício")}</td><td class="c num">${txt(ma)}</td><td class="c num">${txt(mb)}</td><td class="c num">${ma && mb ? dif(Number(ma.carga), Number(mb.carga)) + " kg" : "–"}</td><td class="c num">${fmtKg(vlEx(a.regs, e))}</td><td class="c num">${fmtKg(vlEx(b.regs, e))}</td></tr>`; }).join("")}</tbody></table></div>` : `<p class="small muted">Nenhum exercício em comum entre os dois ciclos.</p>`}
+    ${so.length ? `<p class="small muted">Só em um dos ciclos: ${so.map(e => `${esc(exMap[e] || "Exercício")} (${a.regs.some(r => r.exercicio_id === e) ? "A" : "B"})`).join(", ")}.</p>` : ""}`;
+}
+function painelCardioPersonal(){
+  const pr = S.data.programa, regs = (S.data.cardios || []).slice().sort((x, y) => x.semana - y.semana || x.letra.localeCompare(y.letra) || x.idx - y.idx);
+  if (!pr || !pr.treinos.some(t => (t.cardios || []).length)) return "";
+  const nome = r => { const c = pr.treinos.find(t => t.letra === r.letra)?.cardios?.[r.idx]; return c ? `${c.local || r.local || ""} · ${CARDIO_TIPOS[c.tipo] || ""}` : (r.local || "Cardio"); };
+  const fotos = S.data.cdFotos || {};
+  return `<div class="panel"><h3>Cardio realizado</h3>${regs.length ? `<div class="tbl-wrap"><table class="data"><thead><tr><th>Sem.</th><th>Treino</th><th>Cardio</th><th>Tempo</th><th>Distância</th><th>Inclinação</th><th>Carga</th><th>Passos</th><th class="c">PSE</th><th>Foto</th></tr></thead><tbody>
+    ${regs.map(r => `<tr><td class="c num">${r.semana}</td><td class="c">${esc(r.letra)}</td><td>${esc(nome(r))}</td><td>${esc(r.tempo || "–")}</td><td>${esc(r.distancia || "–")}</td><td>${esc(r.inclinacao || "–")}</td><td>${esc(r.carga || "–")}</td><td>${esc(r.passos || "–")}</td><td class="c num">${r.pse ?? "–"}</td><td>${r.foto ? `<button class="btn sm" data-act="verFotoCd" data-path="${esc(r.foto)}">Ver</button>` : "–"}</td></tr>`).join("")}</tbody></table></div>`
+    : `<p class="small muted">Nenhum cardio concluído ainda neste ciclo.</p>`}</div>`;
 }
 
 /* ---------- Anamnese ---------- */
@@ -2296,7 +2456,7 @@ document.addEventListener("click", async ev => {
     if (a === "esqueci") { S.p.esqueci = true; return render(); }
     if (a === "voltarLogin") { S.p.esqueci = false; return render(); }
     if (a === "toggleCad") { S.p.cad = !S.p.cad; return render(); }
-    if (a === "logout") { await db.signOut(); S.user = null; S.view = "login"; S.p = {}; registrarHist("login", {}, "trocar"); return render(); }
+    if (a === "logout") { LS.del("ultimoUso"); await db.signOut(); S.user = null; S.view = "login"; S.p = {}; registrarHist("login", {}, "trocar"); return render(); }
     if (a === "copy") { const i = document.getElementById("shareLink"); try { await navigator.clipboard.writeText(i.value); toast("Link copiado"); } catch { i.select(); toast("Selecionado. Copie com Ctrl+C."); } return; }
     if (a === "openAluno") return go("aluno", { alunoId: el.dataset.id });
     if (a === "tab") { if (S.p.tab === el.dataset.tab) return; S.p.tab = el.dataset.tab; registrarHist(S.view, { alunoId: S.p.alunoId, tab: S.p.tab }, "push"); return render(); }
@@ -2367,11 +2527,28 @@ document.addEventListener("click", async ev => {
       }
       const semTrab = p.treinos.find(t => t.itens.some(it => !serT(it).length));
       if (semTrab) return toast(`No treino ${semTrab.letra} há exercício sem série de trabalho. Toda ficha precisa de pelo menos uma.`, 4500);
+      if (!p.inicio || !p.fim || p.fim < p.inicio) return toast("Confira as datas: o fim do ciclo precisa ser depois do início.", 4000);
+      p.semanas = semanasEntre(p.inicio, p.fim);
+      const pub = d.programa, modo = el.dataset.modo;
+      const datasMudaram = pub?.id && (pub.inicio !== p.inicio || fimDe(pub) !== p.fim);
+      if (datasMudaram && !modo) return modal(`<h2 id="modalTit">Datas do ciclo alteradas</h2>
+        <p class="muted">De <b>${fmtData(pub.inicio)} a ${fmtData(fimDe(pub))}</b> para <b>${fmtData(p.inicio)} a ${fmtData(p.fim)}</b>.</p>
+        <p class="small"><b>Reiniciar o ciclo:</b> o ciclo recomeça na semana 1 seguindo as novas datas, sem arquivar o anterior. Os registros deste ciclo são apagados; ficam guardados só o último peso e as repetições dos exercícios que continuam no treino, como referência.</p>
+        <p class="small"><b>Só ajustar as datas:</b> mantém todos os registros e apenas corrige o período (ex.: estender o fim).</p>
+        <div class="acoes"><button class="btn primary" data-act="savePrograma" data-modo="reiniciar">Reiniciar o ciclo com as novas datas</button><button class="btn" data-act="savePrograma" data-modo="datas">Só ajustar as datas</button><button class="btn ghost" data-act="fecharModal">Cancelar</button></div>`);
+      if (modo) fecharModal();
       el.disabled = true;
+      if (modo === "reiniciar") {
+        const manter = new Set(p.treinos.flatMap(t => t.itens.map(i => i.exercicio_id)));
+        const antiga = Object.fromEntries(Object.entries(pub.referencia || {}).filter(([k]) => manter.has(Number(k.split(":")[0]))));
+        p.referencia = { ...antiga, ...calcReferencia(d.regs, manter) };
+        await db.limparCiclo(pub.id, pub.aluno_id);
+        d.regs = []; d.sess = []; d.cardios = [];
+      }
       const saved = normPrograma(await db.savePrograma(p));
       d.programa = saved; d.draft = clone(saved); delete d.draft.rascunho; delete d.draft.rascunho_em; d.dirty = false; d.rascunhoEm = null; d.linhaPublicada = true;
       if (!d.regs.length && saved.id) d.regs = await db.getRegistros(saved.aluno_id, saved.id);
-      toast(d.aluno?.presencial ? "Programa salvo." : "Programa salvo. O aluno já pode ver."); return render();
+      toast(modo === "reiniciar" ? "Ciclo reiniciado com as novas datas. Os últimos pesos e repetições ficaram como referência." : d.aluno?.presencial ? "Programa salvo." : "Programa salvo. O aluno já pode ver.", 4500); return render();
     }
     if (a === "newEx") { d.edit = { nome: "", grupo: "", video_url: "", descricao: "", musculos: [] }; render(); document.getElementById("exNome")?.focus(); return; }
     if (a === "editEx") { d.edit = clone(d.exercicios.find(e => e.id === Number(el.dataset.id))); render(); window.scrollTo(0, 0); return; }
@@ -2432,6 +2609,62 @@ document.addEventListener("click", async ev => {
     if (a === "pedirDescartarRasc") return modal(`<h2 id="modalTit">Descartar o rascunho?</h2><p class="muted">${d.linhaPublicada ? "A montagem volta para a última versão enviada ao aluno." : "A montagem em andamento será apagada."} Não dá para desfazer.</p><div class="acoes"><button class="btn danger" data-act="descartarRasc">Descartar rascunho</button><button class="btn ghost" data-act="fecharModal">Voltar</button></div>`);
     if (a === "descartarRasc") { fecharModal(); await db.descartarRascunho(d.draft.id, d.linhaPublicada); toast("Rascunho descartado."); return go("aluno", { alunoId: S.p.alunoId, tab: "programa" }, { hist: "trocar" }); }
     if (a === "volF") { S.p.volF = el.dataset.v; const y = window.scrollY; render(); window.scrollTo(0, y); return; }
+    if (a === "pedirNovoCiclo") {
+      const pr = d.programa; if (!pr?.id) return;
+      const enc = cicloEncerrado(pr, d.sess), hoje = todayISO(), ini = hoje, fim = addDias(ini, (Number(pr.semanas) || 8) * 7 - 1);
+      const fimArq = (fimDe(pr) < hoje ? fimDe(pr) : hoje) < pr.inicio ? pr.inicio : (fimDe(pr) < hoje ? fimDe(pr) : hoje);
+      return modal(`<h2 id="modalTit">${enc ? "Iniciar novo ciclo" : "Encerrar ciclo e iniciar outro"}</h2>
+        <p class="muted">O <b>Ciclo ${fmtData(pr.inicio)} a ${fmtData(fimArq)}</b> será arquivado no perfil do aluno, com todas as cargas e repetições, para consulta e comparação.</p>
+        <div class="grid2"><label class="field"><span>Início do novo ciclo</span><input type="date" id="ncIni" value="${ini}"></label><label class="field"><span>Fim do novo ciclo</span><input type="date" id="ncFim" value="${fim}"></label></div>
+        <label class="consent"><input type="checkbox" id="ncTreino" checked><span><b>Manter o mesmo treino</b> (exercícios, séries, repetições e cardio). Desmarcado, o novo ciclo começa vazio para você montar.</span></label>
+        <label class="consent"><input type="checkbox" id="ncCargas" checked><span><b>Manter cargas e repetições</b> do último registro como ponto de partida (aparecem como referência na semana 1).</span></label>
+        <div class="acoes"><button class="btn primary" data-act="novoCiclo">Arquivar e iniciar novo ciclo</button><button class="btn ghost" data-act="fecharModal">Cancelar</button></div>`);
+    }
+    if (a === "novoCiclo") {
+      const pr = d.programa, ini = document.getElementById("ncIni").value, fim = document.getElementById("ncFim").value;
+      if (!ini || !fim || fim < ini) return toast("Confira as datas do novo ciclo: o fim precisa ser depois do início.", 4000);
+      const manterTreino = document.getElementById("ncTreino").checked, manterCargas = document.getElementById("ncCargas").checked, hoje = todayISO();
+      let fimArq = fimDe(pr) < hoje ? fimDe(pr) : hoje; if (fimArq < pr.inicio) fimArq = pr.inicio;
+      el.disabled = true;
+      const base = { aluno_id: pr.aluno_id, nome: pr.nome, modalidade: pr.modalidade, objetivo: pr.objetivo || null, reavaliacao: null, frequencia: pr.frequencia ? Number(pr.frequencia) : null, restricoes: pr.restricoes || null,
+        inicio: ini, fim, semanas: semanasEntre(ini, fim), ativo: true, referencia: manterCargas ? calcReferencia(d.regs, null) : null };
+      await db.arquivarPrograma(pr.id, fimArq, Math.max(semanasEntre(pr.inicio, fimArq), Math.max(0, ...d.regs.map(r => r.semana))));
+      const vazio = { ...base, treinos: LETRAS.map(l => ({ letra: l, nome: "", itens: [], cardios: [] })) };
+      await db.criarCiclo({ ...base, treinos: manterTreino ? clone(pr.treinos) : [], publicado: manterTreino, rascunho: manterTreino ? null : vazio, rascunho_em: manterTreino ? null : new Date().toISOString() });
+      fecharModal();
+      toast(manterTreino ? "Ciclo arquivado. O novo ciclo já está liberado com o mesmo treino." : "Ciclo arquivado. Monte o treino do novo ciclo e envie quando estiver pronto.", 5000);
+      return go("aluno", { alunoId: S.p.alunoId, tab: "programa" }, { hist: "trocar" });
+    }
+    if (a === "verCiclo") {
+      const id = el.dataset.id;
+      if (String(S.p.cicloVer) === String(id)) { S.p.cicloVer = null; return render(); }
+      S.p.cicloVer = id; render(); await carregarCiclo(id); const y = window.scrollY; render(); window.scrollTo(0, y); return;
+    }
+    if (a === "compararCiclos") {
+      const A = document.getElementById("cmpA").value, B = document.getElementById("cmpB").value;
+      if (A === B) return toast("Escolha dois ciclos diferentes.");
+      el.disabled = true; await Promise.all([carregarCiclo(A), carregarCiclo(B)]);
+      S.p.cmpA = A; S.p.cmpB = B; S.p.comparando = true; const y = window.scrollY; render(); window.scrollTo(0, y); return;
+    }
+    if (a === "verFotoCd") { const url = await db.fotoCardioUrl(el.dataset.path); return modal(`<h2 id="modalTit">Foto do cardio</h2><img class="cd-foto" src="${esc(url)}" alt="Foto enviada no cardio"><div class="acoes"><button class="btn" data-act="fecharModal">Fechar</button></div>`); }
+    if (a === "editarCardioFeito") { S.p.cdForm = Number(el.dataset.k); S.p.aberto = Number(el.dataset.ab); keepInputs(render); statusTreino(); return; }
+    if (a === "cancelarCardioFeito") { S.p.cdForm = null; S.p.aberto = Number(el.dataset.ab); keepInputs(render); statusTreino(); return; }
+    if (a === "salvarCardioFeito") {
+      const k = Number(el.dataset.k), t = d.programa.treinos.find(x => x.letra === S.p.letra), c = t.cardios[k];
+      const v = f => (document.getElementById("cd-" + f)?.value || "").trim();
+      if (!v("tempo")) return toast("Informe o tempo feito.");
+      const pseEl = document.querySelector('input[name="cd-pse"]:checked'), file = document.getElementById("cd-foto")?.files?.[0];
+      if (file && file.size > 20 * 1024 * 1024) return toast("Foto muito grande. Escolha outra.", 4000);
+      el.disabled = true;
+      const quem = alvo(), ant = (d.cardios || []).find(x => x.semana === S.p.semana && x.letra === S.p.letra && x.idx === k);
+      let foto = ant?.foto || null;
+      if (file) { el.textContent = "Enviando foto…"; foto = await db.uploadFotoCardio(quem, await comprimirFoto(file)); }
+      await db.saveCardio({ aluno_id: quem, programa_id: d.programa.id, semana: S.p.semana, letra: S.p.letra, idx: k, local: c.local, tipo: c.tipo,
+        tempo: v("tempo"), distancia: v("distancia") || null, inclinacao: v("inclinacao") || null, carga: v("carga") || null, passos: v("passos") || null,
+        pse: pseEl ? Number(pseEl.value) : null, foto, concluido_em: new Date().toISOString() });
+      d.cardios = await db.getCardios(quem, d.programa.id);
+      S.p.cdForm = null; S.p.aberto = Number(el.dataset.ab); toast("Cardio concluído. Boa!"); keepInputs(render); statusTreino(); return;
+    }
     if (a === "comboPick") return escolherCombo(el.closest(".combo"), Number(el.dataset.id));
     if (a === "limparSobra") {
       const n = Math.min(LETRAS.length, Number(d.draft.frequencia) || 0);
@@ -2517,6 +2750,10 @@ document.addEventListener("input", ev => {
       it[f] = f === "exercicio_id" ? Number(el.value) : el.value;
     } else if (f === "tnome") d.treinos[+el.dataset.t].nome = el.value;
     else d[f] = (f === "semanas") ? Math.max(1, Math.min(52, parseInt(el.value) || 8)) : el.value;
+    if ((f === "inicio" || f === "fim") && d.inicio && d.fim) {
+      if (d.fim >= d.inicio) d.semanas = semanasEntre(d.inicio, d.fim);
+      const dt = document.getElementById("durTxt"); if (dt) dt.textContent = d.fim < d.inicio ? "O fim está antes do início" : `${d.semanas} ${d.semanas > 1 ? "semanas" : "semana"}`;
+    }
     S.data.dirty = true;
     const m = document.getElementById("dirtyMsg"); if (m) { m.textContent = "Alterações não salvas"; m.style.color = "var(--warn)"; m.classList.remove("muted"); }
   }
@@ -2695,6 +2932,24 @@ async function entrar(){
   } catch {}
   go(rotaInicial(), {}, { hist: "trocar" });
 }
+const INATIVIDADE_MS = INATIVIDADE_HORAS * 3600e3;
+let ultimoUsoGravado = 0;
+function marcarUso(forcar){ const ag = Date.now(); if (forcar || ag - ultimoUsoGravado > 60000) { ultimoUsoGravado = ag; LS.set("ultimoUso", ag); } }
+["click", "keydown", "touchstart"].forEach(e => document.addEventListener(e, () => marcarUso(), { passive: true, capture: true }));
+async function checarInatividade(){
+  if (!S.user || DEMO || !db) return false;
+  const ult = Number(LS.get("ultimoUso")) || 0;
+  if (ult && Date.now() - ult > INATIVIDADE_MS) {
+    try { salvarAgora(); } catch {}
+    try { await db.signOut(); } catch {}
+    S.user = null; S.view = "login"; S.p = {}; LS.del("ultimoUso"); registrarHist("login", {}, "trocar"); render();
+    toast(`Por segurança, você saiu da conta depois de ${INATIVIDADE_HORAS} horas sem usar o app. Entre de novo.`, 6000);
+    return true;
+  }
+  marcarUso(true); return false;
+}
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") checarInatividade(); });
+setInterval(checarInatividade, 5 * 60000);
 async function start(){
   if (DEMO) { db = makeDemo(); render(); return; }
   $app.innerHTML = `<main><div class="wrap"><p class="muted">Carregando…</p></div></main>`;
@@ -2704,6 +2959,7 @@ async function start(){
     S.user = await db.current();
   } catch (e) { $app.innerHTML = `<main><div class="wrap"><div class="callout">${esc(traduzErro(e))}</div></div></main>`; return; }
   if (S.user && RECUPERANDO) return go("novaSenha");
+  if (S.user && await checarInatividade()) return;
   if (S.user) entrar(); else render();
 }
 start();
