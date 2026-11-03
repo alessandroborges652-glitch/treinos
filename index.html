@@ -411,6 +411,30 @@ table.data td.z{color:var(--muted)}
 .pse-ops span{min-width:42px;justify-content:center}
 .cd-st{flex:none;font-size:.78rem;font-weight:800;padding:3px 8px;border-radius:99px;background:var(--up-soft);color:var(--up)}
 .cd-foto{max-width:100%;border-radius:10px}
+/* Ganho de força */
+.fz-tiles{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.fz-tiles .tile b{font-size:1.25rem}
+.fz-tiles .tile.dest{border-color:var(--up);background:var(--up-soft)}
+.fz-bar{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr) 64px;gap:8px;align-items:center;font-size:.86rem;padding:3px 0}
+.fz-bar .nm{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fz-bar .trk{height:14px;border-radius:4px;background:var(--sunken);overflow:hidden}
+.fz-bar .trk i{display:block;height:100%;border-radius:4px}
+.fz-bar .v{text-align:right;font-weight:800;font-variant-numeric:tabular-nums}
+.fz-top{display:flex;flex-direction:column;gap:6px}
+.fz-top div{display:flex;gap:10px;align-items:baseline;border-left:4px solid var(--up);background:var(--up-soft);border-radius:0 8px 8px 0;padding:8px 10px}
+.fz-top b{font-size:1.05rem;color:var(--up);font-variant-numeric:tabular-nums}
+.pdf-box{width:100%;box-sizing:border-box;padding-right:14px!important;background:#fff;color:#22282A;padding:8px;display:flex;flex-direction:column;gap:14px}
+.pdf-box .panel{break-inside:auto}
+.pdf-box .ex-detail,.pdf-box .vgrid,.pdf-box .multiples{grid-template-columns:minmax(0,1fr)!important}
+.pdf-box .tbl-wrap{overflow:visible}
+.pdf-box table.data{font-size:.72rem;width:100%;table-layout:fixed;overflow-wrap:anywhere}
+.pdf-box table.data th,.pdf-box table.data td{padding:4px 5px;white-space:normal}
+@media print{
+  .top,.demo,.savebar,.toast,.nav,.no-pdf,button,.btn{display:none!important}
+  body{background:#fff}
+  main .wrap{padding:0}
+  .panel{break-inside:avoid-page;border-color:#ccc}
+}
 </style>
 <!--HEAD-END-->
 </head>
@@ -1185,7 +1209,7 @@ function viewAluno(){
     ${enc ? `<div class="panel ciclo-fim"><b>O ${esc(nomeCiclo(programa))} terminou.</b><span class="small">Arquive este ciclo no perfil do aluno e inicie o próximo. Você escolhe se mantém o mesmo treino e as cargas.</span><div class="row"><button class="btn primary" data-act="pedirNovoCiclo">Arquivar e iniciar novo ciclo</button><button class="btn" data-act="pedirEstender">Estender ciclo</button></div></div>` : ""}
     ${pres && programa?.id ? `<div class="row"><button class="btn primary" data-act="treinarPres" data-id="${esc(aluno.id)}">▶ Abrir treino para registrar</button><span class="small muted">Use durante a sessão para anotar cargas e finalizar o treino.</span></div>` : ""}
     <div class="tabs" role="tablist">${proprio ? "" : `<button role="tab" data-act="tab" data-tab="anamnese" aria-selected="${tab === "anamnese"}">Anamnese${an ? "" : pres ? ' <span class="chip">opcional</span>' : ' <span class="chip warn">pendente</span>'}</button>`}<button role="tab" data-act="tab" data-tab="programa" aria-selected="${tab === "programa"}">Programa</button><button role="tab" data-act="tab" data-tab="evolucao" aria-selected="${tab === "evolucao"}">Evolução</button><button role="tab" data-act="tab" data-tab="ciclos" aria-selected="${tab === "ciclos"}">Ciclos${S.data.ciclos?.length ? ` <span class="chip num">${S.data.ciclos.length}</span>` : ""}</button></div>
-    ${conteudo !== null ? conteudo : (programa?.id ? (aluno.id === S.user.id || pres ? "" : painelEnvio()) + evolucao({ prog: programa, regs: S.data.regs, exercicios: S.data.exercicios, modo: aluno.id === S.user.id ? "proprio" : "personal", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) }) + painelCardioPersonal() : `<div class="empty">Monte e salve um programa para acompanhar a evolução.</div>`)}
+    ${conteudo !== null ? conteudo : (programa?.id ? `<div class="row no-pdf"><button class="btn" data-act="exportarPDF" data-nome="${esc(proprio ? "Meu treino" : aluno.nome)}">⬇ Exportar evolução em PDF</button><span class="small muted">Gera o PDF com o que está na tela (abas selecionadas). A Conferência não entra.</span></div>` + (aluno.id === S.user.id || pres ? "" : painelEnvio()) + `<div id="evoPdf">` + evolucao({ prog: programa, regs: S.data.regs, exercicios: S.data.exercicios, modo: aluno.id === S.user.id ? "proprio" : "personal", obs: S.data.obs, sess: S.data.sess, editavel: true, prof: profDe(S.user) }) + painelCardioPersonal() + "</div>" : `<div class="empty">Monte e salve um programa para acompanhar a evolução.</div>`)}
     ${pres ? `<details class="panel dados-pres" ${S.data.confirmarPres ? "open" : ""}><summary style="cursor:pointer;font-weight:700">Dados do aluno presencial</summary>
       <div class="row" style="align-items:flex-end"><label class="field" style="flex:1;min-width:200px"><span>Nome completo</span><input id="presRenome" type="text" value="${esc(aluno.nome)}"></label><button class="btn" data-act="renomearPres" data-id="${esc(aluno.id)}">Salvar nome</button></div>
       ${S.data.confirmarPres ? `<div class="row"><span class="small">Excluir ${esc(aluno.nome)} com programa, cargas e anamnese? Não dá para desfazer.</span><button class="btn sm danger" data-act="excluirPres" data-id="${esc(aluno.id)}">Excluir definitivamente</button><button class="btn sm ghost" data-act="cancelarPres">Cancelar</button></div>`
@@ -2084,7 +2108,7 @@ function evolucao(ctx){
     }));
     const notas = (ctx.sess || []).filter(x => x.obs && x.semana >= de).sort((a, b) => b.semana - a.semana || a.letra.localeCompare(b.letra));
     if (notas.length) sumiu.push(...notas.slice(0, 6).map(x => `<div class="sess-note"><b>Observação do aluno · semana ${x.semana}, treino ${x.letra}:</b> ${esc(x.obs)}</div>`));
-    if (falt.length || sumiu.length) conf = `<div class="callout"><b>Conferência</b>
+    if (falt.length || sumiu.length) conf = `<div class="callout no-pdf"><b>Conferência</b>
       ${falt.map((r, k) => `<div style="margin-top:8px">Semana ${r.semana}, treino ${r.letra}, ${esc(nomeEx(r.exercicio_id))}, série ${r.serie}: falta ${r.carga == null ? "a carga" : "o número de repetições"}. Fica fora das contas até ser lançado.
         <div class="fix"><input id="fix-${k}" type="text" inputmode="${r.carga == null ? "decimal" : "tel"}" placeholder="${r.carga == null ? "kg" : "reps"}" aria-label="Valor que falta"><button class="btn sm" data-act="fixReg" data-k="${k}">Lançar</button></div></div>`).join("")}
       ${sumiu.map(s => `<div style="margin-top:8px">${s}</div>`).join("")}</div>`;
@@ -2259,11 +2283,95 @@ function evolucao(ctx){
   let acc = 0;
   const cum = range(1, N).map(w => w < de ? undefined : w <= ultima ? (acc += ptsSemana(w)) : null);
   const saldos = range(de + 1, ultima).map(w => `S${w} <b style="color:${corPts(ptsSemana(w))}">${sinal(ptsSemana(w))}</b>`).join(" · ");
-  const s6 = sec("06 · Fechamento", "fechamento", `Pontos acumulados: ${sinal(acc)}`, `<p class="small muted">${T("A linha sobe quando a semana soma pontos, fica parada quando você mantém tudo e desce quando há recuo.", "Acumulado semanal. Ausência não pontua.")}</p>
+  /* 06 · Ganho de força: força estimada (1RM pela fórmula de Epley) da melhor série no início e no fim do período */
+  const e1 = r => r && r.carga != null && r.reps != null ? (Number(r.carga) > 0 ? Number(r.carga) * (1 + Number(r.reps) / 30) : Number(r.reps)) : null;
+  const melhorDe = (w, l, ex) => { let m = null; regs.filter(r => r.semana === w && r.letra === l && r.exercicio_id === ex).forEach(r => { const v = e1(r); if (v != null && (!m || v > m.v)) m = { v, r }; }); return m; };
+  const grupoDe = ex => exMap[ex]?.musculos?.[0]?.m || exMap[ex]?.grupo || "";
+  const fz = [];
+  treinos.forEach(t => t.itens.forEach(it => {
+    const ws = semanas.filter(w => melhorDe(w, t.letra, it.exercicio_id));
+    if (ws.length < 2) return;
+    const a = melhorDe(ws[0], t.letra, it.exercicio_id), b = melhorDe(ws[ws.length - 1], t.letra, it.exercicio_id);
+    const maxC = w => Math.max(...regs.filter(r => r.semana === w && r.letra === t.letra && r.exercicio_id === it.exercicio_id && r.carga != null).map(r => Number(r.carga)));
+    fz.push({ t, ex: it.exercicio_id, nome: nomeEx(it.exercicio_id), grupo: grupoDe(it.exercicio_id), wa: ws[0], wb: ws[ws.length - 1], a, b, pct: (b.v - a.v) / a.v * 100, ca: maxC(ws[0]), cb: maxC(ws[ws.length - 1]) });
+  }));
+  let s6f = "";
+  if (fz.length) {
+    const media = arr => arr.length ? arr.reduce((x, y) => x + y.pct, 0) / arr.length : 0;
+    const pctTxt2 = p => `${p > 0 ? "+" : ""}${fmt(Math.round(p * 10) / 10)}%`;
+    const corP = p => p > 0.05 ? "var(--up)" : p < -0.05 ? "var(--down)" : "var(--muted)";
+    const subiram = fz.filter(x => x.pct > 0.05), mantidos = fz.filter(x => Math.abs(x.pct) <= 0.05);
+    const top = [...fz].sort((x, y) => y.pct - x.pct);
+    const porTreino = treinos.map(t => ({ t, arr: fz.filter(x => x.t.letra === t.letra) })).filter(x => x.arr.length).map(x => ({ ...x, m: media(x.arr) }));
+    const grupos = [...new Set(fz.map(x => x.grupo).filter(Boolean))].map(g => ({ g, arr: fz.filter(x => x.grupo === g) })).map(x => ({ ...x, m: media(x.arr) })).sort((x, y) => y.m - x.m);
+    const melhorT = [...porTreino].sort((x, y) => y.m - x.m)[0], melhorG = grupos[0];
+    const maxAbs = Math.max(1, ...fz.map(x => Math.abs(x.pct)), ...porTreino.map(x => Math.abs(x.m)), ...grupos.map(x => Math.abs(x.m)));
+    const barra = (nm, p, sub) => `<div class="fz-bar"><span class="nm" title="${esc(nm)}">${esc(nm)}${sub ? ` <span class="muted small">${esc(sub)}</span>` : ""}</span><span class="trk"><i style="width:${Math.min(100, Math.abs(p) / maxAbs * 100)}%;background:${corP(p)}"></i></span><span class="v" style="color:${corP(p)}">${pctTxt2(p)}</span></div>`;
+    const serieTxt = r => r.carga != null && Number(r.carga) > 0 ? `${fmt(r.carga)} kg × ${esc(r.reps_txt ?? r.reps)}` : `${esc(r.reps_txt ?? r.reps)} reps`;
+    const tiles = `<div class="fz-tiles">
+      ${tile(T("Seu ganho médio de força", "Ganho médio de força"), pctTxt2(media(fz)), `em ${fz.length} exercícios`, "dest")}
+      ${tile("Exercícios que evoluíram", `${subiram.length} de ${fz.length}`, mantidos.length ? `${mantidos.length} mantido(s)` : "")}
+      ${tile("Maior ganho", pctTxt2(top[0].pct), esc(top[0].nome))}
+      ${melhorT ? tile("Treino que mais evoluiu", "Treino " + melhorT.t.letra, pctTxt2(melhorT.m) + " em média") : ""}
+      ${melhorG ? tile("Grupo que mais evoluiu", esc(melhorG.g), pctTxt2(melhorG.m) + " em média") : ""}
+      ${tile("Período comparado", `S${Math.min(...fz.map(x => x.wa))} → S${Math.max(...fz.map(x => x.wb))}`, "primeiro e último registro")}</div>`;
+    const destaques = `<div class="fz-top">${top.filter(x => x.pct > 0.05).slice(0, 3).map(x => `<div><b>${pctTxt2(x.pct)}</b><span><b style="color:inherit;font-size:inherit">${esc(x.nome)}</b> · ${serieTxt(x.a.r)} → ${serieTxt(x.b.r)}</span></div>`).join("") || `<p class="small muted">Ainda sem ganho registrado no período. Mantenha a regularidade: o progresso aparece a partir das próximas semanas.</p>`}</div>`;
+    const tabela = `<div class="tbl-wrap"><table class="data"><thead><tr><th>Exercício</th><th class="c">Treino</th><th class="c">Melhor série · início</th><th class="c">Melhor série · fim</th><th class="c">Carga máx.</th><th class="c">Força estimada</th><th class="c">Ganho</th></tr></thead><tbody>
+      ${top.map(x => `<tr><td>${esc(x.nome)}</td><td class="c">${x.t.letra}</td><td class="c num">${serieTxt(x.a.r)} <span class="muted small">S${x.wa}</span></td><td class="c num">${serieTxt(x.b.r)} <span class="muted small">S${x.wb}</span></td><td class="c num">${isFinite(x.ca) && isFinite(x.cb) ? `${fmt(x.ca)} → ${fmt(x.cb)} kg` : "–"}</td><td class="c num">${fmt(Math.round(x.a.v * 10) / 10)} → ${fmt(Math.round(x.b.v * 10) / 10)}</td><td class="c num"><b style="color:${corP(x.pct)}">${pctTxt2(x.pct)}</b></td></tr>`).join("")}</tbody></table></div>`;
+    s6f = sec("06 · Ganho de força", "forca", T(`Sua força aumentou em média ${pctTxt2(media(fz))}`, `Ganho médio de força: ${pctTxt2(media(fz))}`), `
+      <p class="small muted">${T("Comparamos a sua melhor série de cada exercício no início e no fim do período. A conta considera carga e repetições juntas (força estimada para 1 repetição máxima, pela fórmula de Epley): subir a carga ou fazer mais repetições com a mesma carga contam como ganho.", "Força estimada (1RM, Epley: carga × (1 + reps ÷ 30)) da melhor série de trabalho no primeiro e no último registro do período, por exercício e treino. Exercício com peso corporal (carga 0) usa as repetições.")}</p>
+      ${tiles}
+      <div><h3>${T("Onde você mais ganhou", "Maiores ganhos")}</h3>${destaques}</div>
+      <div class="vgrid"><div><h3>Por exercício</h3><div style="margin-top:6px">${top.map(x => barra(x.nome, x.pct, "· " + x.t.letra)).join("")}</div></div>
+        <div style="display:flex;flex-direction:column;gap:16px"><div><h3>Por treino</h3><div style="margin-top:6px">${porTreino.map(x => barra(`Treino ${x.t.letra}${x.t.nome ? " · " + x.t.nome : ""}`, x.m)).join("")}</div></div>
+        ${grupos.length ? `<div><h3>Por grupo muscular</h3><div style="margin-top:6px">${grupos.map(x => barra(x.g, x.m)).join("")}</div></div>` : ""}</div></div>
+      <details ${paraAluno ? "open" : ""}><summary style="cursor:pointer;font-weight:700">Tabela completa por exercício</summary><div style="margin-top:10px">${tabela}</div></details>`);
+  }
+  const s6 = sec("07 · Fechamento", "fechamento", `Pontos acumulados: ${sinal(acc)}`, `<p class="small muted">${T("A linha sobe quando a semana soma pontos, fica parada quando você mantém tudo e desce quando há recuo.", "Acumulado semanal. Ausência não pontua.")}</p>
     <div class="chart">${linhaPontos(cum, N, ultima)}</div>${saldos ? `<p class="small num">Saldo por semana: ${saldos}</p>` : ""}`);
 
   const rodape = `<footer class="rep-foot">${MARK(22)}<span>${esc(pf.nome)}${pf.cref ? " · CREF " + esc(pf.cref) : ""} · Números dos registros série a série do app, considerando apenas séries de trabalho. Fechamento em ${esc(ctx.data || new Date().toLocaleDateString("pt-BR"))}.</span></footer>`;
-  return conf + topo + s1 + s2 + s3 + s4 + s5 + s6 + rodape;
+  return conf + topo + s1 + s2 + s3 + s4 + s5 + s6f + s6 + rodape;
+}
+
+/* ---------- Exportar em PDF ---------- */
+const carregarScript = src => new Promise((res, rej) => { const sc = document.createElement("script"); sc.src = src; sc.onload = res; sc.onerror = () => rej(new Error("Failed to fetch")); document.head.appendChild(sc); });
+async function exportarPDF(nome, btn){
+  const fonte = document.getElementById("evoPdf"); if (!fonte) return;
+  const txt = btn?.textContent; if (btn) { btn.disabled = true; btn.textContent = "Gerando PDF…"; }
+  const tema = document.documentElement.getAttribute("data-theme");
+  const box = document.createElement("div"); box.className = "pdf-box";
+  try {
+    if (!window.html2pdf) await carregarScript("https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js");
+    const clone = fonte.cloneNode(true);
+    clone.querySelectorAll("textarea").forEach(t => {
+      const v = (fonte.querySelector("#" + CSS.escape(t.id))?.value || "").trim(), alvo = t.closest(".obsf") || t;
+      if (!v) return alvo.remove();
+      const div = document.createElement("div"); div.className = "obs-pt"; div.innerHTML = `<span class="label">Observações de ${esc(primeiroNome((PROF || PROF_PADRAO).nome))}</span><p>${esc(v).replace(/\n/g, "<br>")}</p>`; alvo.replaceWith(div);
+    });
+    clone.querySelectorAll(".no-pdf, button, input, select, .tabs.sub").forEach(e => e.remove());
+    clone.querySelectorAll("details").forEach(d => d.setAttribute("open", ""));
+    clone.querySelectorAll("svg[viewBox]:not([width])").forEach(sv => {
+      const [, , w, h] = sv.getAttribute("viewBox").split(/[\s,]+/).map(Number); if (!w || !h) return;
+      const W = Math.min(660, w * (w < 200 ? 1 : 1)), H = W * h / w;
+      sv.setAttribute("width", W); sv.setAttribute("height", H); sv.style.width = W + "px"; sv.style.height = H + "px"; sv.style.maxWidth = "100%";
+    });
+    box.appendChild(clone);
+    document.documentElement.setAttribute("data-theme", "light");
+    const arquivo = `Evolucao - ${String(nome || "aluno").replace(/[\\/:*?"<>|]/g, "")} - ${todayISO().split("-").reverse().join("-")}.pdf`;
+    await window.html2pdf().set({ margin: [10, 8, 12, 8], filename: arquivo, image: { type: "jpeg", quality: .95 },
+      html2canvas: { scale: 2, useCORS: true, backgroundColor: "#ffffff" },
+      jsPDF: { unit: "mm", format: "a4", orientation: "portrait" },
+      pagebreak: { mode: ["css", "legacy"], avoid: ["tr", ".tile", ".chart", ".exd", "h2", "h3", "h4", ".fz-bar", ".vbar", ".obs-pt", ".fz-top div"] } }).from(box).save();
+    toast("PDF baixado.");
+  } catch (e) {
+    toast("Não deu para gerar o PDF direto. Abrindo a impressão: escolha \"Salvar como PDF\".", 5000);
+    setTimeout(() => window.print(), 600);
+  } finally {
+    box.remove();
+    if (tema == null) document.documentElement.removeAttribute("data-theme"); else document.documentElement.setAttribute("data-theme", tema);
+    if (btn) { btn.disabled = false; btn.textContent = txt; }
+  }
 }
 
 /* ---------- Gráficos (SVG desenhado a partir dos registros) ---------- */
@@ -2357,7 +2465,7 @@ function snapshot(de, ate){
   return {
     programa: { nome: p.nome, modalidade: p.modalidade, inicio: p.inicio, semanas: p.semanas, treinos: p.treinos },
     regs: d.regs.filter(r => r.semana >= de && r.semana <= ate).map(({ id, updated_at, ...r }) => r),
-    exercicios: d.exercicios.filter(e => used.has(e.id)).map(e => ({ id: e.id, nome: e.nome })),
+    exercicios: d.exercicios.filter(e => used.has(e.id)).map(e => ({ id: e.id, nome: e.nome, grupo: e.musculos?.[0]?.m || e.grupo || "" })),
     obs: { ...(d.obs || {}) }, cur: semanaAtual(p, d.sess), data: new Date().toLocaleDateString("pt-BR"), de, ate, prof: profDe(S.user)
   };
 }
@@ -2405,7 +2513,8 @@ function viewRelatorio(){
   return `<div>${isP ? `<button class="btn ghost sm" data-act="backAluno">← Voltar ao aluno</button>` : `<button class="btn ghost sm" data-act="nav" data-v="home">← Início</button>`}</div>
     ${S.p.snapshot ? `<div class="callout">Prévia: é assim que o aluno vai receber. Nada foi enviado ainda.</div>` : ""}
     <div><p class="label">${S.p.snapshot ? "Prévia" : "Enviado em " + new Date(r.created_at).toLocaleDateString("pt-BR")}</p><h1>${esc(r.titulo)}</h1></div>
-    ${evolucao({ prog: normPrograma(clone(d.programa)), regs: d.regs, exercicios: d.exercicios, modo: "aluno", obs: d.obs, cur: d.cur, data: d.data, de: d.de, ate: d.ate, prof: d.prof || PROF_PADRAO })}`;
+    <div class="row no-pdf"><button class="btn" data-act="exportarPDF" data-nome="${esc(r.titulo)}">⬇ Baixar em PDF</button></div>
+    <div id="evoPdf">${evolucao({ prog: normPrograma(clone(d.programa)), regs: d.regs, exercicios: d.exercicios, modo: "aluno", obs: d.obs, cur: d.cur, data: d.data, de: d.de, ate: d.ate, prof: d.prof || PROF_PADRAO })}</div>`;
 }
 
 /* =====================================================================
@@ -2685,6 +2794,7 @@ document.addEventListener("click", async ev => {
       d.cardios = await db.getCardios(quem, d.programa.id);
       S.p.cdForm = null; S.p.aberto = Number(el.dataset.ab); toast("Cardio concluído. Boa!"); keepInputs(render); statusTreino(); return;
     }
+    if (a === "exportarPDF") return exportarPDF(el.dataset.nome, el);
     if (a === "comboPick") return escolherCombo(el.closest(".combo"), Number(el.dataset.id));
     if (a === "limparSobra") {
       const n = Math.min(LETRAS.length, Number(d.draft.frequencia) || 0);
