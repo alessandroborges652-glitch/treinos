@@ -397,6 +397,9 @@ details.cardio-acc>summary .n{font-size:1.1rem}
 table.data td.z{color:var(--muted)}
 .mus-ed{display:flex;flex-direction:column;gap:6px}
 .mus-row{display:grid;grid-template-columns:minmax(0,1fr) 92px;gap:6px}
+.mus-row3{display:grid;grid-template-columns:minmax(0,1fr) 80px 36px;gap:6px;align-items:center}
+.mus-row3:has(input[data-mus="nome"]){grid-template-columns:minmax(0,1fr) minmax(0,1fr) 80px 36px}
+@media (max-width:520px){.mus-row3:has(input[data-mus="nome"]){grid-template-columns:minmax(0,1fr) 80px 36px}.mus-row3 input[data-mus="nome"]{grid-column:1/-1;grid-row:2}}
 .rasc{border-radius:10px;padding:10px 12px;background:var(--accent-soft);color:var(--accent);font-size:.9rem;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
 /* Ciclos */
 .ciclo-fim{border-color:var(--warn);background:var(--warn-soft)}
@@ -1469,7 +1472,13 @@ function viewBiblioteca(){
       <datalist id="grupos">${[...new Set(exercicios.map(e => e.grupo).filter(Boolean))].map(g => `<option value="${esc(g)}">`).join("")}</datalist>
       <label class="field"><span>Link do vídeo no YouTube (não listado)</span><input id="exVideo" type="url" value="${esc(edit.video_url === "demo" ? "" : edit.video_url)}" placeholder="https://youtu.be/..."></label>
       <label class="field"><span>Dicas de execução</span><textarea id="exDesc">${esc(edit.descricao)}</textarea></label>
-      <div class="field"><span>Músculos para o volume semanal (até 4) · fator: 1 = série inteira, 0,5 = meia série</span><div class="mus-ed">${[0, 1, 2, 3].map(k => { const x = (edit.musculos || [])[k] || {}; return `<div class="mus-row"><select id="exM${k}" aria-label="Músculo ${k + 1}"><option value="">${k ? "—" : "Escolha o músculo"}</option>${MUSCULOS.map(m => `<option ${m === x.m ? "selected" : ""}>${m}</option>`).join("")}${x.m && !MUSCULOS.includes(x.m) ? `<option selected>${esc(x.m)}</option>` : ""}</select><input id="exF${k}" type="text" inputmode="decimal" value="${x.m ? esc(fmtSer(Number(x.f) || 0)) : ""}" placeholder="fator" aria-label="Fator do músculo ${k + 1}"></div>`; }).join("")}</div></div>
+      <div class="field"><span>Músculos envolvidos (entram no volume semanal) · fator: 1 = série inteira, 0,5 = meia série</span>
+        <div class="mus-ed">${(edit.musculos && edit.musculos.length ? edit.musculos : [{ m: "", f: 1 }]).map((x, k) => { const outro = x.outro || (x.m && !MUSCULOS.includes(x.m)); return `<div class="mus-row3">
+          <select data-mus="m" data-k="${k}" aria-label="Músculo ${k + 1}"><option value="">Escolha o músculo</option>${REGIOES.map(([r, ms]) => `<optgroup label="${r}">${ms.map(m => `<option ${m === x.m && !outro ? "selected" : ""}>${m}</option>`).join("")}</optgroup>`).join("")}<option value="__outro" ${outro ? "selected" : ""}>Outro músculo (digitar)…</option></select>
+          ${outro ? `<input type="text" data-mus="nome" data-k="${k}" value="${esc(x.m || "")}" placeholder="Nome do músculo" aria-label="Nome do músculo ${k + 1}">` : ""}
+          <input type="text" inputmode="decimal" data-mus="f" data-k="${k}" value="${x.f == null || x.f === "" ? "" : typeof x.f === "string" ? esc(x.f) : esc(fmtSer(Number(x.f) || 0))}" placeholder="fator" aria-label="Fator do músculo ${k + 1}">
+          <button type="button" class="btn sm danger" data-act="rmMus" data-k="${k}" aria-label="Remover músculo ${k + 1}">✕</button></div>`; }).join("")}
+        <div><button type="button" class="btn sm" data-act="addMus">+ Adicionar músculo</button></div></div></div>
       <div class="row"><button class="btn primary" type="submit">Salvar exercício</button><button class="btn ghost" type="button" data-act="cancelEx">Cancelar</button></div>
     </form>` : "";
   const list = f.map(e => {
@@ -2711,6 +2720,11 @@ document.addEventListener("click", async ev => {
       if (!d.regs.length && saved.id) d.regs = await db.getRegistros(saved.aluno_id, saved.id);
       toast(modo === "reiniciar" ? "Ciclo reiniciado com as novas datas. Os últimos pesos e repetições ficaram como referência." : d.aluno?.presencial ? "Programa salvo." : "Programa salvo. O aluno já pode ver.", 4500); return render();
     }
+    if (a === "addMus" || a === "rmMus") {
+      syncExForm(); const ms = d.edit.musculos = (d.edit.musculos && d.edit.musculos.length ? d.edit.musculos : [{ m: "", f: 1 }]);
+      if (a === "addMus") ms.push({ m: "", f: 1 }); else { ms.splice(+el.dataset.k, 1); if (!ms.length) ms.push({ m: "", f: 1 }); }
+      const y = window.scrollY; render(); window.scrollTo(0, y); return;
+    }
     if (a === "newEx") { d.edit = { nome: "", grupo: "", video_url: "", descricao: "", musculos: [] }; render(); document.getElementById("exNome")?.focus(); return; }
     if (a === "editEx") { d.edit = clone(d.exercicios.find(e => e.id === Number(el.dataset.id))); render(); window.scrollTo(0, 0); return; }
     if (a === "cancelEx") { d.edit = null; return render(); }
@@ -2906,8 +2920,19 @@ async function salvarTreino(btn, o = {}){
   if (salvarDeNovo) { salvarDeNovo = false; salvarTreino(null, { auto: true }); }
 }
 
+function syncExForm(){
+  const e = S.data.edit; if (!e) return;
+  const v = id => document.getElementById(id)?.value;
+  ["exNome:nome", "exGrupo:grupo", "exVideo:video_url", "exDesc:descricao"].forEach(p => { const [id, k] = p.split(":"); const x = v(id); if (x != null) e[k] = x; });
+}
 document.addEventListener("input", ev => {
   const el = ev.target;
+  if (el.dataset.mus && S.data.edit) {
+    const ms = S.data.edit.musculos = (S.data.edit.musculos && S.data.edit.musculos.length ? S.data.edit.musculos : [{ m: "", f: 1 }]), x = ms[+el.dataset.k], f = el.dataset.mus;
+    if (f === "m") { if (el.value === "__outro") { x.outro = true; x.m = ""; } else { x.outro = false; x.m = el.value; } syncExForm(); const y = window.scrollY; render(); window.scrollTo(0, y); return; }
+    if (f === "nome") { x.m = el.value; return; }
+    if (f === "f") { x.f = el.value; return; }
+  }
   if (el.classList.contains("combo-in")) { const combo = el.closest(".combo"); combo.querySelector(".combo-list").hidden = false; el.setAttribute("aria-expanded", "true"); comboOpcoes(combo, el.value); return; }
   if (S.view === "treino" && (el.id === "sessObs" || el.closest(".set-in"))) { guardarRascunho(); statusTreino(); autoMsg("Alterações guardadas neste aparelho…"); agendarAuto(); return; }
   if (S.view === "anamnese" && el.dataset.an) { anGuardar(el); return; }
@@ -2967,11 +2992,11 @@ document.addEventListener("submit", async ev => {
     if (video && !ytId(video)) return toast("Link do YouTube não reconhecido. Cole o link do vídeo.", 4000);
     const prev = S.data.edit;
     const musculos = [];
-    for (let k = 0; k < 4; k++) {
-      const m = document.getElementById("exM" + k).value, fs = document.getElementById("exF" + k).value.trim();
-      if (!m) continue;
-      const f = fs === "" ? 1 : parseN(fs);
+    for (const x of (S.data.edit.musculos || [])) {
+      const m = String(x.m || "").trim(); if (!m) continue;
+      const fs = String(x.f ?? "").trim(), f = fs === "" ? 1 : parseN(fs);
       if (f == null || Number.isNaN(f)) return toast(`Fator inválido para ${m}. Use 1 ou 0,5.`, 4000);
+      if (musculos.some(y => y.m.toLowerCase() === m.toLowerCase())) return toast(`${m} aparece duas vezes. Deixe uma linha só.`, 4000);
       musculos.push({ m, f });
     }
     const grupoIn = document.getElementById("exGrupo").value.trim();
